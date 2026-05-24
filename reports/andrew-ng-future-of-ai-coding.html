@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>AI Dev 26 x SF: Andrew Ng「ソフトウェアエンジニアリングの未来」非公式まとめ</title>
+<meta name="description" content="Andrew Ng が AI Dev 26 (SF) で語った AI コーディングの加速、ボトルネックの移動、Context Hub、Code Dream 発表に関する内容を、省略なしで日本語要約した非公式まとめ。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 14px 18px; }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 32px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; margin-bottom: 2px; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre code { display: block; padding: 12px 14px; overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto;
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .95; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">AI Dev 26 x San Francisco / 基調プレゼン</div>
+      <h1>Andrew Ng「ソフトウェアエンジニアリングの未来」非公式まとめ</h1>
+      <p class="lead">AI コーディングで何が変わり、どんな新しいボトルネックが現れ、これからの開発者は何を身につければよいか。Context Hub と Code Dream の新発表まで、省略なしで再構成。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=g8um2AEf5ZA" target="_blank" rel="noopener">YouTube ― AI Dev 26 x SF: Andrew Ng: The Future of Software Engineering</a></dd></div>
+      <div><dt>登壇者</dt><dd>Andrew Ng</dd></div>
+      <div><dt>チャンネル / 主催</dt><dd>DeepLearningAI（AI Dev 26 x San Francisco）</dd></div>
+      <div><dt>公開日</dt><dd>2026-05-20</dd></div>
+      <div><dt>所要時間</dt><dd>19 分 21 秒</dd></div>
+      <div><dt>視聴回数(取得時点)</dt><dd>約 8,225 回</dd></div>
+      <div><dt>カテゴリ</dt><dd>Education</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（原語自動字幕 + info.json）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要トピック</dt>
+        <dd class="badges">
+          <span class="badge">AI コーディング</span>
+          <span class="badge">100% AI 記述</span>
+          <span class="badge">PM ボトルネック</span>
+          <span class="badge">ジェネラリスト小チーム</span>
+          <span class="badge">Context Hub</span>
+          <span class="badge">Code Dream（発表）</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>AI コーディングでコードを書く速度は 10〜100 倍になり、ボトルネックは PM・デザイン・法務・マーケ側に移動した。</li>
+        <li>これからの強いエンジニアは「コーディングエージェントを使いこなす」「最新ビルディングブロックを把握する」「ジェネラリストとして製品全体を回す」の三拍子。雇用大崩壊は起きていない。</li>
+        <li>新発表は 2 つ。最新ドキュメントをエージェントへ供給する <strong>Context Hub</strong>、対話形式で AI コーディングを学ぶ <strong>Code Dream</strong>（本日プレビュー公開）。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. 冒頭 ― 今日伝えたいこと</h2>
+      <p>
+        Andrew Ng は冒頭、既存告知である「AI Prompting for Everyone」コースに加え、本セッションでもう 1 つ重要な発表があると予告する。会場の参加者は世界で最初にそれを聞く立場になる、と述べ、発表自体はプレゼン終盤で行うと前置きした。
+      </p>
+      <p>今日のテーマは大きく 3 つ。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>① 未来像</h4><p>AI コーディングの視点で見た「ソフトウェアエンジニアリングの未来」を共有する。</p></div>
+        <div class="card"><h4>② Context Hub</h4><p>既存ツール「Context Hub」について短く触れる。</p></div>
+        <div class="card"><h4>③ 新発表</h4><p>終盤で、開発者が新しい未来を進むのを助ける新プロジェクトを発表する。</p></div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. ソフトウェアは「LEGO ブロックの組み立て」</h2>
+      <p>
+        1 年前の最初の AI Dev で示した比喩を再掲。ソフトウェア、ツール、フレームワーク、API は LEGO ブロックのようなもので、種類が増えるほど組み合わせが <strong>指数的（組合せ的）</strong> に爆発し、面白いものが作れる。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  W["白ブロックのみ"] --> X["作れる物 少"]
+  M["色・形が増える"] --> Y["組合せ 指数爆発"]
+  Y --> Z["AI エージェントが<br/>高速に組み立て"]
+      </div>
+
+      <p>この 1 年で AI コーディングエージェントが急速に進化し、ブロックを素早く組み合わせて魅力的なソフトを作れるようになった。ブロックには 2 種類ある。</p>
+
+      <table>
+        <thead><tr><th>区分</th><th>例</th></tr></thead>
+        <tbody>
+          <tr><td>AI ブロック</td><td>プロンプト可能な LLM、RAG、エージェント的ワークフロー など</td></tr>
+          <tr><td>非 AI ブロック</td><td>UI コンポーネント、DB（永続化）、認証/認可マネージャ など</td></tr>
+        </tbody>
+      </table>
+
+      <p>AI コーディングのおかげで、両方のブロックが過去に例のない速度で毎日増えている。AI エージェントが自分の代わりにそれらを組み合わせてくれる、という点が特に強力。</p>
+    </section>
+
+    <section id="s3">
+      <h2>3. AI コーディング 80% と 100% は別物</h2>
+      <p>
+        スタートアップ、アカデミア、大企業のチームと話すと「AI コーディングをどれだけ使うべきか」が必ず議論になる。よくあるアンケート：「あなたのコードのうち AI が書く割合は？」。
+      </p>
+
+      <table>
+        <thead><tr><th>AI 比率</th><th>典型コメント</th><th>体感スループット</th></tr></thead>
+        <tbody>
+          <tr><td>0%</td><td>「全部自分で書く」</td><td>―（推奨せず、徐々に引き上げを）</td></tr>
+          <tr><td>80%</td><td>「うちは AI で 80%」</td><td>残り 20% を人が書く／レビューする時間が支配的で、体感は思ったほど速くない</td></tr>
+          <tr><td>ほぼ 100%</td><td>Andrew Ng 本人。フロンティアチームの傾向</td><td>同じ時間で圧倒的に多くを片付ける</td></tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        100% AI コーディングのチームは、短時間で大量を片付ける。残り「最後の 20%」を人がやるかどうかで体感は大きく違う。
+      </blockquote>
+    </section>
+
+    <section id="s4">
+      <h2>4. コードレビューもエージェントに任せる流れ</h2>
+      <p>
+        「AI に書かせるが、全行を人間がレビューする」という運用をしているチームは多い。だが Andrew Ng と彼のチームは、それをやると <strong>自分自身がボトルネック</strong> になると感じている。
+      </p>
+      <p>ただし宗教的に「人間が書くな」とは言っていない。例外も明確にある。</p>
+      <blockquote>
+        NASA で宇宙船用の 50 行を書くなら手で書け。それで構わない。
+      </blockquote>
+      <p>
+        とはいえフロンティア企業は「ほぼ 100% AI 記述」へ寄っており、書く側もレビュー側も、80% 止まりとは別世界の加速がある。
+      </p>
+    </section>
+
+    <section id="s5">
+      <h2>5. 第二次効果 ― PM ボトルネックの出現</h2>
+      <p>
+        コーディングが AI に置き換わると、興味深い <strong>二次的効果</strong> が生まれる。昨年 7 月の The Batch ニュースレターで「<em>プロダクトマネジメント・ボトルネック</em>」として書いた内容。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  A["アイデア"] --> B["プロトタイプ作成<br/>(エンジニアリング)"]
+  B --> C["ユーザに当てる<br/>フィードバック取得 (PM)"]
+  C --> D["改善 (エンジニアリング)"]
+  D --> C
+  style B fill:#f97316,color:#fff
+  style D fill:#f97316,color:#fff
+      </div>
+
+      <p>
+        この図の「B：プロトタイプ作成」が AI コーディングで 10〜100 倍速くなった結果、<strong>新しいボトルネックは「何を作るか」を決める PM の仕事</strong> 側に移った。
+      </p>
+
+      <h3>PM:エンジニア比率の崩壊</h3>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">1 : 8</div><div class="label">従来の典型(PM:エンジニア)</div></div>
+        <div class="stat-card"><div class="num">1 : 2</div><div class="label">最近のチームでよく見る比率</div></div>
+        <div class="stat-card"><div class="num">1 : 1</div><div class="label">さらに進んだチーム</div></div>
+        <div class="stat-card"><div class="num">1 人</div><div class="label">究極形：両役割を 1 人に統合</div></div>
+      </div>
+      <p>
+        究極的には「PM 1 人 + エンジニア 1 人」よりも、<strong>その 2 人を 1 人に潰して両方やる方が速い</strong>。プロダクトを形にできるエンジニア、あるいはコードが書ける PM が爆速で動ける。速さ自体が大きな競争優位になる。
+      </p>
+    </section>
+
+    <section id="s6">
+      <h2>6. 小さなジェネラリスト・チームへの収束</h2>
+      <p>
+        もちろん「1 人チーム」で全てができるわけではない。AI ネイティブな組織で増えているのは <strong>少人数のジェネラリスト・チーム</strong>。
+      </p>
+      <div class="grid-cards">
+        <div class="card"><h4>エンジニア</h4><p>PM 仕事をいくらかこなす。</p></div>
+        <div class="card"><h4>PM</h4><p>エンジニアリングをいくらかこなす。</p></div>
+        <div class="card"><h4>全員</h4><p>ほぼ全領域を把握。小チームのまま高速に動ける。</p></div>
+      </div>
+      <p>
+        シリコンバレーの一部では「AI による雇用大崩壊」が流行りの話題だが、Andrew Ng はそれを実際には見ていない。むしろ <strong>このプロフィールのエンジニアの未来は明るい</strong>。
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. AI エンジニア採用で見ているもの</h2>
+      <p>Andrew Ng のチームが AI エンジニアを採るときに重視する観点。</p>
+
+      <table>
+        <thead><tr><th>#</th><th>観点</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>コーディングエージェントを実効的に使える</td><td>Claude Code、Gemini の AI、Codex、open code など何でもよいから使いこなせる</td></tr>
+          <tr><td>2</td><td>最新のビルディングブロックを把握している</td><td>数が多く変化も速いので把握自体が難題。だから差がつく</td></tr>
+          <tr><td>3</td><td>ジェネラリスト・スキル</td><td>基本的なプロダクトマネジメントなど、領域横断の力</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        まとめると「<strong>どう作るか</strong>」と「<strong>何を作るか</strong>」の両方ができる人。このミックスを持つエンジニアへの需要は巨大で、自分のチームでも十分には見つけられていない。
+      </p>
+    </section>
+
+    <section id="s8">
+      <h2>8. デザイン・法務・マーケ・営業のボトルネック</h2>
+      <p>
+        話を PM ボトルネックの先へもう一歩進める。ソフトウェアエンジニアリングが 10〜100 倍速くなると、<strong>他のあらゆる工程が比較で遅く見える</strong>。
+      </p>
+
+      <table>
+        <thead><tr><th>ボトルネック</th><th>症状</th><th>対処の方向</th></tr></thead>
+        <tbody>
+          <tr><td>デザイン</td><td>デザイナー → エンジニアの受け渡しが律速</td><td>デザイナーが Figma を介さずコードで実装する形まで進めるとさらに速い</td></tr>
+          <tr><td>法務・コンプライアンス</td><td>1 日で書いたコードに対して 1 か月の法務待ち</td><td>AI で下書きを作り、本物の弁護士にローンチ前サインオフ</td></tr>
+          <tr><td>マーケティング</td><td>シップが速すぎて、何が出たかをマーケが追えない</td><td>エンジニアが AI で「基本的なマーケ作業」をある程度カバー</td></tr>
+          <tr><td>営業 他</td><td>同様に追いつけない</td><td>少人数ジェネラリスト・チームで巻き取る</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        救いになるのが <strong>少人数ジェネラリスト・チーム</strong>。マーケの専門家でないエンジニアでも、AI を上手にプロンプトできれば「ベース部分のマーケ作業」はこなせる。AI 単独だと変なマーケ判断もするが、人が回せばかなり通用する。
+      </p>
+      <p>
+        2 人チームでソフトウェア・プロダクト・デザイン・法務・マーケのすべてが必要なら、その 2 人は定義上全領域に何らかのスキルを持つことになる。AI ネイティブな賢いチームは、こうした他職能を AI で補えるので非常に速く動く。
+      </p>
+      <p>
+        Andrew Ng 本人の運用例：法務に出す前段のドラフトは AI に作らせ、ローンチ前に本物の弁護士にサインオフしてもらう。「弁護士になれ」とは誰にも言っていないが、AI を「下書き屋」として使うのは現実的。
+      </p>
+
+      <div class="callout">
+        <strong>補足：</strong> 時間の都合で詳細は省略されたが、「複数の AI ネイティブ・チームをどう協働させるか」も触れられた。10 人で全部はできないが、100 人組織を「コミュニケーションを絞り、明確な API 境界を持つ AI ネイティブ小チームの集合」として設計すると、単一チームを超えてスケールできる。
+      </div>
+    </section>
+
+    <section id="s9">
+      <h2>9. 「AI 雇用大崩壊」は起きていない</h2>
+      <p>
+        ソフトウェアを作るために必要な仕事のうち、コードを書く作業は一部にすぎない。それが急速に AI 化されているのは事実だが、<strong>AI による全面的な雇用大崩壊は近い将来には起きていない</strong>、と Andrew Ng は明言する。
+      </p>
+
+      <table>
+        <thead><tr><th>主張</th><th>根拠／引用</th></tr></thead>
+        <tbody>
+          <tr><td>大衆紙とビジネスメディアの精度差</td><td>大衆紙は刺激的なストーリーを語りがちだが、ビジネスメディアは「正確であること」で対価を得ているため精度が高い</td></tr>
+          <tr><td>論調の変化</td><td>ここ 1〜2 か月、ビジネスメディアは「AI 雇用大崩壊は来ていない／後ろ倒し」というトーン</td></tr>
+          <tr><td>連邦準備銀行の調査</td><td>フィラデルフィア連邦準備銀行による調査：人員削減を必要とした CEO はごく少数</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        ただし、雇用不安を感じている人が多いこと自体は否定しない。それには対処が必要であり、コロナ期の過剰採用やゼロ金利時代の採用過多からの揺り戻しでレイオフされた人が多いことも理解している。
+      </p>
+      <blockquote>
+        雇用環境が完璧だとは言わない。良くない面も多い。ただ、一部で語られているような「雇用大崩壊」は起きていない。
+      </blockquote>
+      <p>だからこそ、私たち全員が「ものを作る力」をさらに高めることに投資し続けたい。</p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 並行スキル開発というフレームワーク</h2>
+      <p>
+        私たち一人ひとりが「より優れたビルダー」になっていく上で、もっとも難しく、もっとも重要なのが <strong>ビルディングブロックの習熟</strong>。ここで Andrew Ng は <strong>Parallel Skill Development（並行スキル開発）</strong> というフレームを提示する。
+      </p>
+
+      <div class="mermaid">
+flowchart TB
+  subgraph Agent["エージェント側スキル"]
+    A1["コーディングエージェントの<br/>高機能化"]
+    A2["Agent Skills (Anthropic 等)"]
+  end
+  subgraph Human["人間側スキル"]
+    H1["教育・トレーニング"]
+    H2["エージェントを<br/>正しく駆動する補完スキル"]
+  end
+  Agent -. パートナー .-> Human
+  Human -. パートナー .-> Agent
+  Agent --> Build["新しいものを共同で作る"]
+  Human --> Build
+      </div>
+
+      <p>
+        エージェントが進化するなら、人間側はそれを <strong>適切に駆動する補完スキル</strong> を身につけ、両者を組ませて新しいものを作る、という考え方。残り時間で、両軸に対応する具体プロダクトを 2 つ紹介する。
+      </p>
+      <ul>
+        <li>エージェント側を助けるもの → <strong>Context Hub</strong></li>
+        <li>人間側を助けるもの → 終盤で発表する <strong>Code Dream</strong></li>
+      </ul>
+    </section>
+
+    <section id="s11">
+      <h2>11. Context Hub ― エージェントに最新情報を渡す</h2>
+      <p>
+        ビルディングブロックがあまりに速く増えているため、コーディングエージェントが持つ <strong>知識カットオフ</strong>（1 年前、ときに 1 か月前）が問題になる。
+      </p>
+      <ul>
+        <li>古い／非推奨 API を使ってしまう</li>
+        <li>最新ツールを知らない</li>
+        <li>結果としてハルシネーション（嘘の API 呼び出し）が起きる</li>
+      </ul>
+
+      <h3>具体例：OpenAI API の呼び方</h3>
+      <p>現時点でも Auto Code に OpenAI API を呼ばせると、旧来の <code>Chat Completions API</code> を選び、古いモデルを叩こうとする。インターネット上の学習データの大半が旧 API ベースだから。</p>
+
+      <table>
+        <thead><tr><th></th><th>素のエージェント</th><th>Context Hub あり</th></tr></thead>
+        <tbody>
+          <tr><td>API</td><td>旧 Chat Completions（非推奨）</td><td>新 <code>Responses API</code></td></tr>
+          <tr><td>モデル</td><td>古いモデルを選択</td><td>最新（GPT‑5.5 等）まで認識</td></tr>
+          <tr><td>ハルシネーション</td><td>頻発</td><td>大幅に減少</td></tr>
+        </tbody>
+      </table>
+
+      <h3>仕組み</h3>
+      <p>Context Hub は Vivek Prasad、Sanyam Hota、Andrew Ng の 3 名で作ったツール。役割は AI エージェントに <strong>最新ドキュメント</strong> を渡すこと。</p>
+
+      <div class="mermaid">
+sequenceDiagram
+  participant U as 開発者
+  participant A as コーディングエージェント
+  participant H as Context Hub
+  participant D as OpenAI ドキュメント
+  U->>A: 「OpenAI を呼ぶコードを書いて」
+  A->>H: 最新ドキュメントを要求
+  H->>D: 取得
+  D-->>H: GPT-5.5 / Responses API 仕様
+  H-->>A: 最新仕様を反映したマークダウン
+  A-->>U: 新 Responses API を使う正しいコード
+      </div>
+
+      <p>実演イメージ：</p>
+      <ul>
+        <li><code>chop search openai</code> でパッケージ一覧が返る</li>
+        <li><code>chop get openai/chat</code> 等で OpenAI の最新ドキュメントを取得（GPT‑5.5、Responses API 等にも対応）</li>
+        <li>出力は「600 行くらいのマークダウン」になることもあり、人が読むには長いが、本来の用途は <strong>コーディングエージェントに食わせる</strong> こと（人も読める）</li>
+      </ul>
+
+      <p>
+        Andrew Ng 自身も、OpenAI、Gemini、各種データベース系サービスの呼び出しでエージェントがハルシネーションする経験は数多くしている。<strong>最新コンテキストを差し込めるかどうか</strong> が体験を大きく変える、というのが要点。
+      </p>
+    </section>
+
+    <section id="s12">
+      <h2>12. Code Dream 発表 ― 会話で学ぶ AI コーディング</h2>
+      <p>
+        もう 1 つ、<strong>人間側のスキル開発</strong> を助けるためのプロジェクトを今日この場で初めて発表する。
+      </p>
+      <p>
+        これまで彼のチームは多くのオンラインコースを作ってきた。それは引き続き重要であり続けてほしいと前置きしつつ、新しい体験として開発してきたのが <strong>Code Dream</strong>（プレゼン中では Code Realm とも呼ばれる）。
+      </p>
+
+      <h3>コンセプト</h3>
+      <div class="grid-cards">
+        <div class="card"><h4>コースではなく「会話」</h4><p>ビデオ通話に同席しているイメージで進む学習体験。</p></div>
+        <div class="card"><h4>いつでも割り込める</h4><p>画面下のマイクボタンで質問・割り込み可能。</p></div>
+        <div class="card"><h4>音声エージェント</h4><p>Coding GG が用意した音声 AI が、Andrew Ng 本人と同じ感覚で応答。</p></div>
+        <div class="card"><h4>受け身でも OK</h4><p>もちろんプレゼンとしてただ視聴するだけでもよい。</p></div>
+      </div>
+
+      <h3>最初のレッスン</h3>
+      <p>
+        最初のレッスンで扱うのは、<strong>Context Hub を使ってコーディングエージェントを最新ドキュメントに同期させ、最新 API を使ったコードを書く方法</strong>。実演として「ダジョークジェネレータ」を一緒に作る。
+      </p>
+      <p>
+        スライドそのものが JavaScript で実装されており、テキストをそのまま選択・コピーできるという細かい工夫もある。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  S["スライドの<br/>インストール手順を Cmd+C"] --> T["ブラウザ内ターミナル<br/>(Codoji Build 環境) に貼り付け"]
+  T --> N["npm install chob"]
+  N --> O["open code 起動<br/>(Claude Code 等の OSS 代替)"]
+  O --> W["Python など好きな<br/>コードを書きながら学習"]
+      </div>
+
+      <p>
+        この Codoji ビルド環境は、<strong>最新のコーディングエージェントを Context Hub と一緒に試せる学習・実践環境</strong> として、しばらく前から開発してきたもの。コース受講の代わりに、<strong>Andrew Ng 本人ないし AI バージョンの彼と会話しながら新しいブロックを学べる</strong>、というのが Code Dream のコンセプト。
+      </p>
+
+      <div class="callout">
+        <strong>発表：</strong> Code Dream を <strong>本日からプレビューで公開</strong>。最初の体験は「Code Assist アプリの使い方」。フィードバックを募集中で、改善を続けていく。
+      </div>
+    </section>
+
+    <section id="s13">
+      <h2>13. クロージング</h2>
+
+      <table>
+        <thead><tr><th>まとめポイント</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>加速は本物</td><td>コーディングエージェントによりビルディングブロックを高速に組み立てられるようになった。</td></tr>
+          <tr><td>新ボトルネックは継続課題</td><td>PM、デザイン、法務、マーケなど下流に新しい詰まりが生まれ、まだ整理されきっていない。</td></tr>
+          <tr><td>求人は存在する</td><td>雇用大崩壊は世間で煽られているほど深刻ではない。</td></tr>
+          <tr><td>学び続けることが重要</td><td>新しいビルディングブロックとスキルを継続的に身につける必要がある。</td></tr>
+        </tbody>
+      </table>
+
+      <p>並行スキル開発の両軸について：</p>
+      <ul>
+        <li><strong>エージェント側</strong>：すでに十分よく動くが、最新ブロックへアクセスさせ正しいコンテキストを与えること。<strong>Context Hub</strong> が役立つ。</li>
+        <li><strong>人間側</strong>：本日発表の <strong>Code Dream</strong> 会話型体験を活用してほしい。この場の参加者は、チーム外の世界で <strong>最初に共有された人々</strong>。ぜひ試して、新しいブロックとスキルを身につけてほしい。</li>
+      </ul>
+
+      <p>最後に、来場への感謝とともに講演を締めくくる。</p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=g8um2AEf5ZA" target="_blank" rel="noopener">https://www.youtube.com/watch?v=g8um2AEf5ZA</a> ／ 取得手段: yt-dlp（原語自動字幕 + info.json） ／ 生成日: 2026-05-24
+      </p>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  (function () {
+    const toc = document.getElementById('toc');
+    const sections = document.querySelectorAll('main section[id]');
+    const links = new Map();
+
+    sections.forEach((sec) => {
+      const h2 = sec.querySelector('h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+      toc.appendChild(li);
+      links.set(sec.id, a);
+
+      sec.querySelectorAll('h3').forEach((h3, i) => {
+        if (!h3.id) h3.id = sec.id + '-h3-' + i;
+        const subLi = document.createElement('li');
+        subLi.className = 'lvl-3';
+        const subA = document.createElement('a');
+        subA.href = '#' + h3.id;
+        subA.textContent = h3.textContent.trim();
+        subLi.appendChild(subA);
+        toc.appendChild(subLi);
+        links.set(h3.id, subA);
+      });
+    });
+
+    const targets = [
+      ...document.querySelectorAll('main section[id]'),
+      ...document.querySelectorAll('main h3[id]')
+    ];
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const a = links.get(entry.target.id);
+        if (!a) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    targets.forEach((t) => observer.observe(t));
+  })();
+</script>
+</body>
+</html>
