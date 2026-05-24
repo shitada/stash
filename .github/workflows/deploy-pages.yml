@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+# reports/ 配下のファイルが追加・変更されたら自動で GitHub Pages にデプロイする。
+# 手動実行も可能 (workflow_dispatch)。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "reports/**"
+      - ".nojekyll"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+# Pages デプロイに必要な最小権限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時に複数走らないようにする。進行中をキャンセルしない (公開途中の中断を避ける)。
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # リポジトリ全体 (index.html, reports/, images/, .nojekyll など) を成果物として
+      # アップロードする。.nojekyll があるので Jekyll 処理はスキップされる。
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
