@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>stash ― 未整理のコンテンツ置き場</title>
+<meta name="description" content="未整理のメモ・画像・レポートを一時的に置いておく個人スタッシュ。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.75;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .page { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%);
+    color: #f8fafc; border-radius: var(--radius); padding: 36px 28px;
+    box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ""; position: absolute; inset: auto -80px -120px auto;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle at 30% 30%, rgba(249,115,22,.45), transparent 60%);
+    filter: blur(10px);
+  }
+  .hero .tag {
+    display: inline-block; font-size: 12px; letter-spacing: .12em;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .hero h1 { font-size: clamp(28px, 5vw, 40px); margin: 0 0 8px; }
+  .hero p { margin: 0; color: #cbd5e1; max-width: 60ch; }
+  section { margin-top: 32px; }
+  h2 {
+    font-size: 18px; color: var(--text-dim); letter-spacing: .06em;
+    text-transform: uppercase; margin: 0 0 14px;
+  }
+  .card-list { display: grid; gap: 12px; }
+  .card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card a { color: var(--text); display: block; }
+  .card a:hover { text-decoration: none; }
+  .card h3 { margin: 0 0 6px; font-size: 16.5px; color: var(--accent); }
+  .card p { margin: 0; color: var(--text-dim); font-size: 14px; }
+  .card .meta { margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+  .empty {
+    border: 1px dashed var(--border); border-radius: var(--radius);
+    padding: 18px; color: var(--text-dim); font-size: 14px;
+  }
+  footer {
+    margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--text-dim); text-align: center;
+  }
+  code {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 6px; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <span class="tag">PERSONAL STASH</span>
+    <h1>stash</h1>
+    <p>
+      まだ整理されていないメモ・画像・レポートを一時的に放り込んでおく場所です。
+      ここに置いたものは、後で整理されたリポジトリやサイトに引っ越すことがあります。
+    </p>
+  </header>
+
+  <section>
+    <h2>Reports</h2>
+    <div class="card-list">
+      <article class="card">
+        <a href="reports/tw-future-of-software-engineering-ja.html">
+          <h3>ソフトウェアエンジニアリングの未来 ― リトリート所見と戦略的洞察（日本語要約）</h3>
+          <p>
+            Thoughtworks のレポート『The future of software engineering — Retreat findings and strategic insights』(2026年2月) を
+            内容を省略せず日本語で要約したもの。AI 時代のコード品質・ミドルループ・エージェント設計・組織・セキュリティを網羅。
+          </p>
+          <div class="meta">原文: thoughtworks.com / 全17ページ / 公開: 2026年2月</div>
+        </a>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Images</h2>
+    <div class="empty">
+      画像は <code>images/</code> および <code>copilot-troubleshooting/</code> ディレクトリにまとめて保管しています。
+      公開ランディングからの一覧表示は今のところありません。
+    </div>
+  </section>
+
+  <footer>
+    shitada/stash ・ GitHub Pages (main / root)
+  </footer>
+</main>
+</body>
+</html>

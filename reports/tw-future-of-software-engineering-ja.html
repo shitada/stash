@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>ソフトウェアエンジニアリングの未来 ― リトリート所見と戦略的洞察（日本語要約）</title>
+<meta name="description" content="Thoughtworks『The future of software engineering — Retreat findings and strategic insights』(2026年2月) の日本語全文要約。AI時代のコード品質・新しい中間ループ・エージェント設計・組織・セキュリティを網羅。" />
+<style>
+  :root {
+    --bg: #0e1116;
+    --bg-elev: #161b22;
+    --bg-soft: #1c2230;
+    --border: #2a3240;
+    --text: #e6edf3;
+    --text-dim: #9aa6b2;
+    --accent: #f97316;
+    --accent-soft: #fed7aa;
+    --accent-dark: #c2410c;
+    --link: #60a5fa;
+    --quote-bg: #1a2235;
+    --quote-border: #3b82f6;
+    --tag-now: #f97316;
+    --tag-mid: #eab308;
+    --tag-long: #22c55e;
+    --shadow: 0 6px 24px rgba(0,0,0,.35);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc;
+      --bg-elev: #ffffff;
+      --bg-soft: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-dim: #475569;
+      --accent: #ea580c;
+      --accent-soft: #fed7aa;
+      --accent-dark: #9a3412;
+      --link: #2563eb;
+      --quote-bg: #eff6ff;
+      --quote-border: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%);
+    color: #f8fafc;
+    border-radius: var(--radius);
+    padding: 40px 32px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -80px -120px auto;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle at 30% 30%, rgba(249,115,22,.45), transparent 60%);
+    filter: blur(10px);
+  }
+  .hero .tag {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: .12em;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 4vw, 34px);
+    margin: 0 0 12px;
+    line-height: 1.35;
+  }
+  .hero p { margin: 0; color: #cbd5e1; max-width: 60ch; }
+  .hero .meta {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 13px;
+    color: #cbd5e1;
+  }
+  .hero .meta span::before { content: "● "; color: var(--accent); }
+  .hero .source {
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: #cbd5e1;
+    word-break: break-all;
+  }
+
+  /* Sections */
+  section { margin-top: 36px; }
+  h2 {
+    font-size: 22px;
+    border-left: 5px solid var(--accent);
+    padding: 4px 0 4px 12px;
+    margin: 0 0 16px;
+    line-height: 1.45;
+  }
+  h3 {
+    font-size: 17px;
+    margin: 22px 0 8px;
+    color: var(--accent-dark);
+  }
+  @media (prefers-color-scheme: dark) {
+    h3 { color: var(--accent-soft); }
+  }
+  p, li { font-size: 15.5px; }
+  ul { padding-left: 1.2em; }
+  li { margin: 4px 0; }
+
+  /* TOC */
+  .toc {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-top: 24px;
+  }
+  .toc h2 {
+    border: none;
+    padding: 0;
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: var(--text-dim);
+    letter-spacing: .04em;
+  }
+  .toc ol {
+    columns: 2;
+    column-gap: 28px;
+    padding-left: 1.3em;
+    margin: 0;
+  }
+  .toc li { break-inside: avoid; }
+  @media (max-width: 640px) { .toc ol { columns: 1; } }
+
+  /* Theme cards */
+  .themes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .theme-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-card .num {
+    position: absolute;
+    top: -8px; right: -2px;
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--bg-soft);
+    line-height: 1;
+    pointer-events: none;
+  }
+  .theme-card h4 {
+    margin: 0 0 6px;
+    font-size: 15.5px;
+    color: var(--accent);
+    position: relative;
+  }
+  .theme-card .horizon {
+    display: inline-block;
+    font-size: 11.5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #0f172a;
+  }
+  .h-now { background: #fed7aa; }
+  .h-mid { background: #fef08a; }
+  .h-long { background: #bbf7d0; }
+  .theme-card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  /* Quote */
+  blockquote {
+    background: var(--quote-bg);
+    border-left: 4px solid var(--quote-border);
+    margin: 14px 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--text);
+    font-style: italic;
+  }
+  blockquote .cite {
+    display: block;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    font-style: normal;
+  }
+
+  /* Callouts */
+  .callout {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin: 14px 0;
+    font-size: 14.5px;
+  }
+  .callout strong { color: var(--accent); }
+
+  /* Subsection content blocks */
+  .panel {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .panel + .panel { margin-top: 14px; }
+
+  /* Two column for prereqs */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  /* Open question grid */
+  .questions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .q-card {
+    background: var(--bg-elev);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .q-card h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: .02em;
+  }
+  .q-card ul { margin: 0; padding-left: 1.1em; }
+  .q-card li { font-size: 13.5px; color: var(--text-dim); }
+
+  /* Footer */
+  footer {
+    margin-top: 50px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  /* Print */
+  @media print {
+    .hero { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: white; color: black; }
+    .panel, .theme-card, .q-card, .toc, .callout { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="hero">
+    <span class="tag">REPORT SUMMARY ・ 2026年2月発行</span>
+    <h1>ソフトウェアエンジニアリングの未来<br />― リトリート所見と戦略的洞察</h1>
+    <p>
+      AIがソフトウェア開発の在り方を作り変えるなか、主要テック企業の上級エンジニアが集まり、
+      20を超えるブレイクアウトで議論したクロスカッティングなテーマと、
+      シニアリーダーが「いま」理解し行動すべき論点をまとめた要約です。
+    </p>
+    <div class="meta">
+      <span>発行：Thoughtworks</span>
+      <span>原題：The future of software engineering — Retreat findings and strategic insights</span>
+      <span>原文：英語 / 全17ページ</span>
+      <span>運営ルール：Chatham House Rule（参加者は匿名）</span>
+    </div>
+    <div class="source">
+      原文PDF：
+      <a href="https://www.thoughtworks.com/content/dam/thoughtworks/documents/report/tw_future%20_of_software_development_retreat_%20key_takeaways.pdf" target="_blank" rel="noopener">
+        thoughtworks.com / tw_future_of_software_development_retreat_key_takeaways.pdf
+      </a>
+    </div>
+  </header>
+
+  <!-- Executive summary -->
+  <section>
+    <h2>エグゼクティブサマリー</h2>
+    <div class="panel">
+      <p>
+        主要テック企業のシニア実務者が複数日のリトリートに集まり、AIがソフトウェア開発を変容させる中で「最も重要な問い」に向き合った。
+        議論は20を超える分科会にまたがったが、最も重要な洞察は単一のセッションからではなく、
+        異なる人々が異なる問題を解こうとした<strong>複数の会話の交差点</strong>で繰り返し現れた。
+      </p>
+      <p>
+        本書はそうした横断的テーマを統合し、シニアリーダーが「いま」理解して行動すべきパターンに沿って整理している。
+        リトリートは<strong>未来の単一のビジョン</strong>を出したのではなく、もっと有用なもの、すなわち
+        <strong>「現在のプラクティスが壊れ、新しいものが形成されつつある断層線の地図」</strong>を生み出した。
+      </p>
+      <blockquote>
+        「私たちはどの部屋でも同じ問いを繰り返した。<br />
+        ― もし AI がコードを担うなら、エンジニアリングは実際どこへ行くのか？<br />
+        誰も同じ答えは持っていなかった。だが、この問いが緊急であることには全員が同意した。」
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- TOC -->
+  <nav class="toc" aria-label="目次">
+    <h2>目次</h2>
+    <ol>
+      <li><a href="#themes">テーマ一覧（早見表）</a></li>
+      <li><a href="#sec1">1. 厳密性（rigor）はどこへ向かうか</a></li>
+      <li><a href="#sec2">2. ミドルループ：新しい仕事のカテゴリ</a></li>
+      <li><a href="#sec3">3. エージェント・トポロジーと企業アーキテクチャ</a></li>
+      <li><a href="#sec4">4. 自己修復・自己改善するシステム</a></li>
+      <li><a href="#sec5">5. 人間の側：役割・スキル・体験</a></li>
+      <li><a href="#sec6">6. 技術的基盤：言語・セマンティクス・OS</a></li>
+      <li><a href="#sec7">7. セキュリティ・ガバナンス・アジャイルの未来</a></li>
+      <li><a href="#sec8">8. エージェント・スウォーム</a></li>
+      <li><a href="#sec9">9. オープンな問い</a></li>
+      <li><a href="#next">これから何が起きるか</a></li>
+    </ol>
+  </nav>
+
+  <!-- Themes at a glance -->
+  <section id="themes">
+    <h2>テーマ一覧（早見表）</h2>
+    <p style="color:var(--text-dim); font-size:14px;">
+      タグの色は時間軸：
+      <span class="theme-card" style="display:inline; padding:2px 8px; border-radius:999px; background:#fed7aa; color:#0f172a; font-size:12px;">いま</span>
+      <span class="theme-card" style="display:inline; padding:2px 8px; border-radius:999px; background:#fef08a; color:#0f172a; font-size:12px;">いま〜1年</span>
+      <span class="theme-card" style="display:inline; padding:2px 8px; border-radius:999px; background:#bbf7d0; color:#0f172a; font-size:12px;">1〜3年 / 2〜5年</span>
+    </p>
+    <div class="themes">
+      <article class="theme-card">
+        <span class="num">01</span>
+        <h4>厳密性はどこへ行くか</h4>
+        <span class="horizon h-now">いま</span>
+        <p>AI がコードを書いても品質は消えない。仕様・テスト・制約・リスク管理へと移動する。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">02</span>
+        <h4>コードレビューからリスク階層化へ</h4>
+        <span class="horizon h-now">いま</span>
+        <p>レビューの4機能（指導・一貫性・正しさ・信頼）はそれぞれ別の居場所が必要になる。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">03</span>
+        <h4>生産性 ⇄ 体験 のパラドックス</h4>
+        <span class="horizon h-now">いま</span>
+        <p>開発者の生産性と開発者体験が分離しはじめ、組織は厳しい選択を迫られる。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">04</span>
+        <h4>後付けにされたセキュリティ</h4>
+        <span class="horizon h-now">いま</span>
+        <p>エージェントのセキュリティは極めて未成熟。メール権限だけでアカウント乗っ取りが可能。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">05</span>
+        <h4>ミドルループ</h4>
+        <span class="horizon h-mid">いま〜1年</span>
+        <p>内ループと外ループの間に「監督的エンジニアリング」という新カテゴリが形成中。まだ名前がない。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">06</span>
+        <h4>認知的負債（Cognitive debt）</h4>
+        <span class="horizon h-mid">いま〜1年</span>
+        <p>技術的負債は<strong>システムの複雑さと人間の理解の差</strong>＝認知的負債へと姿を変える。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">07</span>
+        <h4>エージェント・トポロジー</h4>
+        <span class="horizon h-long">1〜3年</span>
+        <p>Conway の法則はエージェントにも適用される。可動性・専門化・ドリフトを EA で扱う必要。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">08</span>
+        <h4>知識グラフ＆セマンティック層</h4>
+        <span class="horizon h-long">1〜3年</span>
+        <p>数十年前の技術が、ドメインを理解するエージェントの<strong>基盤</strong>として再び主役に。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">09</span>
+        <h4>役割の未来</h4>
+        <span class="horizon h-long">1〜3年</span>
+        <p>PM・開発者・デザイナーが収束。スタッフエンジニアに新たな期待。ジュニアは過去最高に価値ある存在。</p>
+      </article>
+      <article class="theme-card">
+        <span class="num">10</span>
+        <h4>自己修復システム</h4>
+        <span class="horizon h-long">2〜5年</span>
+        <p>人手のインシデント対応からエージェント支援の修復へ。まず「潜在知識」問題を解く必要がある。</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Section 1 -->
+  <section id="sec1">
+    <h2>1. 厳密性（rigor）はどこへ向かうか</h2>
+    <p style="color:var(--text-dim);">― リトリート全体で最も重要な問い。ほぼ全ての分科会に登場した。</p>
+    <div class="panel">
+      <p>
+        AI がコード生成を担っても、コードを書いてレビューする中に宿っていた<strong>エンジニアリングの規律</strong>は消滅しない。それは別の場所へ移動する。
+        リトリートは他のどの問いよりもこのテーマに時間を費やし、コードレビュー、テスティング、言語設計、自己修復、組織設計など複数の視点から検討した。
+        厳密性が移動する先として、以下の<strong>5つの行き先</strong>が確認された。
+      </p>
+
+      <h3>① 仕様レビューという上流へ</h3>
+      <p>
+        多くの実務者がレビューの労力をコードからその前段の計画へ移していると報告した。「コードそのものではなく、計画を事前レビューし、エンジニアリングを事後レビューする」という言葉も登場。
+        AI が仕様からコードを生成するなら、<strong>仕様こそ最も高レバレッジの誤り発見ポイント</strong>になる。悪い仕様はスケールして悪いコードを生む。
+      </p>
+      <p>
+        実用上の含意として、仕様には<strong>新しい形式</strong>が必要だと報告されている。従来のユーザストーリーは曖昧すぎる。
+        <strong>EARS（Easy Approach to Requirements Syntax）</strong>、状態機械、決定表など、新しくはないが、
+        AI エージェントに正しい実装を生成させるに足る精度を与えるために再発見されている技法がある。
+      </p>
+
+      <h3>② ファーストクラスの成果物としてのテストスイートへ</h3>
+      <p>
+        共有された洞察のうち最もインパクトがあったのは、<strong>TDD が AI コーディングエージェントから劇的に良い結果を生む</strong>という事実だった。
+        メカニズムは具体的だ。TDD は「壊れた振る舞いを正しいかのように検証してしまうテスト」をエージェントが書いてしまう失敗モードを防ぐ。
+        テストが先に存在すれば、エージェントは自分の生成した不正確な実装に合うテストを書く「ズル」ができない。
+      </p>
+      <p>
+        この再フレーミングにより、<strong>TDD はプロンプトエンジニアリングの一形態</strong>となる。
+        テストは<strong>非決定的な生成に対する決定的な検証</strong>となる。
+        レビューの労力をすべてテストスイートに移し、生成コードは<strong>使い捨て</strong>と扱う実務者もいる。
+        テストが正しく、コードが通るなら、見た目に関係なくコードは受容可能、という立場である。
+      </p>
+      <blockquote>
+        「TDD とエージェントによるコーディングの組み合わせは、これまで経験したどの方法よりも良い結果を出している。
+        なぜなら、エージェントが『壊れた振る舞いを検証するテスト』を書いてしまう特有の思考エラーを止められるからだ。」
+        <span class="cite">― リトリート参加者</span>
+      </blockquote>
+
+      <h3>③ 型システムと制約へ</h3>
+      <p>
+        AI 生成コードを<strong>言語機能で制約</strong>することへの強い関心が表明された。
+        生成後にレビューするのではなく、<strong>不正なコードを表現不可能にする</strong>方向だ。これは形式手法や強力な型システムのアイデアを、
+        学術的演習ではなく<strong>エージェント出力の実践的ガードレール</strong>として応用する動きである。
+      </p>
+      <p>
+        重要な洞察は<strong>「仕様」と「制約」の分離</strong>。
+        仕様は「何が変わるべきか」を記述し、制約は「変更が許される境界＝触れてはいけないもの」を定義する。
+        制約は<strong>影響範囲（blast radius）を限定</strong>し、エージェントがドメイン境界を越えて安全に作業することを可能にする。
+        制約を破る必要が生じたら、それは<strong>新たなシステム境界</strong>のシグナルであり、リファクタリングを促す。
+      </p>
+
+      <h3>④ リスクマッピングへ</h3>
+      <p>
+        すべてのコードが同じリスクではない。内部ツール / 外部公開サービス / 安全に関わるシステム、と
+        <strong>業務影響範囲によってコードを階層化</strong>する議論があった。これによりどこに人によるレビューが不可欠で、
+        どこは自動検証で十分かが決まる。
+      </p>
+      <div class="callout">
+        <strong>新しい中核エンジニアリング規律：</strong>
+        「誰かがこのコードをレビューしたか？」ではなく、「このコードが間違ったら影響範囲はどこまでで、
+        我々の検証はその露出に見合っているか？」を問うこと。エンジニアリングは
+        <strong>「すべての行を手レビューする職人モデル」から「投資量をリスクに比例させるリスク管理モデル」へ</strong>移行する。
+      </div>
+
+      <h3>⑤ 継続的理解（continuous comprehension）へ</h3>
+      <p>
+        コードが人がレビューできる速度より速く変わるなら、コードレビューによってメンタルモデルを構築する従来モデルは機能しない。
+        代替案として、週次アーキテクチャ・レトロスペクティブ、複数のエンジニアが同時に同じコードを扱うアンサンブル・プログラミング、
+        オンデマンドでシステム概要を生成する AI 支援の理解ツールなどが議論された。
+      </p>
+      <p>
+        根底にある懸念は実在する。コードレビューは長年、品質ゲートと同じくらい<strong>学習機構</strong>として機能してきた。
+        指導、共通理解、コードベースへの精通はレビューを通じて起きていた。
+        この経路を代替なしに失えば、時間とともに増幅する<strong>理解のギャップ</strong>が生まれる。
+      </p>
+      <blockquote>
+        「ペアプログラミングはこれをすべて解決する。システムを理解することが重要なら、常にそれをやるべきだ。
+        コードレビューの小さなフェーズに分けて理解するのではない。<br />
+        ― このコードが何をしているかを、常に理解しようとし続けるのだ。」
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Section 2 -->
+  <section id="sec2">
+    <h2>2. ミドルループ：新しい仕事のカテゴリ</h2>
+    <p style="color:var(--text-dim);">― リトリート最大の先行コンセプト。業界はまだ名前を持っていない。</p>
+    <div class="panel">
+      <p>
+        ソフトウェア開発は長らく<strong>2つのループ</strong>で語られてきた。
+        <strong>内ループ</strong>＝開発者個人の書く・テストする・デバッグする循環。
+        <strong>外ループ</strong>＝CI/CD・デプロイ・運用というより広い循環。
+        リトリートはここに<strong>第3のループ</strong>、両者の間に位置する<strong>監督的エンジニアリング（ミドルループ）</strong>を見いだした。
+      </p>
+      <p>
+        ミドルループの仕事は AI エージェントの出力を<strong>方向付け、評価し、修正する</strong>こと。コードを書くのとは違うスキルセットが必要だ。
+        問題を<strong>エージェント単位の作業パッケージへ分解</strong>し、出力への<strong>信頼度を校正</strong>し、
+        もっともらしく見えて誤っている結果を<strong>見抜き</strong>、
+        多数の並列なエージェント生成作業の中で<strong>アーキテクチャの一貫性</strong>を保つことが求められる。
+      </p>
+
+      <h3>ミドルループで秀でる人の共通点</h3>
+      <ul>
+        <li>直接実装よりも<strong>委任とオーケストレーション</strong>で思考する。</li>
+        <li>システムアーキテクチャの<strong>強力なメンタルモデル</strong>を持つ。</li>
+        <li>すべての行を読まずに<strong>出力品質を素早く評価</strong>できる。</li>
+      </ul>
+      <p>これらは経験豊かなエンジニアが持つことが多いが、キャリアラダーで明示的に育成・認識されることは稀である。</p>
+
+      <div class="callout">
+        <strong>キャリアへの影響：</strong>
+        ミドルループは<strong>プログラミングに恋をした開発者にとって本物のアイデンティティ危機</strong>を生む。
+        多くは「事前消化されたチケットを動くコードへ翻訳する」ために雇われた。その仕事が消えていく。
+        新しい仕事には別の適性、別の職業的満足の源泉が必要。
+        移行を支援しない組織は<strong>最も経験豊かな人材を「フラストレーション」で失う</strong>ことになる。
+      </div>
+
+      <h3>歴史からのアナロジー</h3>
+      <p>
+        リトリートは<strong>コンピュータグラフィックスの歴史</strong>と並列を引いた。
+        1992年、エンジニアはポリゴン描画アルゴリズムを手で書いていた。
+        2年後、その仕事はハードウェアへ移り、職務はアニメーションと照明になった。
+        今ではカスタム物理とゲーム世界の構築だ。<strong>抽象化レイヤが上がるたび、「自分はポリゴン描画のために雇われた」と主張するエンジニアは取り残された</strong>。
+        コード生成の領域で同じ動きが起きている。
+      </p>
+
+      <h3>プロダクトマネジメントの収束</h3>
+      <p>
+        開発者がより「何を、なぜ作るか」を考えるようになれば、それは元々プロダクトマネージャの仕事だ。
+        ある大手テック企業は<strong>PMロールの呼称を変えるべきか</strong>を研究中で、別の企業は<strong>全 PM を開発者ツール上の Markdown で働けるよう訓練</strong>している。
+        収束は現実だが、どこに着地するかは誰にも見えていない。
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 3 -->
+  <section id="sec3">
+    <h2>3. エージェント・トポロジーと企業アーキテクチャ</h2>
+    <p style="color:var(--text-dim);">― Conway の法則は引退していない。より複雑になっただけだ。</p>
+    <div class="panel">
+      <p>
+        リトリートは <strong>Team Topologies フレームワーク</strong>の拡張として<strong>「エージェント・トポロジー」</strong>を提唱した。
+        前提：組織がそのコミュニケーション構造を映したシステムを作るなら、エージェントが構造のファーストクラス参加者になったとき何が起きるのか？
+      </p>
+      <p>
+        人間と違い、エージェントは<strong>瞬時に複製</strong>でき、オンボーディングの摩擦なしに複数チームに配備できる。
+        専門化されたデータベース・エージェントが、各チームに<strong>同時並列で存在</strong>し、単一の人間スペシャリストにありがちな中央集権ボトルネックなしに、
+        一貫した専門性を提供できる。一見、純粋な勝利のように聞こえる。だが複数の複雑性が確認された。
+      </p>
+
+      <h3>① スピードの不整合</h3>
+      <p>
+        エージェントはバックログを焼き尽くす速さで動き、<strong>遅い組織依存に衝突</strong>する。
+        AI ツールをチームに与えれば、彼らは数日でバックログを消化し、その後にクロスチーム依存・アーキテクチャレビュー・人間速度の意思決定の<strong>壁</strong>にぶつかる。
+        結果は「より速い納品」ではなく、「同じ速度＋増えたフラストレーション」。ボトルネックがエンジニアリング能力から<strong>それ以外のすべて</strong>へ移っただけだ。
+      </p>
+
+      <h3>② エージェント・ドリフト</h3>
+      <p>
+        コンテキストから学習するエージェントは時間とともに発散する。
+        EC バックエンドで働くデータベース・エージェントは、ERP で働くものと（設定は同じでも）<strong>別のパターンと好み</strong>を蓄積する。
+        これは人間チームのローカル規範の問題に類似するが、<strong>加速されたタイムラインで起きる</strong>。
+        ドリフトを「管理」すべきか、「歓迎」すべきか（ローカル最適化）でリトリートは割れた。
+      </p>
+
+      <h3>③ 新たなボトルネック：意思決定疲労</h3>
+      <p>
+        エージェントがリーダーがレビュー・承認できる速度より速く成果物を作るなら、制約は<strong>生産能力から意思決定能力へ</strong>移る。
+        従来コーディネーションのハブだった<strong>中間管理職が「承認のボトルネック」</strong>になる。
+        ジョブスペック・コード修正・機能実装をエージェントが「Yes」と言える誰よりも速く生成している、と複数の実務者が報告した。
+      </p>
+      <p>
+        鋭い問い：人間はシステム理解の容量に上限があるが、エージェントにはない。<strong>そんなに多くの中間管理職が必要だろうか？</strong>
+        合意には至らなかったが、問い自体が大きな組織課題を示唆する。
+      </p>
+      <blockquote>
+        「ソフトウェアデリバリーのプロセスを我々は<strong>人間のために</strong>最適化してきた。
+        いまや人間だけではないなら、『組織化する』とは何を意味するのかを問い直さなければならない。」
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Section 4 -->
+  <section id="sec4">
+    <h2>4. 自己修復・自己改善するシステム</h2>
+    <p style="color:var(--text-dim);">― 野心は本物。だが前提条件はまだほとんど満たされていない。</p>
+    <div class="panel">
+      <p>
+        人主導のインシデント対応を超えて、エージェント支援の自己修復へ移行できるかを議論。
+        野心レベルは2つに区別された：<br>
+        <strong>自己修復</strong>＝既知の良好状態へ戻す。
+        <strong>自己改善</strong>＝性能・信頼性などの非機能特性を能動的に進化させる。
+      </p>
+
+      <h3>まだ存在しない前提条件</h3>
+      <div class="two-col">
+        <ul>
+          <li>すべての変更を記録した<strong>明確な台帳</strong>（エージェントが何が起きたかを理解できるように）。</li>
+          <li><strong>エージェント用の OS</strong>（IDとパーミッション境界を持つ）。</li>
+        </ul>
+        <ul>
+          <li>コード変更なしで動作する<strong>強力な汎用ミティゲーション</strong>（ロールバック、フィーチャーフラグ）。</li>
+          <li>エージェントが評価可能な形で「健全」を定義する<strong>フィットネス関数</strong>。</li>
+        </ul>
+      </div>
+      <div class="callout">
+        リトリートは率直だった：<strong>「インシデント対応におけるコード変更は最後の手段であるべき」</strong>。
+        自己修復への道は、エージェントによる本番コードの書き換えよりも先に、より良いロールバック・フィーチャーフラグ・可観測性を通る。
+      </div>
+
+      <h3>潜在知識（latent knowledge）問題</h3>
+      <p>
+        シニアエンジニアはインシデント対応に何十年ものパターンマッチングを持ち込む。
+        「あるエラーコードは実は深部のインフラ問題の症状」、「あるサービスのCPU高騰はまず DB コネクションプールを確認」など。
+        この知識は<strong>ほぼ文書化されない</strong>。人の頭の中にあり、経験を通じて適用される。
+      </p>
+      <p>
+        エージェントで複製するため、リトリートは<strong>「エージェントの潜在意識（agent subconscious）」</strong>の構築を提唱：
+        ポストモーテムやインシデントデータから何年分も構築された<strong>ナレッジグラフ</strong>を、
+        リアルタイム信号の解釈のための歴史的文脈として与えるもの。
+        ポストモーテム自動ドラフト化を進める組織はあるが、ニュアンスと文脈を人間が追加する工程は依然不可欠。
+      </p>
+
+      <h3>インシデントコマンダー問題</h3>
+      <p>
+        人間のインシデントコマンダーは前提を問い、心地よい仮説に押し返し、状況認識を保つ。
+        一方で <strong>LLM は肯定強化と同意</strong>に傾きがち。
+        効果的なエージェント・インシデントコマンダーを構築するには、この行動上の不一致を解く必要がある。
+        提案の一つは、<strong>「怒っているエージェント（angry agents）」</strong>を訓練し、支配的仮説に対する反論を専門化させること。
+      </p>
+
+      <h3>エージェント間の協調リスク</h3>
+      <p>
+        同じ問題を複数エージェントが直そうとすると、<strong>一方の修正が他方の補正を引き起こすフィードバックループ</strong>が起こる。
+        実例：500行ファイル制限を強制する linter を持つエージェントが、<strong>個々の行を長くする</strong>ことでルールを技術的に満たしつつ原則を侵害した。
+        複数エージェントがトレードオフで異なる優先順位を出すと、システムは<strong>収束ではなく振動</strong>しうる。
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 5 -->
+  <section id="sec5">
+    <h2>5. 人間の側：役割・スキル・体験</h2>
+    <p style="color:var(--text-dim);">― AI は人を置き換えるのではない。人がやることと、その感じ方を再配置している。</p>
+    <div class="panel">
+
+      <h3>生産性 / 体験 のパラドックス</h3>
+      <p>
+        開発者体験は伝統的に<strong>フロー状態・フィードバックループ・認知負荷</strong>の3次元で定義されてきた。
+        生産性と体験は数十年にわたり密結合だったが、リトリートは両者が<strong>分離</strong>している証拠を検討した。
+        開発者の満足度低下・認知負荷増・フロー減少がある環境でも、AI ツールで生産性向上が達成されうる。
+      </p>
+      <p>
+        これは現実のジレンマを生む。投資せず出力が増えるなら、開発者体験への投資ケースは弱まる――<strong>体験の定義自体が、エージェント監督業務の現実に合わせて進化しない限り</strong>。
+        ある参加者は鋭い再フレーミングを提示した：<strong>「Developer Experience」と呼ぶのをやめて「Agent Experience」と呼ぼう</strong>。
+        エージェントが活躍する条件には投資の財布が早く開きやすい。そして、エージェントが力を発揮する条件と人間が力を発揮する条件の<strong>重なりはほぼ完全</strong>であることがわかる。
+      </p>
+
+      <h3>圧力下のスタッフエンジニア</h3>
+      <p>
+        スタッフエンジニアは<strong>かつてないほど重要であり、かつてないほどストレスが大きい</strong>。
+        500社にまたがる調査では、スタッフエンジニアはジュニアより AI 利用頻度が低いが、<strong>使ったときに節約する時間は週あたり大きい</strong>。
+        広い文脈とアーキテクチャへの深い理解により、エージェント監督者として効果的になる。
+      </p>
+      <p>
+        緊張は「彼らが何を求められているか」と「彼らが何をすべきか」のズレ。
+        多くが人間調整に過剰な時間を割いている。リトリートの主張は意図的なシフト：
+        スタッフエンジニアは<strong>「フリクション・キラー」</strong>になるべき。
+        人とエージェントの双方の作業を遅らせる障害を見つけて除去する役割。
+        どこに骸骨が埋まっているかを知っているからこそ適任だが、
+        「改善には予算がない」と何年も言われ続けた末の<strong>学習性無力感</strong>を経験している者も多い。
+      </p>
+
+      <h3>ジュニア開発者はより価値がある</h3>
+      <p>
+        「AI がジュニアを不要にする」という物言いに、リトリートは異を唱えた。
+        ジュニアは過去最高に<strong>収益性</strong>がある。
+        AI ツールが彼らを「初期のネット・ネガティブ期」を素早く脱させる。
+        将来の生産性に対する<strong>コールオプション</strong>として機能する。
+        そして AI ツールの<strong>適応はシニアより速い</strong>――採用を遅らせる習慣や前提を持っていないから。
+      </p>
+      <p>
+        真の懸念は<strong>10年の採用ブーム期に育ったミドル層</strong>。
+        新環境で活躍する基礎が育っていない可能性があり、業界の量的主軸を占めるが、再訓練は本当に難しい。
+        徒弟制、ローテーション、生涯学習の構造で対処できるか議論されたが、<strong>解決した組織はまだない</strong>と認められた。
+      </p>
+
+      <div class="callout">
+        <strong>教育のシグナル：</strong>
+        ウォータールー大学の Co-op プログラムがモデルとして挙げられた。
+        深い理論基礎＋2.5年分の業界インターン（4ヶ月×6ローテーション）。
+        AI が代替できない<strong>基礎と実践的判断</strong>の両方を備えて卒業する。
+        複数社が、インターン採用パイプラインが従来の新卒採用を上回ると報告した。
+      </div>
+
+      <h3>プロダクトマネジメントの未来</h3>
+      <p>
+        リトリートでは、AI 駆動の世界で PM が何をするかを誰も定義できなかった。
+        ある組織は PM を技術ツールに近づけ、Markdown と開発環境で働くよう訓練している。
+        別の組織は、PM が<strong>戦略オーケストレータ</strong>に、開発者が<strong>戦術的プロダクト判断</strong>を担う方向で分岐すると見る。
+      </p>
+      <p>
+        明らかなのは、AI は PM と開発者の関係の<strong>既存の機能不全を露呈</strong>しているということ。
+        知識の断片化、職能間の文化ギャップ、不明瞭な役割境界は AI 以前から存在した。
+        AI はそれらを<strong>無視するコストを高くしただけ</strong>。
+        各役割が自分のやり方で働きながら共有可視性を保てる<strong>「境界オブジェクト」</strong>としてのツール活用が強調された。
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 6 -->
+  <section id="sec6">
+    <h2>6. 技術的基盤：言語・セマンティクス・OS</h2>
+    <p style="color:var(--text-dim);">― エージェント時代のためのインフラはまだ存在しない。組み立てが始まっている部品群。</p>
+    <div class="panel">
+
+      <h3>エージェント向けプログラミング言語</h3>
+      <p>
+        現存するすべてのプログラミング言語は人間を主ユーザとして設計された。
+        動的型付けは人間の認知負荷低減のため、強い静的型付けは人間のミス検出のために存在する。
+        リトリートは<strong>「エージェント生成コードのために設計された言語はどうなるか、そしてそれは人間にとっても良いか」</strong>を問うた。
+      </p>
+      <div class="callout">
+        <strong>原理として収束した結論：「AI に良いものは人間にも良い」</strong>。
+        強力な型、限定された計算モデル、形式的制約によって<strong>誤ったコードを表現不可能にする</strong>言語は、エージェントの正しい出力を助け、人間の検証も助ける。
+        逆に、安全性より表現力を優先する言語は、生成も検査も難しくする。
+      </div>
+      <p>
+        より急進的な可能性として、<strong>ソースコードが過渡的成果物</strong>となり、オンデマンドで生成され保存されない、という見方も。
+        この点で議論は割れた。10年以内に消えると見る者もいれば、
+        決定的検証には<strong>安定した成果物</strong>が必要で、それは事実上ソースコードである（呼び名が何であれ）と主張する者もいた。
+      </p>
+
+      <h3>セマンティック層と知識グラフ</h3>
+      <p>
+        数十年メインストリームになれなかった技術が突如関連性を取り戻している。
+        セマンティック層、ナレッジグラフ、ドメイン・オントロジーは、業務ドメインを理解する AI エージェントのための<strong>基盤層</strong>として再発見されている。
+        ある大手通信会社の<strong>ドメイン・オントロジー全体がおよそ286概念</strong>で表現できたという報告は、この仕事を「不可能なほど野心的」ではなく「達成可能」に感じさせた。
+      </p>
+      <p>
+        実用的価値は<strong>レガシー近代化</strong>にある。既存システムから概念データモデルを構築し、SME と検証することで、
+        エージェントが自信を持って近代化に取り組める仕様レイヤを作れる。
+        あるチームは LLM を使って<strong>コードからコマンド・イベント・アグリゲート・ポリシーを自動抽出</strong>し、
+        イベントストーミング成果物を自動生成。人間専門家が補正することで、<strong>数週間のディスカバリーを数日に圧縮</strong>している。
+      </p>
+
+      <h3>エージェント版 OS</h3>
+      <p>エージェント用 OS が備えるべき要素として議論されたもの：</p>
+      <ul>
+        <li><strong>エージェントの ID とパーミッション管理</strong>。</li>
+        <li><strong>メモリとコンテキストウィンドウ管理</strong>。</li>
+        <li>必要スキル、受け入れ基準、SLO、コスト制約などの属性を持つ<strong>未来・現在・過去の作業台帳</strong>。</li>
+        <li><strong>エージェント能力とコンプライアンス要件のグラフ</strong>を通るガバナンス経路。</li>
+      </ul>
+      <p>
+        中心的洞察：エージェントとは<strong>ペルソナ・目標・現在のコンテキスト以上のもの</strong>であり、これまで実行した作業の履歴を含む。
+        モデルはエージェント内で代替可能（LLM の差し替え）だが、モデル変更はエージェントの振る舞いを根本的に変えるため<strong>追跡必須</strong>。
+        新OSの中核プリミティブとして<strong>作業台帳</strong>が浮かび上がった――金融のブロックチェーンに類比される、検索可能・監査可能で、
+        エージェントが作業を<strong>発見し入札</strong>することを可能にするもの。
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 7 -->
+  <section id="sec7">
+    <h2>7. セキュリティ・ガバナンス・アジャイルの未来</h2>
+    <div class="panel">
+
+      <h3>セキュリティは危険なほど遅れている</h3>
+      <p>
+        リトリートは、セキュリティ分科会の参加が少なかったこと自体が業界の広いパターンを反映していると懸念を示した。
+        セキュリティは「技術が動いて信頼できるようになってから後で」と扱われがちだ。<strong>エージェントの文脈で、この順序は危険</strong>である。
+      </p>
+      <p>
+        最も鮮烈な例：<strong>エージェントにメールアクセスを与えると、パスワードリセットとアカウント乗っ取りが可能になる</strong>。
+        開発ツール向けの完全マシンアクセスは、エージェントが望むあらゆる行為に対する完全マシンアクセスを意味する。
+      </p>
+      <div class="callout">
+        <strong>推奨は明快：</strong>プラットフォームエンジニアリングが<strong>セキュアなデフォルト</strong>を駆動すべき。
+        安全な振る舞いを簡単に、安全でない振る舞いを難しくすること。
+        エージェントアクセスの構成時に、個々の開発者の「セキュリティ意識のある選択」に頼ってはならない。
+      </div>
+      <p>3つの優先事項が浮上した：</p>
+      <ul>
+        <li>非交渉的なベースラインとしての<strong>セキュア・バイ・デザイン</strong>。</li>
+        <li><strong>業界横断連合</strong>による相互運用可能なエージェント・セキュリティ標準。</li>
+        <li>AI 駆動の攻撃速度と高度化に対抗できる<strong>AI 駆動の防御機構</strong>。</li>
+      </ul>
+
+      <h3>アジャイルは死んでいない、進化している</h3>
+      <p>
+        「アジャイルは死んだ」という物言いに、リトリートは強く押し返した。
+        実際に起きているのはより微妙だ。
+        スプリント周期を<strong>1週間に圧縮</strong>し、デモ・レポート・ステータスなどの儀礼を AI で自動化するチームがある。
+        他方では<strong>XPプラクティス（ペアプロ、アンサンブル開発、CI）の再発見</strong>が進む。これらが、エージェント支援開発が必要とする<strong>タイトなフィードバックループと共有理解</strong>を作るからだ。
+      </p>
+      <p>
+        アジャイルへの真の脅威は<strong>ガバナンス</strong>だ。AIツールを採用して速くなったチームも、同じ承認プロセス・コンプライアンス・組織依存にぶつかる。
+        開発プラクティスと並行してガバナンスを改革しなければ、<strong>速いチームは同じ壁により早く突き当たるだけ</strong>。
+        チームプラクティスを再考する際は内部監査・ガバナンスを<strong>後で扱う障害ではなく、早期から関与させる</strong>べき。
+      </p>
+      <p>
+        さらに、<strong>バッチサイズの増大とともにソフトウェアの安定性が低下</strong>している。
+        AI ツールで大きな変更セットを生成しやすくなったことで、一部のチームは<strong>ウォーターフォール的（大きく、低頻度のリリース）</strong>に逆戻りしつつある。
+        これは「小さなバッチサイズが高い安定性と相関する」という<strong>10年間の DORA 研究を直接逆行</strong>している。
+        リトリートはこれを業界が注目すべき<strong>能動的なリグレッション</strong>として位置づけた。
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 8 -->
+  <section id="sec8">
+    <h2>8. エージェント・スウォーム：逐次思考を超える</h2>
+    <div class="panel">
+      <p>
+        エージェントのスウォーミング（群行動）に集中時間を割き、AI 支援作業の組織化に関する従来仮定を覆す洞察が得られた。
+      </p>
+      <p>
+        スウォーミングの<strong>第一の障壁は技術ではなく思考様式</strong>。
+        逐次分解で訓練されたエンジニアは、並列なエージェント作業を概念化するのに苦戦する。
+        このメンタルモデルが<strong>学習を能動的に阻害</strong>する。
+        ブレークスルーを経験した者は「過去のソフトウェア開発のどれとも根本的に異なる経験」だと語る。
+        <strong>エージェントに明示的に並列化させ、その結果を観察する</strong>という単純な行為が、いかなる理論的フレームワークよりも多くを教えてくれる。
+      </p>
+      <p>
+        エンタープライズ用途で重要なパターン：
+        <strong>個々のエージェントの完璧な精度より、集団としての目標への収束が重要</strong>。
+        個別には不完全なエージェントの群でも、システム・アーキテクチャが収束を導けば価値ある結果を生む。
+        これは分散システムや生物のスウォーム知能から借りた設計原理を、AI エージェントのオーケストレーションに適用したものだ。
+      </p>
+      <p>
+        ただし、<strong>エンタープライズの大半はスウォーミングのようには見えない</strong>。
+        より一般的なのは<strong>「ループ上を巡回する作業者（patrol workers on loops）」</strong>パターン。
+        ETL変換、データ品質チェック、業務プロセス監視などを<strong>常時実行</strong>するエージェント群。
+        つまり、データの信頼性と清浄さという地味な仕事がバックグラウンドで常に動いている形だ。
+        <strong>強力で設計の良い API</strong>を持つ組織は、スウォーミングにも巡回型にも著しく有利な立場にある。
+      </p>
+      <div class="callout">
+        <strong>モデル選択の含意：</strong>
+        フロンティアモデルの中にはスウォーム的シナリオに構造的弱点を持つものがある。
+        エージェント配備のためのモデル選定は、シングルエージェント能力だけでなく、<strong>マルチエージェント協調</strong>を具体的にテストすべき。
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 9: Open Questions -->
+  <section id="sec9">
+    <h2>9. オープンな問い</h2>
+    <p style="color:var(--text-dim);">― 答えよりも問いが多く生まれた。部屋を眠らせなかった問いたち。</p>
+    <div class="questions">
+      <div class="q-card">
+        <h4>仕事とアイデンティティ</h4>
+        <ul>
+          <li>コードを書くのが好きなエンジニアが、監督的エンジニアリング業務に意味と満足を見出すには？</li>
+          <li>ミドルループに至る職業的キャリアパスは？</li>
+          <li>PM と開発者の役割が収束するなら、結果の役割は何と呼び、誰が担うのか？</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <h4>組織設計</h4>
+        <ul>
+          <li>エージェントが中間管理職のボトルネックを可視化するなら、答えは「管理職を減らす」「異なるスキルの管理職」「根本的に異なる協調モデル」のどれか？</li>
+          <li>エージェントがチーム境界を越えて動けるがガバナンスは越えられない時、エンタープライズ・アーキテクチャをどう再設計するか？</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <h4>信頼と検証</h4>
+        <ul>
+          <li>AI生成コードのレビューを完全にやめるには何が真でなければならないか？</li>
+          <li>テストスイートと制約だけで十分な検証になる世界はあるか？</li>
+          <li>同じ入力で出力が変わる<strong>本質的に非決定的</strong>なシステムへの信頼をどう築くか？</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <h4>知識と理解</h4>
+        <ul>
+          <li>コードが人が理解できる速度より速く変わるなら、組織的知識を保つ新しいモデルが必要か？</li>
+          <li>知識グラフとセマンティック層は、長年同じコードベースで働いて得る<strong>人間の直観</strong>を本当に置き換えられるか？</li>
+          <li>多くの組織が未構築の「エージェント潜在意識」システムへの適正投資水準は？</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <h4>速度と安定性</h4>
+        <ul>
+          <li>AI による生産性ゲインが<strong>バッチサイズ増大による安定性損失で相殺</strong>されるリグレッションにいま我々はいるのか？</li>
+          <li>意思決定量が人間の評価能力を圧倒するために、開発を意図的に遅くする必要が出るか？</li>
+          <li>蓄積する<strong>認知的負債</strong>の実コストをどう測るか？</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- What's next -->
+  <section id="next">
+    <h2>これから何が起きるか</h2>
+    <div class="panel">
+      <p>
+        リトリートで一貫したパターンが浮かび上がった：人間のみのソフトウェア開発のために構築されたプラクティス、ツール、組織構造が、
+        AI 支援作業の重みのもとで<strong>予測可能な形で壊れつつある</strong>。代替物は形成中だが、まだ成熟していない。
+      </p>
+      <h3>業界の広範な議論に持ち込む準備が整ったアイデア</h3>
+      <ul>
+        <li><strong>監督的エンジニアリングのミドルループ</strong></li>
+        <li>新しい中核エンジニアリング規律としての<strong>リスク階層化</strong></li>
+        <li>最も強力なプロンプトエンジニアリングとしての <strong>TDD</strong></li>
+        <li>開発者体験投資の再フレーミングとしての<strong>「エージェント体験」</strong></li>
+      </ul>
+      <h3>未解決だが同等に重要な問い</h3>
+      <ul>
+        <li>職業人生における<strong>アイデンティティの転換</strong>を人がどう乗り越えるか。</li>
+        <li>エージェントが人より速く動く中で組織を<strong>どうガバナンスするか</strong>。</li>
+        <li>本質的に非決定的なシステムへの<strong>信頼の築き方</strong>。</li>
+      </ul>
+      <p>これらは技術的解で済む技術的問題ではない。率直な対話と協力を要する<strong>人間の問題</strong>である。</p>
+      <blockquote>
+        「リトリートはロードマップを作らなかった。代わりに、地図が書き直されつつあるという<strong>共有理解</strong>を作った。
+        そして、その地図を描くのに最も適しているのは、<strong>自分がまだ知らないことの多さを認める用意のある人々</strong>であるという理解を。」
+      </blockquote>
+    </div>
+  </section>
+
+  <footer>
+    本ページは Thoughtworks 公開資料『The future of software engineering — Retreat findings and strategic insights』(2026年2月) を、
+    内容を省略せず日本語で要約・再構成した非公式まとめです。原文の引用権はThoughtworks に帰属します。
+  </footer>
+</main>
+</body>
+</html>
