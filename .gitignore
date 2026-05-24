@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# content-summarizer 作業用一時ディレクトリ
+.tmp/
