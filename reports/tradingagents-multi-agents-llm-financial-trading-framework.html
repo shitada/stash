@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>TradingAgents: Multi-Agents LLM Financial Trading Framework 非公式まとめ</title>
+<meta name="description" content="arXiv:2412.20138『TradingAgents: Multi-Agents LLM Financial Trading Framework』を、省略せず日本語で要約・再構成した非公式HTMLレポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 920px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 14px 18px; }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 32px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; margin-bottom: 2px; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+    color: var(--text); padding: 4px 10px; cursor: pointer;
+  }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas {
+    --diagram-zoom: 1.2;
+    transform: scale(var(--diagram-zoom)); transform-origin: top left;
+    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
+  }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .95; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">arXiv:2412.20138 / Quantitative Finance</div>
+      <h1>TradingAgents: Multi-Agents LLM Financial Trading Framework 非公式まとめ</h1>
+      <p class="lead">LLMエージェントで「取引会社」の組織構造を模倣し、アナリスト、強気・弱気リサーチャー、トレーダー、リスク管理、ファンドマネージャーを協調させる金融取引フレームワークの論文要約。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://arxiv.org/pdf/2412.20138" target="_blank" rel="noopener">arXiv PDF: 2412.20138</a></dd></div>
+      <div><dt>論文タイトル</dt><dd>TradingAgents: Multi-Agents LLM Financial Trading Framework</dd></div>
+      <div><dt>著者</dt><dd>Yijia Xiao, Edward Sun, Di Luo, Wei Wang</dd></div>
+      <div><dt>所属</dt><dd>UCLA, MIT, Tauric Research</dd></div>
+      <div><dt>提出 / 改訂</dt><dd>2024-12-28 提出、2025-06-03 v7 改訂</dd></div>
+      <div><dt>分野</dt><dd>q-fin.TR; cs.AI; cs.CE; cs.LG</dd></div>
+      <div><dt>ライセンス</dt><dd>CC BY 4.0（arXiv表示）</dd></div>
+      <div><dt>取得手段</dt><dd>arXiv TeX Source + arXiv abstract metadata</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要トピック</dt>
+        <dd class="badges">
+          <span class="badge">金融LLM</span>
+          <span class="badge">マルチエージェント</span>
+          <span class="badge">エージェント討論</span>
+          <span class="badge">構造化通信</span>
+          <span class="badge">バックテスト</span>
+          <span class="badge">説明可能性</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li><strong>TradingAgents</strong> は、実際の取引会社を模したLLMマルチエージェント構成で、ファンダメンタル、センチメント、ニュース、テクニカル分析を統合し、強気・弱気討論とリスク討論を経て売買判断を出す。</li>
+        <li>特徴は、自然言語会話だけに頼らず、各エージェントの状態・レポート・決定を<strong>構造化ドキュメント</strong>として共有する点。長い会話で情報が劣化する「伝言ゲーム」問題を避ける狙いがある。</li>
+        <li>2024年1月1日から3月29日の主要テック株バックテストで、AAPL/GOOGL/AMZNの累積リターン、年率リターン、シャープレシオでベースラインを上回った。ただし3か月のみの評価で、LLM・ツール呼び出しコストのため長期検証は今後課題。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. 論文の問題意識</h2>
+      <p>
+        この論文は、LLMを使った自律エージェントが、人間の意思決定プロセスや業務フローを再現しながら複雑な問題を分解できる点に着目する。金融市場は、企業ファンダメンタル、ニュース、SNS感情、テクニカル指標、マクロ経済、地政学イベントが絡む複雑系であり、マルチエージェント設計の対象として自然だと位置づけられている。
+      </p>
+      <p>
+        従来のアルゴリズム取引は定量モデルに強みがある一方、ニュースやレポートなど自然言語情報を十分に扱いにくく、深層学習ベースの取引モデルは説明性が低いという課題がある。LLMはテキスト理解に強く、判断根拠を自然言語で出せるため、金融取引における説明可能性を高められる可能性がある。
+      </p>
+      <table>
+        <thead><tr><th>既存研究の限界</th><th>論文での説明</th><th>TradingAgentsの対応</th></tr></thead>
+        <tbody>
+          <tr><td>現実的な組織モデル不足</td><td>多くの既存フレームワークは特定タスクだけに狭く最適化され、実際の取引会社のワークフローや人間の運用手順を十分に再現しない。</td><td>アナリスト、リサーチャー、トレーダー、リスク管理、ファンドマネージャーという専門チーム構成を模倣する。</td></tr>
+          <tr><td>非効率な通信インターフェース</td><td>自然言語の履歴や未整理の情報プールに依存すると、長いタスクで文脈が汚れ、重要情報が失われる。</td><td>構造化出力で状態・レポート・判断を管理しつつ、討論が必要な部分だけ自然言語対話を使う。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s2">
+      <h2>2. 関連研究の位置づけ</h2>
+      <p>関連研究は、金融におけるLLM活用を3系統に整理している。</p>
+      <table>
+        <thead><tr><th>系統</th><th>代表的内容</th><th>TradingAgentsとの違い</th></tr></thead>
+        <tbody>
+          <tr><td>金融アシスタントとしてのLLM</td><td>金融データでのファインチューニングや金融コーパスによる事前学習。PIXIU/FinMA、FinGPT、Instruct-FinGPT、BloombergGPT、XuanYuan 2.0、Fin-T5など。</td><td>主に分類、検索、要約、分析支援であり、取引会社的な意思決定フローそのものは作らない。</td></tr>
+          <tr><td>トレーダーとしてのLLM</td><td>ニュース駆動、推論駆動、強化学習駆動の取引エージェント。FinMem、FinAgent、TradingGPT、SEPなど。</td><td>直接取引判断を扱うが、役割分担・討論・リスク管理まで含む組織的な協調モデルはまだ限定的。</td></tr>
+          <tr><td>アルファマイナーとしてのLLM</td><td>QuantAgentやAlphaGPTのように、取引アイデアからコードやアルファ因子を生成し、市場テストで改善する。</td><td>アルファ因子の発見が中心で、日次の総合的な取引判断とリスク承認の流れとは異なる。</td></tr>
+        </tbody>
+      </table>
+      <p>
+        論文は、金融特化LLMや取引LLMの有用性を認めつつ、TradingAgentsの新規性を「実際の取引会社のような専門役割・討論・承認・リスク管理をLLMエージェントで構成すること」としている。
+      </p>
+    </section>
+
+    <section id="s3">
+      <h2>3. TradingAgentsの全体構成</h2>
+      <p>
+        TradingAgentsは、7種類の主要ロールを持つシミュレートされた取引会社である。各エージェントには名前、役割、目標、制約、文脈、スキル、使用ツールが割り当てられる。全エージェントはReActプロンプティングを使い、共有された環境状態を参照しながら、調査、討論、取引判断、リスク管理を行う。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  D["市場データ<br/>価格・ニュース・SNS・財務・指標"] --> A["Analyst Team<br/>4種の専門分析"]
+  A --> R["Researcher Team<br/>強気 vs 弱気 討論"]
+  R --> T["Trader<br/>売買判断と根拠"]
+  T --> M["Risk Management<br/>攻め・中立・保守で討論"]
+  M --> F["Fund Manager<br/>承認・調整・実行"]
+  F --> X["Buy / Sell / Hold"]
+      </div>
+
+      <table>
+        <thead><tr><th>チーム / ロール</th><th>役割</th><th>扱う情報・判断</th></tr></thead>
+        <tbody>
+          <tr><td>Fundamental Analyst</td><td>企業の内在価値や長期投資可能性を評価。</td><td>財務諸表、決算、インサイダー取引、企業ファンダメンタル。</td></tr>
+          <tr><td>Sentiment Analyst</td><td>投資家心理や短期的な集団行動を推定。</td><td>Reddit、X/Twitter、SNS投稿、感情スコア、インサイダー感情。</td></tr>
+          <tr><td>News Analyst</td><td>市場・企業・マクロのニュースイベントを評価。</td><td>ニュース、政府発表、世界イベント、マクロ経済指標。</td></tr>
+          <tr><td>Technical Analyst</td><td>価格パターンや売買タイミングを分析。</td><td>MACD、RSI、Bollinger Bandsなど、資産ごとのテクニカル指標。</td></tr>
+          <tr><td>Bullish / Bearish Researchers</td><td>強気・弱気の両面から投資判断を討論。</td><td>アナリストレポートを材料に、投資機会と下振れリスクを対立的に検討。</td></tr>
+          <tr><td>Trader</td><td>分析と討論を統合し、売買行動を決定。</td><td>タイミング、取引サイズ、ポートフォリオ配分、Buy/Sell/Hold。</td></tr>
+          <tr><td>Risk Management Team</td><td>市場リスク・流動性・カウンターパーティーリスクを監視。</td><td>ストップロス、分散、リスク許容度、規制・投資目的への整合。</td></tr>
+          <tr><td>Fund Manager</td><td>リスク討論を確認し、最終判断を承認・調整。</td><td>トレーダー判断とリスク管理結果を踏まえた最終実行。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s4">
+      <h2>4. エージェント間通信の設計</h2>
+      <p>
+        論文が強く問題視しているのは、マルチエージェントが長い自然言語会話だけで連携すると、過去情報が失われたり、不要な発話で文脈が膨らんだりする点である。TradingAgentsは、MetaGPTのような構造化通信の考え方を参考に、各エージェントの状態・レポート・判断を明確なドキュメントとして保存する。
+      </p>
+      <p>
+        ただし自然言語対話を完全には捨てない。討論や反論が価値を持つ局面では、エージェント同士が短く焦点を絞った自然言語対話を行い、その結果を構造化状態へ戻す。つまり、事実・レポート・決定は構造化し、推論のぶつけ合いは自然言語で行うハイブリッド設計である。
+      </p>
+
+      <div class="mermaid">
+flowchart TB
+  A1["各アナリスト<br/>専門レポート作成"] --> S["Global Agent State<br/>構造化レポート"]
+  S --> B1["Bull Researcher"]
+  S --> B2["Bear Researcher"]
+  B1 -- "n rounds debate" --- B2
+  B1 --> C["Debate Facilitator<br/>勝った観点を記録"]
+  B2 --> C
+  C --> S
+  S --> T["Trader<br/>判断と根拠を記録"]
+  T --> R1["Risk Seeking"]
+  T --> R2["Neutral"]
+  T --> R3["Risk Conservative"]
+  R1 -- "risk debate" --- R2
+  R2 -- "risk debate" --- R3
+  R3 --> FM["Fund Manager<br/>最終調整"]
+      </div>
+
+      <table>
+        <thead><tr><th>通信タイプ</th><th>使う場面</th><th>利点</th></tr></thead>
+        <tbody>
+          <tr><td>構造化ドキュメント</td><td>アナリストの調査レポート、トレーダー判断、リスク管理結果、ファンドマネージャーの更新。</td><td>必要な情報を直接参照でき、長文会話による情報劣化を避けやすい。</td></tr>
+          <tr><td>自然言語討論</td><td>強気対弱気の研究チーム、攻め・中立・保守のリスク管理チーム。</td><td>異なる視点の衝突により、単一エージェントでは見落とすリスクや機会を拾いやすい。</td></tr>
+          <tr><td>ファシリテータによる記録</td><td>討論終了後、優勢な視点や調整内容を状態へ反映。</td><td>会話結果を次工程が利用しやすい形に変換する。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s5">
+      <h2>5. 使用するLLMと実装思想</h2>
+      <p>
+        TradingAgentsは、タスクの複雑さと速度要求に応じてLLMを使い分ける。低深度で高速な処理、たとえばAPI取得、データ取得、要約、表データからテキストへの変換には、<code>gpt-4o-mini</code>や<code>gpt-4o</code>のような高速モデルを想定する。一方、意思決定、証拠に基づくレポート作成、深いデータ分析には<code>o1-preview</code>のような推論重視モデルを使う。
+      </p>
+      <p>
+        アナリストノードは堅牢な分析のため深い推論モデルを使い、APIやツール呼び出しは高速モデルが担う。リサーチャーとトレーダーも、価値ある洞察や根拠ある判断のため深い推論モデルを使う。センチメント分析のような専門タスクには補助的なエキスパートモデルも利用する。
+      </p>
+      <div class="callout">
+        <strong>実装上の主張：</strong> フレームワークはGPUなしでも動かせるよう、APIクレジットに依存する設計であり、将来はローカルホストやAPIアクセス可能な別モデルへ差し替えられる。著者らは、金融特化モデルや改善された推論モデルへの交換可能性を重視している。
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2>6. 実験設定</h2>
+      <p>
+        実験では、2024年1月1日から2024年3月29日までの期間に、主要テック株を対象にバックテストを行う。本文ではApple、Nvidia、Microsoft、Meta、Googleなどを含むと説明し、結果表ではAAPL、GOOGL、AMZNの詳細な比較値を示している。各取引日に利用可能な情報だけを使うため、将来情報を参照するルックアヘッドバイアスを避ける設計である。
+      </p>
+      <table>
+        <thead><tr><th>項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>期間</td><td>2024-01-01 から 2024-03-29</td></tr>
+          <tr><td>対象データ</td><td>株価、ニュース、SNS感情、インサイダー取引、財務諸表、企業プロファイル、60種類のテクニカル指標。</td></tr>
+          <tr><td>ニュース源</td><td>Bloomberg、Yahoo、EODHD、FinnHub、Redditなど。</td></tr>
+          <tr><td>売買信号</td><td>各日、TradingAgentsがBuy/Sell/Holdを生成し、その後パフォーマンス指標を計算。</td></tr>
+          <tr><td>比較ベースライン</td><td>Buy and Hold、MACD、KDJ+RSI、ZMR、SMA。</td></tr>
+          <tr><td>評価指標</td><td>Cumulative Return (CR)、Annualized Return (ARR/AR)、Sharpe Ratio (SR)、Maximum Drawdown (MDD)。</td></tr>
+        </tbody>
+      </table>
+      <p>
+        データセットはマルチアセットかつマルチモーダルで、OHLCVと調整後終値、日次ニュース、SNS投稿と感情スコア、SEDIや企業提出書類からのインサイダー感情、四半期・年次報告、会社概要、MACD・RSI・Bollinger Bandsなど60種類の指標を含む。
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. ベースラインと評価指標</h2>
+      <p>付録では、比較対象と評価指標を以下のように説明している。</p>
+      <table>
+        <thead><tr><th>ベースライン</th><th>概要</th></tr></thead>
+        <tbody>
+          <tr><td>Buy and Hold</td><td>選択株へ等額投資し、シミュレーション期間中そのまま保有。</td></tr>
+          <tr><td>MACD</td><td>MACD線とシグナル線のクロスに基づくトレンドフォロー型モメンタム戦略。</td></tr>
+          <tr><td>KDJ + RSI</td><td>ストキャスティクス系KDJとRSIを組み合わせ、買われすぎ・売られすぎを判断。</td></tr>
+          <tr><td>ZMR</td><td>価格がゼロ基準線から乖離し、平均回帰することを利用する戦略。</td></tr>
+          <tr><td>SMA</td><td>短期・長期単純移動平均のクロスに基づくトレンドフォロー戦略。</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>評価指標</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td>CR</td><td>開始時と終了時のポートフォリオ価値から、期間全体の累積リターンを測る。</td></tr>
+          <tr><td>AR / ARR</td><td>累積リターンを年率換算し、期間の長さに依存しない収益率として見る。</td></tr>
+          <tr><td>SR</td><td>リスクフリーレートを超える平均リターンをボラティリティで割ったリスク調整後リターン。</td></tr>
+          <tr><td>MDD</td><td>ピークからボトムまでの最大下落率。小さいほど大きな損失局面が少ない。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s8">
+      <h2>8. 結果</h2>
+      <p>
+        結果表では、TradingAgentsがAAPL、GOOGL、AMZNの累積リターン、年率リターン、シャープレシオで最良値を出したと報告されている。本文は、特に市場ボラティリティで伝統的手法が苦戦したAAPLで、数か月のうちに26%超のリターンを達成した点を強調している。
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">26.62%</div><div class="label">AAPL 累積リターン</div></div>
+        <div class="stat-card"><div class="num">24.36%</div><div class="label">GOOGL 累積リターン</div></div>
+        <div class="stat-card"><div class="num">23.21%</div><div class="label">AMZN 累積リターン</div></div>
+        <div class="stat-card"><div class="num">8.21</div><div class="label">AAPL シャープレシオ</div></div>
+      </div>
+
+      <table>
+        <thead><tr><th>銘柄</th><th>手法</th><th>CR%</th><th>ARR%</th><th>SR</th><th>MDD%</th></tr></thead>
+        <tbody>
+          <tr><td>AAPL</td><td>Buy &amp; Hold</td><td>-5.23</td><td>-5.09</td><td>-1.29</td><td>11.90</td></tr>
+          <tr><td>AAPL</td><td>最良ルール系の代表値</td><td>2.05 (KDJ&amp;RSI)</td><td>2.07 (KDJ&amp;RSI)</td><td>1.64 (KDJ&amp;RSI)</td><td>0.86 (ZMR)</td></tr>
+          <tr><td>AAPL</td><td><strong>TradingAgents</strong></td><td><strong>26.62</strong></td><td><strong>30.50</strong></td><td><strong>8.21</strong></td><td>0.91</td></tr>
+          <tr><td>GOOGL</td><td>Buy &amp; Hold</td><td>7.78</td><td>8.09</td><td>1.35</td><td>13.04</td></tr>
+          <tr><td>GOOGL</td><td>最良ルール系の代表値</td><td>6.23 (SMA)</td><td>6.43 (SMA)</td><td>2.31 (MACD)</td><td>1.22 (MACD)</td></tr>
+          <tr><td>GOOGL</td><td><strong>TradingAgents</strong></td><td><strong>24.36</strong></td><td><strong>27.58</strong></td><td><strong>6.39</strong></td><td>1.69</td></tr>
+          <tr><td>AMZN</td><td>Buy &amp; Hold</td><td>17.10</td><td>17.60</td><td>3.53</td><td>3.80</td></tr>
+          <tr><td>AMZN</td><td>最良ルール系の代表値</td><td>11.01 (SMA)</td><td>11.60 (SMA)</td><td>2.22 (SMA)</td><td>0.82 (ZMR)</td></tr>
+          <tr><td>AMZN</td><td><strong>TradingAgents</strong></td><td><strong>23.21</strong></td><td><strong>24.90</strong></td><td><strong>5.60</strong></td><td>2.11</td></tr>
+        </tbody>
+      </table>
+
+      <h3>収益性</h3>
+      <p>
+        TradingAgentsは3つの掲載銘柄で少なくとも23.21%の累積リターン、24.90%の年率リターンを達成し、最良ベースラインを累積リターンで6.10ポイント以上上回ったとされる。改善行では、AAPLで24.57ポイント、GOOGLで16.58ポイント、AMZNで6.10ポイントの累積リターン改善が示されている。
+      </p>
+
+      <h3>シャープレシオ</h3>
+      <p>
+        シャープレシオでもTradingAgentsは全ベースラインを上回った。論文は、この結果をリスク調整後リターンの高さとして解釈し、マルチエージェント討論とリスク管理が収益とリスクのバランスに寄与したと述べる。
+      </p>
+      <blockquote>
+        ただし論文脚注は、3か月という短い期間での評価であり、1予測あたり11回のLLM呼び出しと20回以上のツール呼び出しが必要だったため長期バックテストが制限された、と明記している。非常に高いシャープレシオは、期間中にTradingAgentsのプルバックが少なかった現象による可能性があるとして、結果をそのまま報告している。
+      </blockquote>
+
+      <h3>最大ドローダウン</h3>
+      <p>
+        MDDでは、いくつかのルールベース手法の方が小さい値を出している。AAPLではZMRが0.86、TradingAgentsが0.91、GOOGLではMACDが1.22、TradingAgentsが1.69、AMZNではZMRが0.82、TradingAgentsが2.11である。著者らは、ルールベース手法はリスク抑制に優れる場面がある一方、収益獲得では劣ると説明し、TradingAgentsは高い収益を得ながらMDDを管理可能な水準に保ったと評価している。
+      </p>
+
+      <h3>説明可能性</h3>
+      <p>
+        論文は、深層学習型取引モデルの弱点として判断根拠が読みにくい点を挙げる。TradingAgentsでは、各判断が自然言語レポート、ツール使用、思考プロセス、討論ログとして残るため、トレーダーが意思決定の根拠を確認し、デバッグし、改善できる。この透明性が、従来のブラックボックス型アルゴリズムに対する利点とされている。
+      </p>
+    </section>
+
+    <section id="s9">
+      <h2>9. 付録ケース: AAPLの一日</h2>
+      <p>
+        付録は、2024年11月19日のApple (AAPL) を例に、TradingAgentsのロール仕様と協調過程を示す。本文の結果表とは別のデモ日付で、各チームがどのようにレポートを出し、討論し、最終的に判断するかを詳しく見せている。
+      </p>
+      <table>
+        <thead><tr><th>段階</th><th>主な出力</th></tr></thead>
+        <tbody>
+          <tr><td>Market / Technical Analyst</td><td>RSIは11月5日と7日に過熱、ADXは強いトレンドから弱まり、Bollinger BandsとMACDは強気傾向、ATRと出来高は変動性を示す。過熱後の調整リスクとブレイクアウト可能性の両方に注意。</td></tr>
+          <tr><td>News Analyst</td><td>米中地政学、半導体、AI、TSMC補助金、FRBのインフレ対応、投資会社の保有動向などを整理。テックとAIが投資家の焦点であり、地政学リスクを考慮すべきとする。</td></tr>
+          <tr><td>Social Media Analyst</td><td>Redditデータの欠落を認めつつ、感情スコアはおおむねポジティブ。ただし一部にネガティブな日もあり、ニュースや他データと併用すべきとする。</td></tr>
+          <tr><td>Fundamentals Analyst</td><td>Appleは高い収益性と成長指標を持つが、流動性制約、高レバレッジ、高バリュエーション、インサイダー売りに注意。短期的には弱気戦略も検討余地がある。</td></tr>
+          <tr><td>Bullish Researcher</td><td>強い成長性、競争優位、機関投資家の保有増、ポジティブな市場心理を根拠に、弱気懸念はあるがAppleの強みが上回ると主張。</td></tr>
+          <tr><td>Bearish Researcher</td><td>米中リスク、高PER、インサイダー売り、流動性・レバレッジ、センチメント変動を重視し、現在の投資は見かけ以上にリスクが高いと反論。</td></tr>
+          <tr><td>Risk Seeking Analyst</td><td>過熱指標は強い上昇モメンタムの証拠であり、統合的には高リターンを狙う好機と主張。</td></tr>
+          <tr><td>Conservative Analyst</td><td>過熱、ボラティリティ、地政学、インサイダー売りを踏まえ、明確なシグナルを待つ保守姿勢を推奨。</td></tr>
+          <tr><td>Neutral Analyst</td><td>段階的なポジション構築、ストップロス、ヘッジ、分散で、成長機会と下振れリスクのバランスを取る。</td></tr>
+          <tr><td>Fund Manager</td><td>強弱両面を確認したうえで、Apple株の<strong>Buy</strong>推奨に同意。強い財務、イノベーション、外部リスクへの耐性、ポジティブな市場心理が高バリュエーションやインサイダー売りを上回ると判断。</td></tr>
+        </tbody>
+      </table>
+      <p>
+        このケースは、単に「LLMが買いと言った」例ではなく、各専門家ロールが互いに矛盾する観点を提示し、リスクチームが攻め・守り・中立の観点で再評価し、最終的にファンドマネージャーが承認する一連の構造を示すためのものになっている。
+      </p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 議論と限界</h2>
+      <p>
+        著者らは、複数の専門LLMエージェントとエージェント討論を統合することで、取引性能が改善したと結論づけている。多様なデータソースと専門分析を統合し、リスクプロファイルに合わせた判断を作れる点が強みだとされる。特に、リフレクション的なエージェントとリスク管理チームが、戦略の洗練とリスク緩和に重要だと述べている。
+      </p>
+      <table>
+        <thead><tr><th>強み</th><th>注意点 / 限界</th></tr></thead>
+        <tbody>
+          <tr><td>実際の取引会社に近い役割分担で、複数の専門観点を統合できる。</td><td>評価期間は約3か月で、長期・異なる市場局面での頑健性は限定的にしか示されていない。</td></tr>
+          <tr><td>構造化通信により、長い会話で情報が壊れる問題を軽減する。</td><td>1予測あたり11回のLLM呼び出しと20回以上のツール呼び出しが必要で、コスト・速度の課題がある。</td></tr>
+          <tr><td>自然言語ログにより、判断根拠を追いやすく説明可能性が高い。</td><td>LLMの判断が市場で常に有効とは限らず、ハルシネーションやデータ品質の問題は残る。</td></tr>
+          <tr><td>GPUなしでAPIベースに動かせ、バックボーンモデルを交換しやすい。</td><td>実運用ではスリッページ、取引コスト、流動性、規制、リアルタイムデータ遅延など、論文外の要素が重要になる。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>投資上の注意：</strong> 本レポートは論文内容の要約であり、特定銘柄やTradingAgentsの利用を推奨するものではありません。論文の結果はバックテストであり、将来の収益を保証しません。
+      </div>
+    </section>
+
+    <section id="s11">
+      <h2>11. 結論</h2>
+      <p>
+        TradingAgentsは、金融取引を単一LLMのプロンプト問題としてではなく、専門チームが協働する組織問題として設計し直すフレームワークである。アナリストが情報を集め、強気・弱気リサーチャーが討論し、トレーダーが判断を作り、リスク管理チームがリスクプロファイルから再検討し、ファンドマネージャーが最終調整する。
+      </p>
+      <p>
+        実験では、掲載された主要テック株において、従来のBuy and Holdやルールベース戦略より高い累積リターン、年率リターン、シャープレシオを示した。著者らは、今後の課題としてライブ取引環境への展開、エージェントロールの拡張、リアルタイムデータフィードの導入を挙げている。
+      </p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        出典: <a href="https://arxiv.org/pdf/2412.20138" target="_blank" rel="noopener">https://arxiv.org/pdf/2412.20138</a> ／ 取得手段: arXiv TeX Source + arXiv abstract metadata ／ 生成日: 2026-05-26
+      </p>
+    </footer>
+  </main>
+</div>
+
+<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
+  <div class="diagram-modal-head">
+    <strong>Mermaid 図</strong>
+    <div class="diagram-modal-tools">
+      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
+      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
+    </div>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas"></div>
+  </div>
+</dialog>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  (function () {
+    const diagrams = document.querySelectorAll('.mermaid');
+    const dialog = document.getElementById('diagram-modal');
+    if (!diagrams.length || !dialog) return;
+
+    const canvas = dialog.querySelector('.diagram-modal-canvas');
+    const zoom = dialog.querySelector('#diagram-zoom');
+    const zoomValue = dialog.querySelector('#diagram-zoom-value');
+    const closeButton = dialog.querySelector('[data-close-diagram]');
+
+    const applyZoom = () => {
+      const value = Number(zoom.value) / 100;
+      canvas.style.setProperty('--diagram-zoom', String(value));
+      zoomValue.textContent = zoom.value + '%';
+    };
+
+    const openDiagram = (diagram) => {
+      canvas.innerHTML = '';
+      const clone = diagram.cloneNode(true);
+      clone.removeAttribute('role');
+      clone.removeAttribute('tabindex');
+      clone.removeAttribute('aria-label');
+      clone.removeAttribute('title');
+      canvas.appendChild(clone);
+      zoom.value = '120';
+      applyZoom();
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    };
+
+    diagrams.forEach((diagram) => {
+      diagram.setAttribute('role', 'button');
+      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+      diagram.setAttribute('title', 'クリックで拡大表示');
+      diagram.tabIndex = 0;
+      diagram.addEventListener('click', () => openDiagram(diagram));
+      diagram.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDiagram(diagram);
+        }
+      });
+    });
+
+    zoom.addEventListener('input', applyZoom);
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    const toc = document.getElementById('toc');
+    const sections = document.querySelectorAll('main section[id]');
+    const links = new Map();
+
+    sections.forEach((sec) => {
+      const h2 = sec.querySelector('h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+      toc.appendChild(li);
+      links.set(sec.id, a);
+
+      sec.querySelectorAll('h3').forEach((h3, i) => {
+        if (!h3.id) h3.id = sec.id + '-h3-' + i;
+        const subLi = document.createElement('li');
+        subLi.className = 'lvl-3';
+        const subA = document.createElement('a');
+        subA.href = '#' + h3.id;
+        subA.textContent = h3.textContent.trim();
+        subLi.appendChild(subA);
+        toc.appendChild(subLi);
+        links.set(h3.id, subA);
+      });
+    });
+
+    const targets = [
+      ...document.querySelectorAll('main section[id]'),
+      ...document.querySelectorAll('main h3[id]')
+    ];
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const a = links.get(entry.target.id);
+        if (!a) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    targets.forEach((t) => observer.observe(t));
+  })();
+</script>
+</body>
+</html>
