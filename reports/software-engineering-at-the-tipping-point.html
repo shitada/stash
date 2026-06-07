@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Software engineering at the tipping point - 日本語要約</title>
+<meta name="description" content="Google I/O 2026 の Adam Bender 氏による講演『Software engineering at the tipping point』を、ソフトウェア生態系と AI 時代の 10x 圧力という観点で日本語要約した非公式レポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 270px; --content-max: 900px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border); background: var(--bg-elev); padding: 24px 18px;
+  }
+  .toc-title { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 10px; }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px; border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45; border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(127,127,127,.08); font-weight: 600; }
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  .lead { color: var(--text-dim); margin: 0; }
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px; margin: 20px 0 32px; display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
+  .tldr, .callout { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 22px; margin: 24px 0; }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  section { margin: 42px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 16px 0; padding: 8px 16px; color: var(--text-dim); background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--bg-elev); border-radius: var(--radius); overflow: hidden; }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+  .mermaid { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 18px 0; text-align: center; overflow-x: auto; }
+  footer.page { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 34px 18px 72px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Google I/O 2026 / Professional Development</div>
+      <h1>Software engineering at the tipping point</h1>
+      <p class="lead">AI がコード生成を加速する時代に、ソフトウェア開発を「個別のツール」ではなく「社会技術的なエコシステム」として捉え直す講演まとめ。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=2n41YjR5QfU" target="_blank" rel="noopener">YouTube: Software engineering at the tipping point</a></dd></div>
+      <div><dt>著者 / 登壇者</dt><dd>Adam Bender</dd></div>
+      <div><dt>公開日</dt><dd>2026-05-21</dd></div>
+      <div><dt>媒体 / チャンネル</dt><dd>Google for Developers</dd></div>
+      <div><dt>イベント</dt><dd>Google I/O 2026</dd></div>
+      <div><dt>所要時間</dt><dd>39 分 39 秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp / en-orig 字幕 JSON3</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ / 文脈</dt>
+        <dd class="badges">
+          <span class="badge">Software Engineering</span>
+          <span class="badge">AI/Machine Learning</span>
+          <span class="badge">Developer Ecosystem</span>
+          <span class="badge">Systems Thinking</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>Adam Bender 氏は、AI による変化を「個別ツールの改善」ではなく、文化・組織・技術が絡み合うソフトウェア生態系全体の変化として捉えるべきだと説明する。</li>
+        <li>コード生成が 10 倍速くなっても、エンジニアリング全体が同じ倍率で速くなるわけではなく、ビルド、テスト、レビュー、バージョン管理、リリース、ロールバック、人間の注意に圧力が移る。</li>
+        <li>AI は増幅器であり、良い基礎を増幅すれば力になるが、弱い検証、曖昧な責任、悪い設計、低い可視性も増幅する。備えの中心は、容量・検証・隔離・抽象化・原則の再確認である。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. 問題設定: ソフトウェア開発を生態系として見る</h2>
+      <p>講演は、2026 年のソフトウェアエンジニアの仕事が 2020 年に想像していたものとは大きく変わった、という観察から始まる。Bender 氏は未来を正確に予測するのではなく、現在の開発エコシステムを「システム」として観察することが、AI がもたらす変化を理解する近道だと述べる。</p>
+      <p>そこで導入されるのが「software ecology（ソフトウェア生態学）」である。これは、ソフトウェアを生み出す環境を、ツールやコードベースだけではなく、人、文化、インセンティブ、組織構造、標準化、運用慣行まで含めて一つの生態系として扱う見方である。</p>
+      <blockquote>講演全体を貫く主張は、「システムではすべてがつながっている」ということだ。AI の導入も、IDE やコード生成ツールだけで完結しない。</blockquote>
+    </section>
+
+    <section id="s2">
+      <h2>2. システム、エコシステム、社会技術システム</h2>
+      <p>Bender 氏はまず、空調システムを例に「システム」を説明する。サーモスタット、HVAC、部屋が互いに関係し、温度という状態を保つために信号が流れる。ソフトウェアエンジニアは日常的にシステムを設計・構築・運用しているが、重要なのは個々の部品だけではなく相互接続を見ることだ。</p>
+      <p>エコシステムは、相互依存する主体が環境とともに変化し、中央集権的な制御だけでは説明できない創発的な振る舞いを持つ。開発組織も同じで、ツール、サービス、人間、制約、文化が一緒に動く社会技術システムである。</p>
+      <table>
+        <thead><tr><th>概念</th><th>講演での意味</th><th>開発組織への示唆</th></tr></thead>
+        <tbody>
+          <tr><td>System</td><td>相互に関係する要素がルールに従って統一的に動く全体。</td><td>ツールやプロセスは単体ではなく、接続とフィードバックで見る。</td></tr>
+          <tr><td>Ecosystem</td><td>主体が環境とともに共進化し、創発的な振る舞いを持つ動的ネットワーク。</td><td>開発環境の変化は、組織文化やビジネス制約も巻き込む。</td></tr>
+          <tr><td>Socio-technical system</td><td>人間と技術で構成されるシステム。</td><td>アーキテクチャ、レビュー、ポストモーテム、セキュリティ方針は文化と結びつく。</td></tr>
+          <tr><td>Software ecology</td><td>ソフトウェアを生産する社会技術的エコシステムの包括的研究。</td><td>AI 導入も「ツール追加」ではなく、生態系全体の再均衡として扱う。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s3">
+      <h2>3. 文化が技術を形作る: Google の実例</h2>
+      <p>Conway の法則は「組織は、その内部コミュニケーション構造を反映したシステムを作る」という観察である。Bender 氏は、技術と組織構造は切り離せず、さらに組織の価値観や文化も開発エコシステムへ反映されると説明する。</p>
+      <p>Google の例では、エンジニア主導、透明性、助け合い、コードレビューを指導の機会として扱う文化、標準化、継続的改善、非難しないポストモーテム、持続可能性、自動化が文化的特徴として挙げられる。技術面では、モノリシックリポジトリ、trunk-based development、共通ビルドツール、グローバルなテスト自動化、統一された計算環境、意見を持ったフレームワーク、少数の主要言語が挙げられる。</p>
+      <p>これらは別々に存在するのではなく、互いに支え合う。Google の技術的な選択は、その文化を知らないと理解しにくい。</p>
+      <h3>Shared fate と Large-Scale Changes</h3>
+      <p>Google の開発エコシステムを説明する鍵として「shared fate（共有運命）」がある。モノレポでは 1 つの変更が会社全体のコードに影響しうるため、適切に使えば大きな力になる。正しい場所の 10 行を直すことで、100 億行規模のソフトウェアへセキュリティ修正を波及させられる。</p>
+      <p>一方で、本番環境では 1 つの障害が全体に連鎖するような共有運命は危険である。shared fate は良し悪しではなく、どこに置くかを選ぶトレードオフだ。この環境から生まれた能力が Large-Scale Changes（LSC）であり、テスト文化、共通テスト基盤、共通ビルドツール、標準ライブラリ、コードレビュー、モノレポの透明性が揃って初めて成り立つ。</p>
+    </section>
+
+    <section id="s4">
+      <h2>4. AI-first エコシステムと 10x モーメント</h2>
+      <p>講演の中心は、AI-first な開発エコシステムが何を意味するのかという問いである。多くの組織はゼロから作り直す余裕がなく、既存の開発を続けながら、生態系のほぼ全体を入れ替える必要がある。</p>
+      <p>Bender 氏は、自分たちのエコシステムをどれだけ理解しているかを問いかける。構成要素を地図化できるか。社会的な要素まで把握しているか。強み、弱み、制約、ボトルネック、自由度、創発的性質を説明できるか。そして、次の 18 か月で 10 倍から 15 倍に成長しなければならなくなったら、どこが最初に壊れるか。</p>
+      <div class="mermaid">
+flowchart LR
+  A[AI がコード作成を加速] --> B[変更量・活動量が増える]
+  B --> C[ビルド・テスト・レビュー・VCS に圧力]
+  C --> D[リリース・ロールバック・内部 API に波及]
+  D --> E[人間の注意資源と組織文化が制約になる]
+  E --> F[システム全体の再設計が必要]
+      </div>
+      <p>重要なのは、コード生成が 10 倍速いことと、エンジニアリング全体が 10 倍速いことは違うという点である。プログラミングが速くなるなら、その周囲の設計、検証、運用、リリース、安全性をどう成立させるかを考え直さなければならない。</p>
+    </section>
+
+    <section id="s5">
+      <h2>5. 10x 圧力が壊す場所</h2>
+      <p>AI によって作業量が増えたとき、影響はコードを書く部分だけに留まらない。ソースコード、ビルド、設計、コードレビュー、トークン、テスト、バージョン管理など、開発システムの各所に二次的な影響が出る。</p>
+      <table>
+        <thead><tr><th>領域</th><th>起きる圧力</th><th>講演での含意</th></tr></thead>
+        <tbody>
+          <tr><td>ソースコード</td><td>書ける量が増えれば、コード量も増えやすい。</td><td>Jeff Atwood の「ソフトウェアは負債」という考えを踏まえると、10x のコードは 10x の負債になりうる。</td></tr>
+          <tr><td>ビルド</td><td>より大きなコード、より多いコンパイル、より高い計算コスト。</td><td>巨大バイナリ、モバイル配送、マイクロサービスでは通信量やサービス数が問題になる。</td></tr>
+          <tr><td>設計・再利用</td><td>エージェントは書きやすいコードを書きがちで、長期保守を自動で最適化しない。</td><td>分離、再利用、標準フレームワーク、コンポーネント設計を意識した抽象化が必要。</td></tr>
+          <tr><td>コードレビュー</td><td>変更が 10 倍大きくなるか、件数が 10 倍になる。</td><td>人間レビュアーがボトルネック化し、圧力でレビュー品質が下がる恐れがある。</td></tr>
+          <tr><td>コード理解</td><td>人がコードを書かず、レビューも浅くなると、誰もコードベースの進化を把握しなくなる。</td><td>「誰が全体を見ているのか」という問題が深刻化する。</td></tr>
+          <tr><td>トークン管理</td><td>トークン消費が 10x/100x になり、予算と優先順位の問題になる。</td><td>どこでトークンを使っているか、どこに投資すべきかの可視性が必要。</td></tr>
+          <tr><td>テスト</td><td>変更増加とエージェントの試行でテスト実行が増える。</td><td>依存グラフはコード規模に対して線形ではなく、100x/1000x のテスト圧力になりうる。</td></tr>
+          <tr><td>バージョン管理</td><td>多くの VCS は速度より一貫性と履歴保持に最適化されている。</td><td>コミット速度や小リポジトリ乱立の運用コストが、新たなボトルネックになる。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s6">
+      <h2>6. 見落とされやすい二次的課題</h2>
+      <p>容量問題だけなら、既存の数値に 10 を掛けて概算できる。しかし Bender 氏は、さらに見えにくい課題を列挙する。統合テスト、巨大変更、リリース、内部 API、Jevons のパラドックス、ロールバック、全員がビルダーになること、若手の急速な技術リード化、人間の注意資源である。</p>
+      <p>検証では、単体テスト中心の戦略が限界に近づく可能性がある。10x のコードと 10x のサービスでは統合テストが品質戦略の中心になるが、統合テストに満足している組織は少ない。また、すべてのテストが緑であることを要求する「真偽値の conjunction」は、テスト数が膨大になるほど現実的でなくなる。統計的にどのテストを走らせるかを選ぶ、新しい検証戦略が必要になる。</p>
+      <p>リリースが速くなりすぎると、問題を検出する前に複数の変更が積み重なり、ロールバックが複雑になる。内部 API や内部データも、エージェントから見ると事実上「公開 API」のように扱われるため、外部公開 API と同程度に固く設計する必要がある。</p>
+      <p>「全員がビルダーになる」ことも両義的だ。誰もがツールを作れるようになると、社内に似たような代替ツールが乱立し、共通の社会的基盤が崩れる可能性がある。経験の浅い開発者が多数のエージェントを使えるようになると、判断力や直感が育つ前に大きな影響範囲を持つ意思決定をすることになる。</p>
+      <blockquote>人間の注意こそが最も貴重な資源であり、AI エージェントが増えるほど、何に注意を向けるかを設計する必要がある。</blockquote>
+    </section>
+
+    <section id="s7">
+      <h2>7. システム思考: Why と What if</h2>
+      <p>AI 時代に適応するには、常にシステムで考える必要がある。見るべきものは、規模の増加、時間による効果、因果の向き、隣接ノードとの相互作用、創発、社会的・技術的インセンティブ、容量、フィードバックループ、ボトルネックである。</p>
+      <p>実践の入口は「Why」と「What if」の 2 つの問いでよい。Why は、なぜ今のテストが少ないのか、なぜその言語を使うのか、といった現状の理由を掘る問いである。What if は、もし AI がすべてのコードを書いたら、もし単体テストより統合テストが多くなったら、という形で前提を揺さぶる問いである。</p>
+      <p>What if は怖い問いでもある。長く正しいと思ってきたプラクティスを手放す可能性があるからだ。しかし同時に、現在の制約を見直す想像力を与える問いでもある。</p>
+    </section>
+
+    <section id="s8">
+      <h2>8. AI は増幅器であり、方向は与えない</h2>
+      <p>Bender 氏は DORA の知見に触れ、AI は「amplifier（増幅器）」として働くと説明する。AI はテスト、ドキュメント、コードを増やせるが、同時に混乱も増やせる。増幅とは大きさであって方向ではない。AI 自体は、増えたものが良い方向へ向かうかを保証しない。</p>
+      <p>基礎が強いチームほど AI の増幅を良い方向へ使える。逆に、意思決定文化、技術戦略、開発者生産性への関心、協働、セキュリティ姿勢、コードヘルス、リリース衛生、信頼性が弱いままでは、AI はその弱さも増幅する。</p>
+      <div class="grid-cards" aria-label="AI を活かすための基礎">
+        <div class="card"><h4>意思決定文化</h4><p>誰が何を根拠に決めるかが曖昧だと、AI は迷いを拡大する。</p></div>
+        <div class="card"><h4>技術戦略</h4><p>標準、抽象化、言語、フレームワークの方針がエージェントの選択を方向づける。</p></div>
+        <div class="card"><h4>コードヘルス</h4><p>既に壊れやすいコードベースでは、生成速度の向上が保守困難性を増やす。</p></div>
+        <div class="card"><h4>リリース衛生</h4><p>検証、ロールバック、リリース頻度の設計が追いつかないと、速度はリスクになる。</p></div>
+      </div>
+    </section>
+
+    <section id="s9">
+      <h2>9. 今から準備すべき 4 つの柱</h2>
+      <p>2030 年から見れば現在の開発エコシステムは、現代から見た 2001 年のソフトウェア開発のように古く見えるかもしれない。Bender 氏は、その変化に備えるための柱として、容量、検証、隔離、抽象化を挙げる。</p>
+      <table>
+        <thead><tr><th>柱</th><th>意味</th><th>今考えるべき問い</th></tr></thead>
+        <tbody>
+          <tr><td>容量</td><td>AI、ビルド、テスト、実行基盤に使える資源を把握する。</td><td>どの資源が足りず、10 倍利用で最初に詰まるのはどこか。</td></tr>
+          <tr><td>検証</td><td>増えたコードとサービスを安全に出荷できる確信を得る。</td><td>すべてを走らせるのではなく、何をどう選んで検証するか。</td></tr>
+          <tr><td>隔離</td><td>試作や個人向けツールが本番へ悪影響を及ぼさないようにする。</td><td>楽しい実験コードと収益を生む本番コードをどう分けるか。</td></tr>
+          <tr><td>抽象化</td><td>人間とエージェントが悪い選択をしにくいように、使うべき道を整える。</td><td>エージェントに自由を与えすぎず、良いフレームワークや API をどう提供するか。</td></tr>
+        </tbody>
+      </table>
+      <p>ここで重要なのは、エンジニアリングプラクティスは神聖不可侵ではないということだ。変えてはいけないのは手順そのものではなく、背後にある原則である。テストやリリースの理由を理解していなければ、AI 時代に合わせて進化させることもできない。</p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 知的制御とエンジニアへの呼びかけ</h2>
+      <p>Bender 氏が特に気にしている問題は、コードベースが巨大化しても人間がそれを理解し、推論し、制御できるかである。これを彼は「intellectual control」と呼ぶ。私たちはすでにこの戦いで劣勢にあり、多くの大規模システムは個々の人間が全体を理解できる範囲を超えている。</p>
+      <p>一方で、AI はこの問題への希望でもある。コード生成を速くするだけでなく、巨大システム全体を理解するための対話的なアーキテクチャ空間を作れるかもしれない。容量を移したら何が起きるか、ユーザー成長が跳ねたらどうなるか、といった問いをシステム全体に投げられれば、人間の理解を深める方向に AI を使える。</p>
+      <p>最後に Bender 氏は、変化の速さに苦しんでいる人を助けること、AI ワークフローを共有すること、シニアエンジニアがメンターになること、技術リードが自社のエンジニアリングの方向に関与することを求める。品質や設計を重視するなら、その価値を自分の声で主張しなければならない。</p>
+      <blockquote>AI による変化は大きく見えるが、システムではすべてがつながっている。システムを見ればレバレッジを見つけられる。現場のエンジニアには、自分の組織、チーム、自分自身の未来を作るための主体性がある。</blockquote>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=2n41YjR5QfU" target="_blank" rel="noopener">https://www.youtube.com/watch?v=2n41YjR5QfU</a> ／ 取得手段: yt-dlp / en-orig 字幕 JSON3 ／ 生成日: 2026-05-25
+      </p>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  (function () {
+    const toc = document.getElementById('toc');
+    const sections = document.querySelectorAll('main section[id]');
+    const links = new Map();
+
+    sections.forEach((sec) => {
+      const h2 = sec.querySelector('h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+      toc.appendChild(li);
+      links.set(sec.id, a);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const a = links.get(entry.target.id);
+        if (!a) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    sections.forEach((section) => observer.observe(section));
+  })();
+</script>
+</body>
+</html>

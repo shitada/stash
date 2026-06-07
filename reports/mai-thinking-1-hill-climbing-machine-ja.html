@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>MAI-Thinking-1: Building a Hill-Climbing Machine ― 全章日本語要約</title>
+<meta name="description" content="Microsoft AI Team『MAI-Thinking-1: Building a Hill-Climbing Machine』(2026年6月、109ページ) を本編・付録すべて含めて日本語に要約した非公式レポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 290px; --content-max: 920px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; border-bottom: none; padding: 0; display: block; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  section h4 { font-size: 15px; margin: 16px 0 6px; }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre code { display: block; padding: 12px 14px; overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+    color: var(--text); padding: 4px 10px; cursor: pointer;
+  }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas {
+    --diagram-zoom: 1.2;
+    transform: scale(var(--diagram-zoom)); transform-origin: top left;
+    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
+  }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft AI Technical Report ／ MAI-Thinking-1</div>
+      <h1>MAI-Thinking-1: Building a Hill-Climbing Machine ― 全章日本語要約</h1>
+      <p class="lead">
+        Microsoft AI が公開した、ゼロから蒸留なしで開発した初の推論モデル
+        <strong>MAI-Thinking-1</strong>（35B active / 1T total MoE）の技術レポートを、
+        本編 7 章＋付録 A–K すべて含めて日本語に再構成した非公式まとめ。
+      </p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>原典タイトル</dt><dd>MAI-Thinking-1: Building a Hill-Climbing Machine</dd></div>
+      <div><dt>著者</dt><dd>The Microsoft AI Team</dd></div>
+      <div><dt>連絡先</dt><dd>mai-technical-report@microsoft.com</dd></div>
+      <div><dt>公開日</dt><dd>2026 年 6 月 3 日（PDF メタデータ）</dd></div>
+      <div><dt>ページ数 / 形式</dt><dd>109 ページ（A4 PDF）</dd></div>
+      <div><dt>原典 URL</dt><dd><a href="https://microsoft.ai/wp-content/uploads/2026/06/main_20260602_2.pdf" target="_blank" rel="noopener">microsoft.ai/.../main_20260602_2.pdf</a></dd></div>
+      <div><dt>取得手段</dt><dd>curl ダウンロード → pdftotext で本文抽出</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要キーワード</dt>
+        <dd class="badges">
+          <span class="badge">35B active / 1T total MoE</span>
+          <span class="badge">Zero distillation</span>
+          <span class="badge">30T tokens pre-training</span>
+          <span class="badge">8K GB200</span>
+          <span class="badge">256K context</span>
+          <span class="badge">SWE-Bench Pro 52.8%</span>
+          <span class="badge">AIME 2025 97.0%</span>
+          <span class="badge">LCB v6 87.7%</span>
+          <span class="badge">YOLO / Rocket</span>
+          <span class="badge">MAIA-200</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>Microsoft AI が独自開発した <strong>MAI-Thinking-1</strong>（35B active / 1T total の MoE）は、<strong>30T トークンをゼロから事前学習</strong>し、第三者モデルからの蒸留を一切行わずに、SWE-Bench Pro 52.8%／AIME 2025 97.0%／LiveCodeBench v6 87.7% という同サイズ帯トップ級のスコアを達成した推論モデル。</li>
+        <li>その背後にある考え方が <strong>「Hill-Climbing Machine（丘登り機械）」</strong>。データ・アーキテクチャ・分散学習基盤（YOLO）・強化学習基盤（Rocket）・評価・安全評価を <strong>一体化した経験的最適化ループ</strong>として運用し、長期にわたる log-linear な性能改善を持続させる仕組みである。</li>
+        <li>RL は <strong>「学ばせる、模倣させない」</strong>を原則とし、STEM／Agentic／Helpfulness & Safety の 3 つの専門モデルを GRPO の改良 + Self-Distillation で訓練したのち SFT で統合し、最終的に軽量 RL を 1 度かけて <strong>MAI-Thinking-1</strong> を完成させる構成。MAIA-200 推論ハードでは GB200 比 <strong>40% 以上スループット改善</strong>。</li>
+      </ul>
+    </div>
+
+    <section id="s0">
+      <h2>0. はじめに ― 3 つの設計原則と全体像</h2>
+      <p>
+        MAI-Thinking-1 は Microsoft AI（MAI）チームが、社内クラスタでゼロから事前学習した最初の推論モデルである。STEM 推論とコーディングの両方で同サイズ帯のフロンティアモデルと競争力があり、特に <strong>SWE-Bench Pro 52.8%</strong>、<strong>AIME 2025 97.0%</strong>、<strong>AIME 2026 94.5%</strong>、<strong>LiveCodeBench v6 87.7%</strong> といったベンチマークで、Sonnet 4.6 と広範囲で互角〜上回る結果を示している。
+      </p>
+
+      <h3>0-1. 3 つの設計原則</h3>
+      <div class="grid-cards">
+        <div class="card">
+          <h4>① Capabilities should be learned, not inherited</h4>
+          <p>能力は <strong>「学ばせる」</strong> もので、蒸留で受け継ぐと長期 climb に必要な操作性・頑健性が欠ける。</p>
+        </div>
+        <div class="card">
+          <h4>② Simplicity is sustainable</h4>
+          <p>シンプルでスケーラブルなレシピ・クリーンで信頼できるデータ・透明な基盤が、ゼロからの climb を支える。</p>
+        </div>
+        <div class="card">
+          <h4>③ Scientific rigor avoids shortcuts</h4>
+          <p>すべての意思決定は <strong>scaling ladder・ablation・evaluation</strong> でテスト可能でなければならない。</p>
+        </div>
+      </div>
+
+      <h3>0-2. パイプライン全体像</h3>
+      <div class="mermaid">
+flowchart LR
+  PT["Pre-training<br/>30T tokens · 16K ctx<br/>8K GB200"] --> MT["Mid-training<br/>3.55T tokens<br/>64K → 256K ctx"]
+  MT --> RL1["STEM Climb"]
+  MT --> RL2["Agentic Climb<br/>(SWE + Tool Use)"]
+  MT --> RL3["Helpfulness &amp; Safety Climb"]
+  RL1 --> SFT["Consolidation SFT<br/>(3 teachers → 1 student)"]
+  RL2 --> SFT
+  RL3 --> SFT
+  SFT --> FRL["Final lightweight RL"]
+  FRL --> M["MAI-Thinking-1"]
+      </div>
+
+      <p>
+        ベースとなる <strong>MAI-Base-1</strong> は 35B active / 1T total parameter MoE で、8K GB200 GPU 上で事前学習。続いて mid-training で context 長を 256K まで拡張し、RL では 3 つの専門 teacher を作って SFT で統合 → 最後に軽量 RL で完成という流れになる。
+      </p>
+    </section>
+
+    <section id="s1">
+      <h2>1. 事前学習（Pre-training）</h2>
+
+      <h3>1-1. モデルアーキテクチャ</h3>
+      <p>
+        MAI-Base-1 はデコーダ専用 Transformer。<strong>5 層の local attention に 1 層の global attention</strong> を交互配置（Gemma 3 流）、<strong>dense FFN と高 sparsity な MoE を交互</strong>に配置するインターリーブ構成を採用する。
+      </p>
+      <ul>
+        <li><strong>Tokenizer</strong>：<code>o200k_base</code>（vocab 200,019）。社内 tokenizer よりわずかに精度劣るが、社内ツール連携を優先。</li>
+        <li><strong>Attention</strong>：local は RoPE（window 512、base 10,000）、global は位置エンコーディングなし。GQA（KV 8 head／128 dim）。<strong>FlashAttention-4 + Ulysses-style context parallelism</strong>。</li>
+        <li><strong>MoE</strong>：<strong>LatentMoE 設計</strong>（NVIDIA 2025）。8/512 expert を softmax gating で選択。圧縮潜在空間で all-to-all 通信、ルーティング判断は元の表現に基づく。</li>
+        <li><strong>Load balancing</strong>：global-batch 集約による GShard 流ロス。<strong>capacity を取らない fully dropless MoE</strong> を採用（possible memory blowup を別の static-memory dropless モードで吸収）。</li>
+        <li><strong>正規化</strong>：input/output 双方の residual add 直前で RMSNorm。Q/K に RMSNorm 適用。bias は使わず embedding は tied。</li>
+      </ul>
+
+      <p>
+        家族全体の構成は L12（365M active）から L78（35.6B active）までを <strong>scaling ladder</strong> として用意し、活性化パラメータあたり同 TPP（tokens per parameter）で訓練して効率比較を行う。
+      </p>
+
+      <h4>MAI-Base-1 と Ladder の比較（抜粋）</h4>
+      <table>
+        <thead><tr><th>Model</th><th>Active</th><th>Total</th><th>Layers</th><th>Hidden</th><th>Top-k / Experts</th></tr></thead>
+        <tbody>
+          <tr><td>L12</td><td>365M</td><td>3.9B</td><td>12</td><td>1024</td><td>8 / 512</td></tr>
+          <tr><td>L42</td><td>6.1B</td><td>159B</td><td>42</td><td>3584</td><td>8 / 512</td></tr>
+          <tr><td>L66</td><td>21.7B</td><td>615B</td><td>66</td><td>5632</td><td>8 / 512</td></tr>
+          <tr><td>L78</td><td>35.6B</td><td>1015B</td><td>78</td><td>6656</td><td>8 / 512</td></tr>
+          <tr><td><strong>MAI-Base-1</strong></td><td>34.7B</td><td>962B</td><td>78</td><td>6656</td><td>8 / 512</td></tr>
+        </tbody>
+      </table>
+
+      <h3>1-2. アブレーション方法論 ― Scaling Ladder と Efficiency Gain</h3>
+      <p>
+        小規模で見えた改善が大規模でも生き残るかを担保するため、<strong>scaling ladder</strong> と <strong>Efficiency Gain（EG）</strong> を中心に意思決定する。EG はベースラインの scaling law $L=AC^{-\alpha}+E$ を fit し、候補が同じ loss に到達するのに必要なベースラインコストの比として定義する：
+      </p>
+      <p>$$\text{EG} = \frac{f^{-1}(L')}{C'}$$</p>
+      <ul>
+        <li>FLOPs を C にした <strong>EG<sub>FLOPs</sub></strong> はアーキテクチャ自体の優劣を見るのに使用。</li>
+        <li>wall-clock 時間を C にした <strong>EG<sub>Time</sub></strong> は既存ハード上での実効性を見るのに使用。</li>
+        <li>例：MoE-every-layer に shared expert を加えると EG<sub>FLOPs</sub> = 1.03 だが EG<sub>Time</sub> = 0.82 となるため、現行レシピである interleaved 構成のほうが優れている。</li>
+        <li>Sparsity を 256 → 512 → 1024 expert に上げると EG が一貫して向上することを確認。MAI-Base-1 は品質と効率のバランスから top-8/512 を採用。</li>
+      </ul>
+
+      <h3>1-3. 評価方法論 ― NLL ベースの社内ベンチ</h3>
+      <p>
+        日々の開発判断には、汎用ベンチではなく <strong>NLL（負の対数尤度）に基づく社内ベンチマーク約 40 種</strong> を使用する。理由は、(a) 自動生成や judge を必要とする評価は高コスト、(b) MMLU や MATH のような評価は format 変化や MCQ 解釈能力の創発に敏感、(c) NLL は teacher-forcing なので minor error が積み上がらず信号品質が高い、の 3 点。
+      </p>
+      <p>カテゴリは <strong>Code / STEM / Math / General Knowledge / Multilingual</strong> の 5 群で、集約スコアは次の重み付き和で定義：</p>
+      <p>$$\text{Target} = 0.5 \cdot \text{Code} + 0.175 \cdot \text{STEM} + 0.175 \cdot \text{Math} + 0.1 \cdot \text{General} + 0.05 \cdot \text{Multilingual}$$</p>
+      <p>
+        公開評価はリーク対策として huggingface.co とそのミラーを学習データから除外し、すべての訓練ソースで <strong>20-gram 80% 類似度の fuzzy dedup</strong> を適用。それでも漏れる例があるため、Web 上に存在しない private benchmark を独自に構築する。
+      </p>
+
+      <h3>1-4. データソース・ライセンス・処理</h3>
+      <ul>
+        <li><strong>方針</strong>：LLM 生成の合成データは事前学習に使わない。収集データ中の AI 生成コンテンツも検出して除外。社内 PII/Safety フィルタを必ず通す。</li>
+        <li><strong>独自 Web クローラ</strong>：robots.txt と各種 HTML/meta 制御を尊重。USTR Notorious Markets リスト掲載サイトは除外。</li>
+        <li><strong>第三者データセット</strong>：商用契約で取得、適切なオーナーシップ／利用権を diligence。</li>
+        <li><strong>ユーザーデータ</strong>：明示的 opt-in や合意条件下のみ使用。</li>
+      </ul>
+
+      <h4>Knowledge cutoff</h4>
+      <table>
+        <thead><tr><th>ソース</th><th>カットオフ</th></tr></thead>
+        <tbody>
+          <tr><td>Web HTML</td><td>2025 年 9 月</td></tr>
+          <tr><td>Web PDFs</td><td>2025 年 12 月</td></tr>
+          <tr><td>Public GitHub</td><td>2025 年 6 月</td></tr>
+          <tr><td>Books & Journals</td><td>2026 年 3 月</td></tr>
+        </tbody>
+      </table>
+
+      <h4>HTML 抽出戦略</h4>
+      <p>
+        単一抽出器ではなく、ソース構造に応じて 4 つを使い分け：
+      </p>
+      <ul>
+        <li><strong>Source-specific structured parser</strong>（HTML/XML のスキーマ対応）</li>
+        <li><strong>Hand-crafted extractor</strong>（BeautifulSoup 等で重要ドメインを丁寧に処理）</li>
+        <li><strong>LLM / agent-based 処理</strong>（normalization・semantic filtering。LLM は <strong>原文の保持／削除</strong>のみ可。新規合成は禁止）</li>
+        <li><strong>Raw 訓練</strong>（Wikipedia の wikitext は約 3 倍冗長でも raw のままが品質高い）</li>
+      </ul>
+
+      <h4>重複除去（Deduplication）</h4>
+      <ul>
+        <li><strong>Boilerplate 除去</strong>：ヘッダ・ナビ・フッタなどを line-occurrence 統計で除去。</li>
+        <li><strong>Exact dup</strong>：MD5 ベース。</li>
+        <li><strong>Fuzzy dup</strong>：MinHash-LSH、類似度 0.8。</li>
+        <li><strong>Templated page</strong>：頻出 token に skeletonize して fuzzy dedup。</li>
+        <li><strong>Semantic dup</strong>：<code>Qwen3-Embedding-0.6B</code> でクラスタリングし、各クラスタから一定数のみ保持。</li>
+        <li><strong>Cross-dataset</strong>：global drop-order に基づき、複数データセットで重複した場合に高優先度のみ残す。</li>
+      </ul>
+
+      <h3>1-5. データミックス選定</h3>
+      <p>
+        数百のデータソースをどう重み付けるかは、(i) 効用の定義、(ii) 巨大な探索空間、(iii) スケール依存性、(iv) データセット間相互作用、(v) multi-epoch 効果、(vi) 計算コストの 6 課題を伴う。
+      </p>
+
+      <h4>Rank invariance hypothesis の反例</h4>
+      <p>
+        小スケールで stem-heavy-mix が code-heavy-mix を STEM NLL で上回ったが、<strong>23B / 20T 規模では順位が逆転</strong>した。原因は stem-heavy-mix が高品質だが <strong>多様性に乏しい 2 つのソース（重み 11.8% vs 0.3%）</strong>に依存していたことで、大規模では情報量が枯渇しスケールが鈍化したため。以降は ladder アプローチで scaling 特性まで含めて評価する方針に。
+      </p>
+
+      <h4>最終データミックス（30T トークン）</h4>
+      <table>
+        <thead><tr><th>Source family</th><th>Unique tokens (T)</th><th>Training tokens (T)</th><th>Mix %</th><th>Avg. Epochs</th></tr></thead>
+        <tbody>
+          <tr><td>Code</td><td>7.4</td><td>16.4</td><td>54.6%</td><td>2.22×</td></tr>
+          <tr><td>STEM</td><td>2.2</td><td>4.7</td><td>15.8%</td><td>2.17×</td></tr>
+          <tr><td>Math</td><td>0.3</td><td>1.6</td><td>5.4%</td><td><strong>5.28×</strong></td></tr>
+          <tr><td>Books & journals</td><td>0.6</td><td>0.9</td><td>3.1%</td><td>1.65×</td></tr>
+          <tr><td>PDFs</td><td>2.7</td><td>1.4</td><td>4.7%</td><td>0.53×</td></tr>
+          <tr><td>Web text</td><td>8.1</td><td>4.5</td><td>14.9%</td><td>0.55×</td></tr>
+          <tr><td>Multilingual (other)</td><td>8.1</td><td>0.5</td><td>1.6%</td><td>0.06×</td></tr>
+          <tr><td><strong>合計</strong></td><td><strong>29.2</strong></td><td><strong>30.0</strong></td><td><strong>100%</strong></td><td>1.03×</td></tr>
+        </tbody>
+      </table>
+
+      <h3>1-6. Mid-training データミックス</h3>
+      <p>
+        Pre-training と同じコーパスを高品質サブセットに再フィルタ／再 weighting し、長い系列長で再 pack。<strong>STEM/Math 35% + Code 55% + Background 10%</strong> に寄せて RL 推論のための土台を強化する。
+      </p>
+      <ul>
+        <li><strong>STEM 推論データ</strong>：Bloom 認知レベル「Analyze 以上」のドキュメントを保持する <em>Bloom Analyze heuristic</em> でフィルタ。</li>
+        <li><strong>コードデータ</strong>：repo を品質 3 ティアに分け、ティアごとに extension フィルタ。file-level と repo-level の 2 視点フォーマットを併用。</li>
+        <li><strong>Memorization-aware epoch capping</strong>：pre-training で「NLL &lt; 0.01 で予測されるトークン」割合が高い source は強く capping。</li>
+        <li><strong>Long context データ</strong>：同じ重みで 64K → 256K に再 pack し、distribution shift を抑制。</li>
+      </ul>
+
+      <h3>1-7. 訓練レシピ・ハイパラ・数値</h3>
+
+      <h4>3 段階の訓練</h4>
+      <table>
+        <thead><tr><th>Phase</th><th>Tokens</th><th>Context</th><th>GB200 GPUs</th></tr></thead>
+        <tbody>
+          <tr><td>Pre-training</td><td>30 T</td><td>16,384</td><td>8,192</td></tr>
+          <tr><td>Mid-training 1</td><td>3.4 T</td><td>65,536</td><td>8,192</td></tr>
+          <tr><td>Mid-training 2</td><td>150 B</td><td>262,144</td><td>4,096</td></tr>
+        </tbody>
+      </table>
+
+      <ul>
+        <li><strong>Optimizer</strong>：AdamW（β1=0.95, β2=0.925, ε=10⁻⁸）、weight decay 0.1（attention 0.01／embed 0.005）。</li>
+        <li><strong>LR</strong>：cosine、peak 2×10⁻⁴ → min 2×10⁻⁵（<strong>0.1× への減衰</strong>のほうが post-RL に良いと判明）。warmup 12B tokens。</li>
+        <li><strong>Dropout</strong>：各層出力直前で <strong>0.15</strong>（高めの dropout が weight decay と相補的に効く）。</li>
+        <li><strong>Batch</strong>：全 phase で <strong>134M tokens グローバルバッチ</strong>。</li>
+        <li><strong>Attention 初期化</strong>：output RMSNorm gain を 0 に → 初期段階では attention が pass-through のように動作し、MoE ルーティングの初期不均衡を緩和。</li>
+      </ul>
+
+      <h4>数値精度</h4>
+      <ul>
+        <li>weight/activation のデフォルトは BF16。Forward GEMM は FP8 E4M3、data-gradient は FP8 E5M2、weight-gradient は BF16 + FP32 accumulation。</li>
+        <li>FP8 は <strong>1024-step delayed scaling</strong>。</li>
+        <li>数値敏感領域（attention/MoE/output logits、residual stream、embedding、RMSNorm、router）は <strong>FP32</strong>。</li>
+        <li>Higher → lower precision の dropdown は <strong>stochastic rounding</strong>。</li>
+      </ul>
+
+      <p>
+        Pre-training loss は早期にいくつかの spike が起きたが、いずれも自然に回復。spike は code dataset に偏り、dropless routing 下の expert imbalance に相関していた。<strong>training batch のスキップや手動介入は一切なし</strong>。
+      </p>
+
+      <h3>1-8. 同時期モデルとの比較</h3>
+      <p>
+        DeepSeek v3.2 / v4 Pro、Kimi-K2、Gemma4-31B、社内 23B モデルとの BPB（bits-per-byte）比較で、MAI-Base-1 は同等 active parameter のモデル群を <strong>全 4 タスクで上回り</strong>、active 1.4×／total 1.6× の DeepSeek v4-Pro に次ぐ位置に。
+      </p>
+
+      <h3>1-9. YOLO ― 自社分散学習フレームワーク</h3>
+      <p>
+        <strong>YOLO（You Only Launch Once）</strong>は PyTorch 上に MAI が自社開発したフレームワークで、pre-training / mid-training / SFT / RL の learner を統合的に扱う。Megatron-Core・DeepSpeed・TorchTitan に学び、kernel から parallelism、scheduling まで <strong>end-to-end の制御</strong>を確保する。
+      </p>
+
+      <h4>主要コンポーネント</h4>
+      <div class="grid-cards">
+        <div class="card">
+          <h4>Kernel</h4>
+          <p>Triton / CUDA / CuteDSL / CUTLASS による FP8 GEMM、grouped GEMM、fused quantization、Blackwell の Cluster Launch Control（CLC）を活用。</p>
+        </div>
+        <div class="card">
+          <h4>Tensor sharding</h4>
+          <p>JAX / DTensor 流の独自 sharding annotation。attention は TP、MLP/MoE は別 DP のような <em>parallel folding</em> も可能。</p>
+        </div>
+        <div class="card">
+          <h4>Parallelism</h4>
+          <p>独自 ZeRO 1〜3、TP（column/row）、Ulysses-style CP、EP（dropless 含む）、PP。Pre-training は EP=64・TP=1。</p>
+        </div>
+        <div class="card">
+          <h4>Activation checkpointing / offloading</h4>
+          <p>transformer-layer checkpointing と fine-grained recomputation を混合。pinned host memory + 専用 CUDA stream で非同期 offload。</p>
+        </div>
+        <div class="card">
+          <h4>MoE 層</h4>
+          <p>dropless / capacity-capped 両対応。router replay や static-memory dropless mode をサポートし、imbalance による OOM を防止。</p>
+        </div>
+        <div class="card">
+          <h4>Determinism</h4>
+          <p>同一 HW・SW・config 下で <strong>bitwise reproducibility</strong>。RMSNorm 逆伝播の 2 段 tiled reduction や stable sort top-k 等で順序固定、NVLink SHARP は無効化。</p>
+        </div>
+      </div>
+
+      <h4>Fault tolerance</h4>
+      <ul>
+        <li><strong>Distributed Checkpoint（DCP）改造</strong>：metadata 作成・シリアライズを書き直して <strong>CPU メモリ・保存時間を 10× 以上削減</strong>、save plan は事前計算してキャッシュ。</li>
+        <li><strong>Async checkpointing</strong>：device → host コピー後は別 process が書き込み。1 件 in-flight に制限する admission control。</li>
+        <li><strong>Storage</strong>：Azure Blob を低レイテンシ／高帯域で使用。replicated state は <strong>1 度読んで NCCL broadcast</strong> し hotspots を回避。</li>
+        <li><strong>Rapid recovery</strong>：Ray actor + hot standby により pod 再生成を回避。GB200 では actor restart 時に OS cache を明示的にクリア。</li>
+      </ul>
+
+      <h4>世代 v2 → v5 の MFU と EG 推移</h4>
+      <table>
+        <thead><tr><th>Version</th><th>Active / Total</th><th>主な変更</th><th>最終 MFU</th><th>EG vs v2</th></tr></thead>
+        <tbody>
+          <tr><td>v2</td><td>23B / 600B</td><td>GB200 baseline（NVL64、EP=64、TP=1）、GDR RDMA、custom block-sparse attention</td><td>22%</td><td>1.00×</td></tr>
+          <tr><td>v3</td><td>23B / 600B</td><td>Dropless MoE、token-count 通信を別 stream に</td><td>22%</td><td>1.40×</td></tr>
+          <tr><td>v4</td><td>23B / 611B</td><td>Top-8/512 expert、LatentMoE、8K GPUs。FA4 deterministic kernel</td><td>20%</td><td>1.69×</td></tr>
+          <tr><td>v5 (MAI-Base-1)</td><td>35B / 1T</td><td>サイズ拡大、ZeRO-2 + activation offloading</td><td>20%</td><td>1.69×</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s2">
+      <h2>2. 強化学習 Climb（RL Climb）</h2>
+
+      <h3>2-1. RL レシピ（GRPO 改良 + Self-Distillation）</h3>
+      <p>
+        RL は GRPO（Shao et al., 2024）+ token-level policy gradient（Yu et al., 2025）をベースに、以下の <strong>2 つの修正</strong>を加えた。
+      </p>
+
+      <h4>Adaptive Entropy Control</h4>
+      <p>
+        upper clip bound を <strong>policy entropy 観測値に基づいて自動調整</strong>する simple integral controller を導入。
+      </p>
+      <p>$$r^{tr}_{i,t}(\theta) = \mathrm{clip}\bigl(r_{i,t}(\theta),\; 1-\epsilon,\; (1-\epsilon)^{-1}+k\bigr)$$</p>
+      <ul>
+        <li>観測 entropy $\hat{H}(\pi_\theta)$ をトークンレベルで importance-weighted に推定。</li>
+        <li>target $H^* = 0.3$ を超えていれば $k$ を縮め、下回っていれば広げる（$\epsilon = 0.6$、$k_{\max} = 2.5$、step $\delta = 0.25$）。</li>
+        <li>初期 $k = 0$ で clip 範囲は log 空間で対称、明示的な entropy bonus 項より良い。</li>
+      </ul>
+
+      <h4>Outer Ratio Clip</h4>
+      <p>
+        GRPO が意図的に unclipped にする 2 ケース（A&lt;0 かつ r&gt;1、A&gt;0 かつ r&lt;1）が <strong>gradient norm の壊滅的 spike</strong> を起こす場合があったため、外側に hard clip $r^{out}_{i,t}(\theta) = \mathrm{clip}(r_{i,t}(\theta), r_{\min}, r_{\max})$ を追加（実装では $r_{\max}=50$、$r_{\min}=0$）。
+      </p>
+
+      <h4>Reward の分解</h4>
+      <p>$$R(q, y_i) = R_{\text{task}}(q, y_i) + w_{\text{lang}} \cdot R_{\text{lang}}(y_i) - w_{\text{len}} \cdot R_{\text{len}}(y_i)$$</p>
+      <ul>
+        <li><strong>Language consistency reward</strong>（$R_{\text{lang}}$）：英語以外の語数で penalize。RL の文脈延長で増える多言語混在 CoT による学習・推論ポリシー乖離を防ぐ。</li>
+        <li><strong>Length penalty</strong>（$R_{\text{len}}$）：問題の pass rate $\rho_q$ で重み付けし、難問は緩く、易問は厳しく。</li>
+      </ul>
+
+      <h4>Sampling 戦略</h4>
+      <ul>
+        <li><strong>Problem sampling</strong>：早期に $G_{\text{early}}=16$ を生成して pass rate を判定、残り全 $G=128$ を生成。最終 pass rate $[\rho_{\min}, \rho_{\max}] = [0.1, 0.8]$ 内のみ訓練対象に。</li>
+        <li><strong>Rollout sampling</strong>：top-p（$p=0.97$）。<strong>top-p 外のトークンの logit を −∞ に置換</strong>することで off-policy mismatch を抑制（rollout 時のマスクを訓練側に持ち込む）。</li>
+        <li><strong>Length curriculum</strong>：8K → 16K → 32K → 64K → 128K と powers of two で出力長を拡張。</li>
+      </ul>
+
+      <h4>Self-Distillation の役割と発見</h4>
+      <p>
+        長期 RL の実用化に不可欠。midtrained checkpoint に対し <strong>RL 中に集めた rollout で SFT</strong> を行う。用途は (a) 生プロンプトから chat 形式への移行、(b) 数値崩壊からのリカバリ、(c) 新しい base policy への進歩継承、(d) reward hacking trace の filter-out。
+      </p>
+      <ul>
+        <li><strong>O(1M) traces</strong> が teacher 並みに到達するには十分。<em>多すぎるとポリシー分布が狭まり、その後の RL の探索余地を奪う</em>。</li>
+        <li>incorrect trace を含めても、successful のみと結果はほぼ同等。最終的に successful のみを使用。</li>
+        <li>late checkpoint からの trace のみだと弱い。<strong>複数の strong checkpoint からの diverse な trace</strong> が最も良い。</li>
+        <li>固定 token bugdet では <strong>prompt 多様性 &gt; prompt あたり trace 数</strong>。random sampling が biased sampling を上回る。</li>
+        <li>Self-distillation 中に long-context 能力を忘れがちなので、mid-training data を mix する。</li>
+      </ul>
+
+      <h4>主要ハイパラ</h4>
+      <ul>
+        <li>RL：AdamW（β1=β2=0.95、ε=10⁻¹⁵）、weight decay なし、constant LR 10⁻⁶（長 generation 時は 9×10⁻⁷）、global batch 7040（packed）、unpacked 最大 12000。</li>
+        <li>5 gradient step ごとに inference を更新、最大 8 推論更新分の stale rollout は破棄（=40 gradient step）。</li>
+        <li>MoE load balancing 係数：RL 時 1×10⁻⁵、self-distillation 時 <strong>1×10⁻²</strong>（事前に expert 分布を整える）。</li>
+      </ul>
+
+      <h3>2-2. STEM Climb</h3>
+      <p>
+        3 つの中で最長の climb。数学・物理・化学・競技プログラミングなどの単一回答型タスクで、推論能力の中核を伸ばす。<strong>verifiable な (q, a) ペアか (q, {tests}) ペア</strong>に依拠。
+      </p>
+
+      <h4>STEM データパイプライン（4 フェーズ）</h4>
+      <div class="mermaid">
+flowchart LR
+  raw["Raw sources<br/>PDF / textbook / forum / vendor"]
+  raw --> P1["Phase 1<br/>Hierarchical Parsing<br/>(OCR + cleanup, structure, Q/A extraction)"]
+  P1 --> P2["Phase 2<br/>Q-A Pairing (N rounds)<br/>candidate proposal + LLM select"]
+  P2 --> P3["Phase 3<br/>Curation<br/>verifiability / type / taxonomy / PII / leakage<br/>MCQ → open-ended (consensus)"]
+  P3 --> P4["Phase 4<br/>Scoring<br/>k 試行 × 4 solver tier → difficulty<br/>blind grading → drop faulty GT"]
+  P4 --> mix["STEM Mix dataset<br/>5M+ samples / 550K+ hard pairs"]
+      </div>
+      <ul>
+        <li>分布：<strong>Open-ended 56.1% / Proof 33.3% / MCQ 10.6%</strong>。トピックは数学 58.5% を中心に物理・化学・工学・CS・経済まで広範。</li>
+        <li>多重 LLM 投票（consensus）で MCQ/Proof → open-ended に書き換え。</li>
+        <li>難問の GT が間違っている可能性を <em>blind grading</em> で監査して drop。</li>
+      </ul>
+
+      <h4>競技コーディング</h4>
+      <p>
+        16 万問、17 言語（Python/C++/C#/Java/JS/Rust/TS 等）。<strong>reference solution が全テストケースを通る</strong>ことを確認した上で投入。専用パイプラインで PDF/フォーラムには頼らない。
+      </p>
+
+      <h4>3 段 Deduplication & Decontamination</h4>
+      <p>SHA-256 → character n-gram MinHash-LSH → embedding コサイン類似度で、内部ベンチ・Olympiad・graduate STEM eval からも除外。</p>
+
+      <h3>2-3. Agentic Climb</h3>
+      <p>
+        外部環境と相互作用するエージェントタスクを学習。ReAct 流の <em>policy step ↔ environment step</em> ループを <strong>Sandbox Execution Environment（SEE）</strong>上で実行。trajectory 全体を verifiable / judged な reward で採点し、token-level credit assignment を均一に適用。
+      </p>
+      <p>
+        STEM と agentic を <strong>同時に climb</strong> させると agentic 側が安定化し SWE / Tool 性能にも正の transfer が確認された（逆方向は中立）。
+      </p>
+
+      <h4>2-3-1. Software Engineering（SWE）</h4>
+      <p>
+        実リポジトリベースのコンテナ環境。tool は <strong>Bash と String Replace Editor の 2 つ</strong>のみで完結。
+      </p>
+
+      <h5>環境ビルドパイプライン（PR → 学習環境）</h5>
+      <ol>
+        <li><strong>収集</strong>：public GitHub PR <strong>1.02 億件</strong>から、main にマージ・15 ファイル未満・コード変更とテスト変更が両方含まれる PR を抽出 → issue リンクで絞り込み <strong>487 万 PR</strong>。</li>
+        <li><strong>Agentic environment build</strong>：LLM agent が repo を読んで Dockerfile を生成、テスト suite を実行して dependency error を弾く。</li>
+        <li><strong>Reference grading 抽出</strong>：base commit に対し pre-fix（test diff のみ）と post-fix（test + code diff）の 2 段で実行。<strong>F2P（issue-resolution signal）</strong> と <strong>P2P（regression signal）</strong> を抽出。F2P が残らないものは破棄。</li>
+        <li><strong>環境＆grader 検証</strong>：empty patch が落ち、golden patch が通ることを multiple trials で再確認。non-deterministic test も除外。</li>
+        <li><strong>品質フィルタ + 書き換え</strong>：仕様の曖昧さ・leakage・実現性を agent が採点し、低品質なら問題文を書き換え。</li>
+      </ol>
+
+      <h5>歩留まり（487 万 PR から）</h5>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">2.08M</div><div class="label">環境ビルド成功（42.8%）</div></div>
+        <div class="stat-card"><div class="num">745K</div><div class="label">Reference grading 通過（15.3%）</div></div>
+        <div class="stat-card"><div class="num">265K</div><div class="label">最終環境＆grader 検証通過（5.5%）</div></div>
+        <div class="stat-card"><div class="num">94K</div><div class="label">ユニークリポジトリ数</div></div>
+      </div>
+
+      <h5>合成データ</h5>
+      <p>
+        ビルドはできたが品質チェックを通らなかった環境は <strong>BugPilot / SWE-Smith / SWE-Mirror 流</strong>で新しい合成問題＆テストに再活用する。
+      </p>
+
+      <h5>Reward Hacking 対策</h5>
+      <ul>
+        <li><strong>Internet 検索</strong>：sandbox の network access を制限／無効化。</li>
+        <li><strong>ローカル git 履歴探索</strong>：base commit より後の commit / ref / branch を sanitization し、<em>「時間旅行」</em>済み repo を構成。</li>
+        <li><strong>テスト改竄</strong>：grading 前に test ファイルを reset、test diff は inference 中に隠す。monkey-patch 等の subtler な hack には LLM monitor を継続強化。</li>
+      </ul>
+
+      <h4>2-3-2. General Tool Use</h4>
+      <p>
+        OpenAI 互換 function-calling schema をベースに、1 環境あたり <strong>50 ツール超</strong> も扱う stateful な mocked backend を用意。
+      </p>
+      <ul>
+        <li><strong>合成パイプライン</strong>：(i) tool 記述・関数実装・DB seed → (ii) tool 呼び出し trajectory のサンプリングと user request 生成 → (iii) 実行検証と過剰類似タスクの除去。<strong>150+ 環境、130K+ task</strong>。</li>
+        <li><strong>Reward</strong>：environment-specific grader（最終 state、ツール使用パターン、最終回答）+ cross-environment grader（parallel tool calls、duplicate 回避、有効引数）。</li>
+      </ul>
+
+      <h3>2-4. Helpfulness and Safety Climb</h3>
+
+      <h4>Reward の組み合わせ</h4>
+      <div class="grid-cards">
+        <div class="card">
+          <h4>Reward Model</h4>
+          <p>MAI-Base-1 を post-train した RM が <em>k-way side-by-side</em> 評価をテキスト出力。inference 時は <strong>サイクリックに k 回</strong>呼び出して permutation バイアスを除去。</p>
+        </div>
+        <div class="card">
+          <h4>AI Judge</h4>
+          <p>rubric-guided の prompted judge。RM の再訓練を待たずに振る舞いを素早く変えるレバー。</p>
+        </div>
+        <div class="card">
+          <h4>Verifiable Reward</h4>
+          <p>「single paragraph で答える」「10 語未満」のような制約を直接検証。reward hack や multi-epoch に強い。長さは <em>許容分位範囲</em>を外れたら penalize。</p>
+        </div>
+      </div>
+
+      <h5>Reward の優先順位付け</h5>
+      <ul>
+        <li><strong>Lexicographic shaping</strong>：上位 reward でタイの rollout 内でのみ下位 reward を発火させる。スケールに不変。</li>
+        <li><strong>Gated application</strong>：上位 reward が最低水準に達しないと下位は計上されない。<em>「unsafe な良文」は許さない</em>のがその典型。</li>
+      </ul>
+
+      <h4>Instruction Following / Steerability</h4>
+      <ul>
+        <li>専門家が書いた指示と、constraint taxonomy + 40+ ドメインを seeds とした合成データを併用。<strong>System / Developer / User の階層</strong>に従う訓練を含む。</li>
+        <li>難易度を pass-rate でコントロール、難しすぎず簡単すぎないものだけ残す。</li>
+        <li>Reward は <em>rule-based verifier</em>＋<em>atomic rubric を判定する LLM judge</em>＋<em>RM</em> を lexicographic 集約。</li>
+      </ul>
+
+      <h4>Safety</h4>
+      <p>
+        2 つの failure mode に対処：<strong>unsafe compliance</strong>（拒否すべきものを許可）と <strong>over-refusal</strong>（合法な要求を拒否）。
+      </p>
+      <ul>
+        <li>prompt は <strong>Harmful</strong>（refusal / partial refusal）と <strong>Borderline</strong>（do-not-refuse）に分類。</li>
+        <li>Harmful は Human red-teaming（vendor + 社内）と Automated（PyRIT、PAP、TAP）で収集、Borderline は do-not-refuse スライスと capability data から。</li>
+        <li>Reward は policy compliance / engagement / style の 3 軸で judge し、<strong>safety-gated aggregator</strong>（非 compliant なら他軸を問わず最低）。</li>
+        <li>注意：scalar reward の単純加重では <strong>87.8% の非 compliant 応答が RM ≥ 3 を獲得</strong>してしまうため、必ず gating が必要。</li>
+      </ul>
+
+      <h4>Honesty</h4>
+      <p>
+        既知の事実は正しく答え、知らないときは適切に hedge。data は (a) 既知の factual、(b) long-tail factual、(c) <em>false-premise</em>（誤前提）の 3 種。LLM judge が factuality と confidence の 2 軸を <strong>CONFIDENT_CORRECT / UNCONFIDENT_CORRECT / NOT_ATTEMPTED / UNCONFIDENT_INCORRECT / CONFIDENT_INCORRECT</strong> の 5 段階に分類し、信念付き正答に最高報酬・信念付き hallucination に最大 penalty。
+      </p>
+
+      <h4>Style</h4>
+      <p>
+        Style guide を策定し、emoji 使用・table/markdown・トーン・layout・density をルール化。grade は <strong>0/1/2 の coarse な LLM judge</strong>（細かすぎる rubric は hack されやすい）。
+      </p>
+
+      <h3>2-5. Consolidation（3 teacher → 1 model）</h3>
+      <p>
+        3 つの specialist teacher を SFT で 1 モデルに統合する。STEM/Agentic teacher は <strong>複数 checkpoint からの rollout</strong>で多様性を確保、Helpfulness teacher は LLM judge + heuristic でフィルタ。
+      </p>
+
+      <h4>Consolidation SFT のミックス</h4>
+      <table>
+        <thead><tr><th>Capability</th><th>Sample weight</th><th>Token weight</th></tr></thead>
+        <tbody>
+          <tr><td>STEM and Coding</td><td>56%</td><td>89%</td></tr>
+          <tr><td>Agentic Capability</td><td>11%</td><td>9%</td></tr>
+          <tr><td>General Helpfulness and Safety</td><td>33%</td><td>2%</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>sample weight でバランスを取る</strong>のが重要。token は STEM/Code が長いので自然と dominant になるが helpfulness は損なわない。SFT は 4 epoch、LR は最大 1×10⁻⁵ から 2× decay。
+      </p>
+
+      <p>
+        最終段の <strong>Consolidation RL</strong> は Helpfulness & Safety climb のレシピをベースに 128K context で、reasoning 退化を防ぐため STEM/Code データを少量混入する。
+      </p>
+
+      <h3>2-6. RL インフラ ― Rocket</h3>
+      <p>
+        Rocket は MAI 社内製の大規模非同期分散 RL フレームワーク。Learner は YOLO、Inference は SGLang + SGLang router。コントローラ、Problem Worker、Rollout Worker から成る。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  Q["Problem Set Sampler"] --> Ctrl["Async Controller"]
+  Ctrl --> PW["Problem Workers"]
+  PW --> RW["Rollout Workers"]
+  RW --> IS["Inference Pool<br/>SGLang Router + Servers"]
+  IS --> RW
+  RW --> PW
+  PW --> Ctrl
+  Ctrl --> LR["Learners (YOLO)"]
+  LR -.weight transfer.-> IS
+  LR --> CK["Checkpointing"]
+      </div>
+
+      <h4>Inference 設計</h4>
+      <ul>
+        <li>大型 RL では <strong>inference : learner = 5 : 1</strong> に達する。最大ジョブでは 4864 GB300 のうち <strong>4096 が inference</strong>、768 が learner。</li>
+        <li>Single-turn workloads：KV cache が bottleneck → EP + DP、prefix cache off（sliding window 完全 evict）、DeepEP、EPLB。</li>
+        <li>Multi-turn workloads：prefill 主体 → <strong>prefix cache hit rate 97–98%</strong>。</li>
+        <li>システム安定性は 3 層 defense：(i) 各 SGLang サーバの self-watchdog、(ii) router の circuit breaker、(iii) job 全体の liveness monitor + step-progress watchdog。失敗した rollout は別 replica に retry。</li>
+      </ul>
+
+      <h4>Learner と Inference の数値ギャップ</h4>
+      <ul>
+        <li>YOLO（学習）と SGLang（推論）の kernel / scheduling 違いから出る log-prob 乖離は importance-sampling 補正を不安定化する。</li>
+        <li>両側で <strong>BF16</strong> を使い、<strong>MoE routing replay</strong> と <strong>top-p mask replay</strong> を併用して mismatch を最小化。</li>
+      </ul>
+
+      <h4>Weight Transfer</h4>
+      <ul>
+        <li>Learner と inference で異なる sharding を結ぶため、resharding / 通信 / per-tensor 変換を <strong>job 開始時に 1 度コンパイルした transfer plan</strong>に集約。</li>
+        <li>plan は「1 learner ↔ 1 inference server」の idealized topology で記述し、runtime で replica の出入りに応じて transfer group を拡張するため <strong>replica の追加・脱落・置換に対しても plan が valid</strong>。</li>
+        <li>DP はパラメータを複製するだけなので、すべての DP rank を動員する必要はなく、<strong>36 サーバを 4 分割して 9 サーバ × 4 並列</strong>で transfer。</li>
+      </ul>
+    </section>
+
+    <section id="s3">
+      <h2>3. 評価結果</h2>
+
+      <h3>3-1. ベンチマーク評価（STEM / Agentic Coding）</h3>
+      <p>
+        全評価は temperature 1.0 / top-p 0.97 / 4 runs 平均。agentic は max context 256K、他は max output 256K。
+      </p>
+
+      <table>
+        <thead><tr><th>Benchmark</th><th>MAI-Thinking-1</th><th>Sonnet 4.6</th><th>Opus 4.6</th><th>GPT 5.4</th><th>Kimi K2.6</th><th>DeepSeek V3.2</th><th>DeepSeek V4</th><th>GLM-5.1</th></tr></thead>
+        <tbody>
+          <tr><td>AIME 2025</td><td><strong>97.0</strong></td><td>95.6</td><td>99.8</td><td>—</td><td>—</td><td>93.1</td><td>—</td><td>—</td></tr>
+          <tr><td>AIME 2026</td><td><strong>94.5</strong></td><td>—</td><td>—</td><td>—</td><td>96.4</td><td>—</td><td>—</td><td>95.3</td></tr>
+          <tr><td>HMMT Feb 2026</td><td>84.9</td><td>—</td><td>—</td><td>—</td><td>92.7</td><td>—</td><td>95.2</td><td>82.6</td></tr>
+          <tr><td>GPQA Diamond</td><td>84.2</td><td>89.9</td><td>91.3</td><td>92.8</td><td>90.5</td><td>82.4</td><td>90.1</td><td>86.2</td></tr>
+          <tr><td>LiveCodeBench v6</td><td><strong>87.7</strong></td><td>—</td><td>—</td><td>—</td><td>89.6</td><td>83.3</td><td>93.5</td><td>—</td></tr>
+          <tr><td>Terminal-Bench 2.0</td><td>46.0</td><td>59.1</td><td>65.4</td><td>75.1</td><td>66.7</td><td>46.4</td><td>67.9</td><td>69.0</td></tr>
+          <tr><td>SWE-bench Verified</td><td>73.5</td><td>79.6</td><td>80.8</td><td>—</td><td>80.2</td><td>73.1</td><td>80.6</td><td>—</td></tr>
+          <tr><td>SWE-Bench Pro</td><td><strong>52.8</strong></td><td>—</td><td>53.4</td><td>57.7</td><td>58.6</td><td>—</td><td>55.4</td><td>58.4</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        MAI-Thinking-1 は <strong>AIME 2025 で Sonnet 4.6 超え</strong>、<strong>SWE-Bench Pro では Opus 4.6 に近接</strong>。Terminal-Bench は SWE 訓練が bash と string-replace のみで terminal 専用環境を含まないため、一般 agentic 訓練からの汎化結果である点に注意。
+      </p>
+
+      <h3>3-2. ベンチマーク評価（General Capabilities）</h3>
+      <table>
+        <thead><tr><th>カテゴリ</th><th>Benchmark</th><th>MAI-Thinking-1</th><th>Sonnet 4.6</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="2">Knowledge</td><td>MMLU Pro</td><td>85</td><td>87</td></tr>
+          <tr><td>SimpleQA Verified</td><td>31</td><td>29</td></tr>
+          <tr><td rowspan="3">Instruction Following</td><td>IF Bench</td><td>69</td><td>50</td></tr>
+          <tr><td>Advanced IF</td><td>85</td><td>86</td></tr>
+          <tr><td>Multi-Challenge</td><td>53</td><td>57</td></tr>
+          <tr><td>Long Context</td><td>GraphWalks (≤128k)</td><td>90</td><td>96</td></tr>
+          <tr><td>Tool Calling</td><td>BFCL v3</td><td>72</td><td>76</td></tr>
+          <tr><td rowspan="3">Safety</td><td>AIR-Bench</td><td>88</td><td>88</td></tr>
+          <tr><td>CyberSec Instruct</td><td>63</td><td>62</td></tr>
+          <tr><td>CyberSec Auto</td><td>63</td><td>56</td></tr>
+          <tr><td rowspan="2">Honesty</td><td>Long Fact</td><td>98</td><td>98</td></tr>
+          <tr><td>TruthfulQA</td><td>88</td><td>88</td></tr>
+          <tr><td rowspan="2">Health</td><td>HealthBench Prof.</td><td>35</td><td>38</td></tr>
+          <tr><td>MedXpertQA</td><td>43</td><td>49</td></tr>
+        </tbody>
+      </table>
+      <p>多くのカテゴリで Sonnet 4.6 と <strong>ほぼ同等</strong>。IFBench は <strong>69 vs 50</strong> と大きくリード。</p>
+
+      <h3>3-3. Human Side-by-Side 評価</h3>
+      <p>
+        Surge AI 経由の英語ネイティブ評価者で、<strong>1276 task（30% multi-turn）</strong>を比較。<em>−1.5 〜 +1.5</em> の 7 点 Likert + 5 軸（instruction following / factuality / conciseness & relevance / completeness / style & tone）。
+      </p>
+      <table>
+        <thead><tr><th>指標</th><th>vs Sonnet 4.6</th><th>vs Opus 4.6</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Overall preference</strong></td><td><strong>+0.07 ±0.06</strong></td><td>−0.07 ±0.06</td></tr>
+          <tr><td>Instruction following ∆</td><td>−0.01 ±0.02</td><td>−0.04 ±0.02</td></tr>
+          <tr><td>Factuality ∆</td><td>−0.02 ±0.02</td><td>−0.03 ±0.02</td></tr>
+          <tr><td>Conciseness & relevance ∆</td><td><strong>+0.11 ±0.02</strong></td><td>+0.07 ±0.02</td></tr>
+          <tr><td>Completeness ∆</td><td>−0.01 ±0.02</td><td>−0.02 ±0.02</td></tr>
+          <tr><td>Style & tone ∆</td><td><strong>+0.08 ±0.02</strong></td><td>+0.05 ±0.02</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Sonnet 4.6 比</strong>：win 49% / tie 6% / lose 45%。conciseness と style で優位、その他は noise レベル。</li>
+        <li><strong>Opus 4.6 比</strong>：win 43% / tie 5% / lose 52%。負け越し。</li>
+      </ul>
+
+      <h3>3-4. 内部 Safety 評価</h3>
+
+      <h4>Safety vs Helpfulness（高 sensitivity の安全 pass rate × 非 sensitivity の helpfulness）</h4>
+      <p>
+        8 カテゴリ（Cyber Harm / Hate / Self Harm / Sexual / Illegal Content / Regulated Goods / Elections & Politics / CBRN）のうち <strong>5 カテゴリで Sonnet 4.6 を上下右に上回る</strong>。特に <strong>CBRN / Self Harm / Elections & Politics</strong> で大きく改善。
+      </p>
+
+      <h4>Jailbreak 評価（2.5K seed → 約 9.5K プロンプト）</h4>
+      <table>
+        <thead><tr><th>Transformation</th><th>MAI-Thinking-1</th><th>GPT 5.4</th><th>Opus 4.6</th><th>Sonnet 4.6</th></tr></thead>
+        <tbody>
+          <tr><td>Foundational Techniques</td><td>4.4%</td><td>17.4%</td><td>7.0%</td><td>26.8%</td></tr>
+          <tr><td>Compositional Techniques</td><td><strong>3.0%</strong></td><td>13.9%</td><td>5.7%</td><td>17.6%</td></tr>
+          <tr><td>Adaptive Techniques</td><td>15.0%</td><td>25.1%</td><td>26.4%</td><td>32.3%</td></tr>
+        </tbody>
+      </table>
+      <p>3 カテゴリすべてで <strong>Sonnet 4.6 / GPT 5.4 を下回る</strong>（=より安全）。Opus 4.6 と肩を並べるか上回る数値。</p>
+    </section>
+
+    <section id="s4">
+      <h2>4. Safety Red Teaming</h2>
+
+      <h3>4-1. 内部 Red Teaming</h3>
+      <ul>
+        <li>開発サイクル中、計 <strong>15 回</strong>の engagement で <strong>2,170+ シナリオ × 25 ポリシーカテゴリ</strong>を 5–10 ターンでテスト。</li>
+        <li>主な攻撃パターンは 6 種：(i) 善意の口実下での multi-turn escalation、(ii) フィクションのフレーミング、(iii) 資格職人(credentialed persona) の偽装、(iv) 漸進的な再帰・format drift、(v) 文脈中の年齢指標バイパス、(vi) 権威ある文書の捏造。</li>
+        <li>これらは個別 prompt ではなく <strong>pattern が durable な攻撃面</strong>。以降のサイクルでは <em>カバレッジ・チェックリスト</em>として使う。</li>
+        <li>fiction-framing による self-harm が突出して目立ったため、多言語版含めた seed-expansion で SFT/RL の safety mix を強化。</li>
+        <li><strong>主要な改善幅</strong>：aggregate ASR ≈ −22%、jailbreak ≈ −44%、hate & fairness ≈ −43%、child safety ≈ −30%、mental health ≈ −20%。</li>
+      </ul>
+
+      <h3>4-2. 独立 Red Teaming</h3>
+      <ul>
+        <li>Microsoft AI Red Team（AIRT）と外部ベンダーが、static eval が弱い領域（自動敵対攻撃、サイバー悪用、心理社会的・メンタルヘルス、多言語）を担当。</li>
+        <li><strong>TAP（Tree of Attacks with Pruning）</strong>に脆弱性が見つかったため、シナリオ生成 → 攻撃変換 → TAP refinement の closed-loop pipeline を構築し、SOTA 並みに改善。</li>
+        <li><strong>低リソース言語</strong>（Yoruba / Telugu / Amharic / Burmese / Khmer / Malay）で英語では拒否される内容が出力される問題に対し、多言語 adversarial seed を追加して有意に縮小。long tail の言語は今後の継続課題。</li>
+      </ul>
+    </section>
+
+    <section id="s5">
+      <h2>5. クラスタ環境と推論基盤</h2>
+
+      <h3>5-1. Training Cluster</h3>
+      <p>
+        MAI-Base-1 は単一サイトの <strong>8K GB200 GPU クラスタ</strong>で学習（NVL72 rack、cross-rack InfiniBand）。実験ノイズを抑えるため accelerator generation、rack health、scheduler、storage path はすべて同質に揃えた。
+      </p>
+
+      <h3>5-2. Stability / Determinism / Goodput</h3>
+      <ul>
+        <li>Goodput = <strong>理想 training duration / 実 wall-clock duration</strong>。これを <strong>第一級の運用 KPI</strong>として全 overhead カテゴリにオーナーと検出経路を割当。</li>
+        <li>visible failure（crashloop、node failure、link flap、OOM、checkpoint stall、manual requeue）と silent loss（MFU degradation、recomputation、長 startup、scheduler 遅延、network/memory 劣化）の双方を追跡。</li>
+        <li><strong>MAI-Base-1 pre-training は 8K GPU で goodput 90.0%、total overhead 51 時間</strong>。Recomputation は 6.5 時間（overhead の 15%）、non-stepping time 14 時間（27%）まで圧縮。MFU drop overhead が最大残課題（18h, 35%）。</li>
+      </ul>
+
+      <h3>5-3. 推論効率と MAIA-200 デプロイ</h3>
+      <p>
+        MAI-Thinking-1 は <strong>Microsoft の自社 AI アクセラレータ MAIA-200</strong>上で実装され、同じ rack 電力予算下で <strong>GB200 ベース比 40% 以上のトークン生成スループット</strong>を達成。性能/Watt 改善により大規模 inference の効率的な提供が可能に。
+      </p>
+
+      <h3>5-4. Sustainability ／ コミュニティ投資</h3>
+      <ul>
+        <li>2025 年に Microsoft はグローバル年間電力消費の <strong>100% を再エネ調達でマッチ</strong>。</li>
+        <li>MAI-Thinking-1 は主に <strong>Phoenix, AZ</strong>の LEED Gold 認証データセンターで学習。バックアップ発電機は再生可能ディーゼル燃料。</li>
+        <li>Community-First AI Infrastructure として、<strong>5,000 万ドル超</strong>を Phoenix 地域の水資源（市営貯水施設、上下水道延伸、Gila River Water Storage、Nature Conservancy 連携など）に投資。</li>
+        <li>Estrella Mountain / Glendale CC で Datacenter Academy を運営し人材育成も推進。</li>
+      </ul>
+    </section>
+
+    <section id="s6">
+      <h2>6. 結論と今後</h2>
+      <blockquote>
+        <strong>「MAI-Thinking-1 はゴールではなく出発点である」</strong>。Microsoft AI は、データ・インフラ・RL レシピ・評価のすべてを最適化する hill-climbing machine を、より多くのモダリティ・より大きなスケール・洗練された能力に拡張していく。
+      </blockquote>
+      <p>
+        AI の進歩は単一モデルではなく、<strong>「信頼できる形で改善できるパイプライン」</strong>の産物であるという思想が、レポート全体を貫いている。
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. 付録 A：事前学習データパイプライン詳細</h2>
+
+      <h3>A.1 Web HTML</h3>
+      <ul>
+        <li>独自クローラで <strong>約 1.2 兆ページ</strong>取得 → policy / adult / blocklist / UT1 list / AI 生成検出で <strong>794B → 423B → 73.4B 英語 + 116.5B 非英語</strong>に削減。</li>
+        <li>Common Crawl は約 300B → 100B → 最終 24.2B。最後に proprietary と統合し URL/コンテンツの fuzzy dedup を追加。</li>
+        <li>全 Web ページに <code>Qwen3-Embedding-0.6B</code> で embedding を計算し、用途別パイプラインへ。</li>
+      </ul>
+
+      <h4>用途別パイプライン</h4>
+      <ul>
+        <li><strong>一般 Web</strong>：属性モデル（教育価値・事実性・writing 品質・情報密度・推論内容・知識性）+ quality モデルで <strong>下位 70% を drop</strong>。Gopher-style heuristic 適用後、英語 4.6B（proprietary）+ 2.8B（CC）。さらに長文プロ品質コーパスを human-curated surface（雑誌・読み物・SNS 共有リンク）から構築。</li>
+        <li><strong>STEM</strong>：topic（7 binary classifier）× educational value × educational level の embedding 分類。式・コードを保持するため MathML/LaTeX を正規化 → Markdown 変換 → セクション単位で LLM が <em>keep/remove</em>。OpenWebMath 流の後処理。<strong>英語 STEM 680B（うち数学 76B） + 多言語 760B（うち数学 58B）</strong>。</li>
+        <li><strong>Code</strong>：STEM パイプライン流に CS topic 抽出。<code>Qwen3-30B</code> + GEPA/DSPy で最適化した judge を 2K 人手ラベルで微調整し品質スコアリング。<strong>約 233B トークン</strong>。</li>
+        <li><strong>Key domain</strong>：Wikipedia など重要源は <em>包含寄り</em>で抽出。</li>
+      </ul>
+
+      <h3>A.2 Web PDFs</h3>
+      <ul>
+        <li>クロール約 100 億ドキュメント → ヒューリスティック分類で 6.2 億 → <strong>Azure Document Intelligence</strong>で OCR。</li>
+        <li>OCR 後処理：式／表正規化、boilerplate 除去、glyph error 修正、line unwrapping、参考文献節除去。</li>
+        <li>SEO/スパム除去には PDF メタデータの <strong>"creator" / "producer" フィールド</strong>が高精度信号として有効。</li>
+        <li>Fuzzy dedup 後で <strong>英語 1.8T + 多言語 1.85T tokens</strong>。educational/non-educational に分類し、Math / CS / STEM / non-STEM × 高校／学部／院 にラベル付。</li>
+      </ul>
+
+      <h3>A.3 Books & Journals</h3>
+      <p>
+        プロバイダごとに専用 ingestion pipeline で正規テキストへ。OCR 整形 → ヒューリスティック → exact / title / fuzzy dedup → <strong>LLM がトピックと品質ラベルを付与</strong>して mixing に活用。
+      </p>
+
+      <h3>A.4 Public GitHub</h3>
+      <ul>
+        <li><strong>7.4T トークン</strong>を Files / Commits / PRs の 3 データセットに編成。</li>
+        <li>共通処理：junk フォルダ除外、生成物（<code>_pb2.py</code>、<code>.d.ts</code> 等）の検出除外、非コード除外、30K 文字超過 reject、SHA-512 exact dedup、MinHashLSH fuzzy dedup、<code>Qwen3-Embedding-0.6B</code> 1024 次元 cosine による semantic dedup、推論訓練・評価との decontamination、品質 bin。</li>
+        <li><strong>Files</strong>：StarCoder2 流フィルタ、repo の depth-first で連結 → <strong>1.26T tokens</strong>。</li>
+        <li><strong>Commits</strong>：repo ごとに最新 10K commit。pre-commit state を loss-mask prefix に、patch を git-diff or search-and-replace 形式で学習対象に → <strong>4.5T tokens</strong>。</li>
+        <li><strong>PRs</strong>：title / body / linked issues / reviews / threads / pre-commit state / constituent commits を結合。<strong>SWE-bench Verified の PR は除外</strong>。長すぎる prefix は線確率的に圧縮、256K 超は破棄 → <strong>1.19T tokens</strong>。</li>
+      </ul>
+    </section>
+
+    <section id="s8">
+      <h2>8. 付録 B：長文脈拡張（Long Context Extension）</h2>
+      <p>
+        256K の context window を達成するために、<strong>16K で pre-train → 64K で mid-train → 256K に短く拡張</strong>する staged アプローチを採用。
+      </p>
+
+      <h3>B.1 データ</h3>
+      <p>
+        long-doc up-weighting / domain ratio 変更などを試したが、いずれも目立った改善はなく、結局 <strong>前段と同じ mixture を 256K で再 pack</strong>するのが最良だった。
+      </p>
+
+      <h3>B.2 評価設定</h3>
+      <ul>
+        <li><strong>Code NLL</strong>：社内 repo の 256K チャンク。末尾 16K に対する prefix を 16K → 256K まで伸ばし、関連情報がどれだけ NLL を下げるかを測定。</li>
+        <li><strong>Retrieval NLL</strong>：standup ノート 32K を A/B に分割、間に無関係な設計文書を挿入して 256K まで延長。<em>距離が伸びても NLL がフラット</em>であれば長文脈に強い。</li>
+        <li><strong>Generative QA</strong>：内部リポジトリドキュメント上の QA。証拠位置と総文脈長で精度を測る。</li>
+      </ul>
+
+      <h3>B.3 Progressive Context Length Scaling</h3>
+      <ul>
+        <li>16K / 32K / 64K / 128K で 1T tokens の mid-training を別々に行うのと、32K で 1T tokens → 256K に約 100B tokens 追加で延長するのを比較。</li>
+        <li><strong>後者（progressive）が 128K context での NLL を 1T tokens の 128K mid-training と同等に達成</strong>。短文脈 quality も損なわない。</li>
+        <li>＝ <strong>「短い MFU-friendly な context で midtrain し、最後だけ短く延長」</strong>でよい。</li>
+      </ul>
+
+      <h3>B.4 Adaptation Speed</h3>
+      <p>
+        256K NLL の改善は <strong>extension iteration の最初の 1〜10% で大半</strong>が起きてプラトーに到達。新しい能力を獲得しているのではなく、位置・attention 機構の校正をしているだけ。
+      </p>
+
+      <h3>B.5 Final Recipe</h3>
+      <p>
+        最終モデルは <strong>64K mid-training + 140B tokens の 256K 拡張</strong>。さらに長い窓（1M トークン）にも同じ staged アプローチが modest cost で適用可能と見込んでいる。
+      </p>
+    </section>
+
+    <section id="s9">
+      <h2>9. 付録 C：推論トレースの進化（CoT Evolution）</h2>
+      <p>
+        蒸留に頼らずゼロから climb したからこそ、CoT の振る舞いがどう進化するかを clean に観察できる。
+      </p>
+
+      <h3>C.1 STEM CoT ― 「Weak guess、Strong work hard」</h3>
+      <p>
+        AIME 2024 の <em>$f(x) = \frac{(x-18)(x-72)(x-98)(x-k)}{x}$ が正実数で最小を取る k を求めよ</em> という問題（正解 240）に対し：
+      </p>
+      <ul>
+        <li><strong>弱い model</strong>：最小化点を「18, 72, 98」から推測し、$k=40, 152, 512$ といった spurious な候補を生む。</li>
+        <li><strong>強い model</strong>：4 つの代数候補 $k \in \{8, 32, 200, 512\}$ を derive し、$x>0$ ドメイン条件で 512 を除外、$8+32+200=240$ に到達。</li>
+      </ul>
+      <p>違いは <strong>最終 verification step での domain check</strong> にある。RL climb によってこのような <em>「最後まで丁寧に検証する」</em>振る舞いが獲得される。</p>
+
+      <h3>C.2 Agentic CoT</h3>
+      <p>
+        Agentic 側でも、climb が進むにつれ <strong>計画立案 → 道具呼出 → 観察 → 再計画</strong>のループがより簡潔で目的指向に変化する例が観察される。
+      </p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 付録 D〜F：エージェント関連ツール／スキーマ／インフラ</h2>
+
+      <h3>D. SWE Agent Tool Schema</h3>
+      <ul>
+        <li><strong>Bash tool</strong>：bash コマンドを実行して stdout/stderr を返す。</li>
+        <li><strong>String Replace Editor</strong>：ファイルを「exact 文字列の置換」で編集（bash の非エルゴノミックな編集を回避）。</li>
+        <li>これら 2 つだけで SWE エージェント環境を構成。</li>
+      </ul>
+
+      <h3>E. Instruction Following 制約 Taxonomy</h3>
+      <p>
+        論文では合成データ生成のシード taxonomy を、format（文字数・段落数・JSON など）・content（言語・トーン）・behavioral（指示優先順位、refusal）など多軸で整理。</p>
+
+      <h3>F. SWE 環境ビルド用インフラ</h3>
+      <ul>
+        <li>repository の build / test sandbox を <strong>SEE（Sandbox Execution Environment）</strong>上に大規模並列で展開。</li>
+        <li>network egress policy / CPU・メモリ制限 / 実行タイムアウトを統一して再現性を担保。</li>
+        <li>環境のメタデータ・grading script・golden patch を中央 store に永続化し、後段で再検証可能に。</li>
+      </ul>
+    </section>
+
+    <section id="s11">
+      <h2>11. 付録 G〜J：評価セットアップの詳細</h2>
+
+      <h3>G. STEM 評価セットアップ</h3>
+      <ul>
+        <li><strong>G.1 Math</strong>：AIME 2025 / 2026、HMMT Feb 2026（MathArena）。temperature 1.0、4-run pass@1。</li>
+        <li><strong>G.2 Science</strong>：GPQA Diamond（graduate-level Google-proof QA）。</li>
+        <li><strong>G.3 Competitive Coding</strong>：LiveCodeBench v6（最新の競技問題）。</li>
+      </ul>
+
+      <h3>H. Agentic Coding 評価</h3>
+      <ul>
+        <li>ReAct ループの上で <strong>SWE-bench Verified / SWE-Bench Pro</strong> は bash + string replace、<strong>Terminal-Bench 2.0</strong> は bash のみで実施。</li>
+        <li>infrastructure 起因の confounding を避けるため、Terminal-Bench 2.0 では predefined timeout を無視。</li>
+      </ul>
+
+      <h3>I. Safety 評価詳細</h3>
+      <ul>
+        <li>over-refusal benchmark：低リスク prompt に対して refusal/hedging/unjustified partial refusal を judge で flag、率を計上。</li>
+        <li>safety pass rate：高 sensitivity prompt の judge safety スコアが Likert 1–5 で <strong>&gt;3</strong> の割合。</li>
+        <li>Jailbreak suite：HarmBench、StrongREJECT、社内 red team、ベンダー seeds を augment して 9.5K 規模に。</li>
+      </ul>
+
+      <h3>J. 一般能力評価</h3>
+      <table>
+        <thead><tr><th>領域</th><th>採用ベンチマーク</th></tr></thead>
+        <tbody>
+          <tr><td>Knowledge</td><td>MMLU-Pro、SimpleQA Verified</td></tr>
+          <tr><td>Instruction Following</td><td>IFBench、AdvancedIF、MultiChallenge</td></tr>
+          <tr><td>Long Context</td><td>GraphWalks</td></tr>
+          <tr><td>Safety</td><td>AIR-Bench 2024、CyberSecEval 4</td></tr>
+          <tr><td>Honesty</td><td>TruthfulQA、LongFact</td></tr>
+          <tr><td>Health</td><td>HealthBench、MedXpertQA</td></tr>
+          <tr><td>Tool Calling</td><td>BFCL v3</td></tr>
+        </tbody>
+      </table>
+      <p>すべて Sonnet 4.6 を MAI 側評価スイートで再評価して横並びにしている。</p>
+    </section>
+
+    <section id="s12">
+      <h2>12. 付録 K：クラスタ環境の詳細</h2>
+
+      <h3>K.1 Hardware</h3>
+      <p>
+        NVIDIA H100 / GB200 / GB300 を併用する heterogeneous fleet。Pre-training run は <strong>単一サイトの GB200 クラスタ</strong>。GB200/GB300 は Microsoft first-party DC に <strong>NVL72 ラック単位</strong>でホスト、ラック内 72 GPU NVLink + ラック間 InfiniBand。H100 系は 8 GPU node。
+      </p>
+
+      <h3>K.2 Cluster Readiness / Certification</h3>
+      <p>
+        ノードは「provisioning されただけでは production プールに入れない」設計。<strong>3 段認証</strong>：
+      </p>
+      <ol>
+        <li><strong>Single-node diagnostics</strong>：GPU/CPU/HCA/NVLink/メモリを長時間 stress、ECC・throttle・clock 違反・link flap を検出。</li>
+        <li><strong>Rack-level multi-node NCCL collective</strong>で intra/inter node 通信を検証（健全ノードが 16 未満のラックは大規模ジョブから除外）。</li>
+        <li><strong>Cross-rack InfiniBand</strong>テストで spine / path diversity / RDMA 性能を確認（blast radius が大きいため on-demand）。</li>
+      </ol>
+      <p>
+        ノードは <em>Init → Certifying → Available → Impaired → Auto Remediating / Vendor Maintenance → Decommissioned</em> という閉ループの lifecycle で管理。
+      </p>
+
+      <h3>K.3 Scheduling / Orchestration / Control Plane</h3>
+      <ul>
+        <li>Kubernetes + Kueue（priority/quota/admission/preemption/topology-aware placement）+ MAI カスタムコントローラ + Ray の階層構造。</li>
+        <li>ラック断片化対策として <strong>soft rack reservation</strong>：キューに <em>preferred rack</em> を割当てつつ、必要時は <code>reclaimWithinCohort</code> で取り戻せる。</li>
+        <li>Ray actor を learner / inference server / rollout worker / router 用に明示的に配置・監視。</li>
+      </ul>
+
+      <h3>K.4 Observability / Telemetry / Fleet Monitoring</h3>
+      <ul>
+        <li>GPU XID・ECC・thermal・power・NVLink BER・IB device state・PCIe error 等を Kubernetes node condition に変換し <strong>schedule / drain / remediate</strong> に直結。</li>
+        <li>Job 状態は Kueue / K8s / Ray / training log / 実験 metadata を横串で参照可能。namespace / pod / job / restart index で絞り込み可能。</li>
+        <li>Telemetry スタックは <strong>Datadog（near-real-time）</strong>、<strong>Azure Managed Prometheus</strong>、<strong>Azure Data Explorer（long retention）</strong>を時間軸別に分担。</li>
+        <li>「ダッシュボードは制御ループの一部」という設計思想。</li>
+      </ul>
+    </section>
+
+    <section id="s13">
+      <h2>13. まとめ ― このレポートが伝えていること</h2>
+      <p>
+        本レポートは単に MAI-Thinking-1 という 1 つのモデルの紹介ではなく、<strong>「Microsoft AI が公開した最初の本格的 from-scratch 推論モデル」と「その背後にある hill-climbing machine」</strong>を、データ・アーキ・分散学習・RL・評価・安全・インフラまで含めて開示した <strong>technical disclosure</strong> である。
+      </p>
+      <ul>
+        <li><strong>蒸留に頼らずに合理的なコストで frontier-class を達成可能</strong>であることを、レシピレベルで示した。</li>
+        <li>そのために必要な要素として、<strong>Scaling Ladder / EG / NLL ベンチ / Dropless MoE / FP8 + FP32 hybrid / YOLO + Rocket / SEE / ASSERT 流の verifiable reward / safety-gated aggregator</strong> といったエコシステムが揃っていることを開示した。</li>
+        <li>あえて MAIA-200 を 1 段落だけ触れているのも特徴的で、<strong>自社シリコンが「推論経済性」のレバー</strong>であることを暗に示している。</li>
+        <li>結語にある <em>「MAI-Thinking-1 はスタート地点であって到達点ではない」</em>という言葉が、今後の MAI 開発の方向性を象徴する。</li>
+      </ul>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        出典: <a href="https://microsoft.ai/wp-content/uploads/2026/06/main_20260602_2.pdf" target="_blank" rel="noopener">microsoft.ai/.../main_20260602_2.pdf</a>
+        ／ 取得手段: curl + pdftotext ／ 生成日: 2026年6月6日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
+  <div class="diagram-modal-head">
+    <strong>Mermaid 図</strong>
+    <div class="diagram-modal-tools">
+      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
+      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
+    </div>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas"></div>
+  </div>
+</dialog>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  // KaTeX (auto-render) for math expressions
+  (function () {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';
+    document.head.appendChild(link);
+
+    const s1 = document.createElement('script');
+    s1.defer = true;
+    s1.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js';
+    document.head.appendChild(s1);
+
+    const s2 = document.createElement('script');
+    s2.defer = true;
+    s2.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js';
+    s2.onload = function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false }
+        ],
+        throwOnError: false
+      });
+    };
+    document.head.appendChild(s2);
+  })();
+</script>
+
+<script>
+  (function () {
+    const diagrams = document.querySelectorAll('.mermaid');
+    const dialog = document.getElementById('diagram-modal');
+    if (!diagrams.length || !dialog) return;
+
+    const canvas = dialog.querySelector('.diagram-modal-canvas');
+    const zoom = dialog.querySelector('#diagram-zoom');
+    const zoomValue = dialog.querySelector('#diagram-zoom-value');
+    const closeButton = dialog.querySelector('[data-close-diagram]');
+
+    const applyZoom = () => {
+      const value = Number(zoom.value) / 100;
+      canvas.style.setProperty('--diagram-zoom', String(value));
+      zoomValue.textContent = zoom.value + '%';
+    };
+
+    const openDiagram = (diagram) => {
+      canvas.innerHTML = '';
+      const clone = diagram.cloneNode(true);
+      clone.removeAttribute('role');
+      clone.removeAttribute('tabindex');
+      clone.removeAttribute('aria-label');
+      clone.removeAttribute('title');
+      canvas.appendChild(clone);
+      zoom.value = '120';
+      applyZoom();
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    };
+
+    diagrams.forEach((diagram) => {
+      diagram.setAttribute('role', 'button');
+      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+      diagram.setAttribute('title', 'クリックで拡大表示');
+      diagram.tabIndex = 0;
+      diagram.addEventListener('click', () => openDiagram(diagram));
+      diagram.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDiagram(diagram);
+        }
+      });
+    });
+
+    zoom.addEventListener('input', applyZoom);
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    const toc = document.getElementById('toc');
+    const sections = document.querySelectorAll('main section[id]');
+    const links = new Map();
+
+    sections.forEach((sec) => {
+      const h2 = sec.querySelector('h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+      toc.appendChild(li);
+      links.set(sec.id, a);
+
+      sec.querySelectorAll('h3').forEach((h3, i) => {
+        if (!h3.id) h3.id = sec.id + '-h3-' + i;
+        const subLi = document.createElement('li');
+        subLi.className = 'lvl-3';
+        const subA = document.createElement('a');
+        subA.href = '#' + h3.id;
+        subA.textContent = h3.textContent.trim();
+        subLi.appendChild(subA);
+        toc.appendChild(subLi);
+        links.set(h3.id, subA);
+      });
+    });
+
+    const targets = [
+      ...document.querySelectorAll('main section[id]'),
+      ...document.querySelectorAll('main h3[id]')
+    ];
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const a = links.get(entry.target.id);
+        if (!a) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    targets.forEach((t) => observer.observe(t));
+  })();
+</script>
+</body>
+</html>

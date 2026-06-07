@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Microsoft Build 2026 発表まとめ ― 製品・アップデート完全レポート</title>
+<meta name="description" content="2026年6月2日にサンフランシスコで開催された Microsoft Build 2026 で発表された製品・アップデートを、出典 URL 付きで日本語にまとめた非公式レポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 920px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; border-bottom: none; display: block; padding: 0; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  section h4 { font-size: 15px; margin: 16px 0 6px; }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  td a { word-break: break-word; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .status-badge { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .03em; }
+  .status-ga { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+  .status-preview { background: rgba(249,115,22,.12); color: var(--accent); border: 1px solid rgba(249,115,22,.3); }
+  .status-coming { background: rgba(96,165,250,.12); color: var(--link); border: 1px solid rgba(96,165,250,.3); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+    color: var(--text); padding: 4px 10px; cursor: pointer;
+  }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas {
+    --diagram-zoom: 1.2;
+    transform: scale(var(--diagram-zoom)); transform-origin: top left;
+    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
+  }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 ／ 製品・アップデート総まとめ</div>
+      <h1>Microsoft Build 2026 発表まとめ ― エージェント時代のフルスタックが揃った日</h1>
+      <p class="lead">
+        2026 年 6 月 2 日にサンフランシスコで開催された Microsoft の年次開発者カンファレンス
+        <strong>Microsoft Build 2026</strong> で発表された主要な製品・サービス・アップデートを、
+        出典 URL とともに日本語でまとめた非公式レポートです。
+      </p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>イベント</dt><dd>Microsoft Build 2026（開発者カンファレンス）</dd></div>
+      <div><dt>開催日</dt><dd>2026 年 6 月 2 日（基調講演）</dd></div>
+      <div><dt>会場</dt><dd>サンフランシスコ（米国）</dd></div>
+      <div><dt>主要登壇者</dt><dd>Satya Nadella（CEO）／Mustafa Suleyman（Microsoft AI CEO）／Jay Parikh／Pavan Davuluri／Steven Bathiche／Jensen Huang（NVIDIA）／Cristiano Amon（Qualcomm）</dd></div>
+      <div><dt>主な出典</dt><dd><a href="https://news.microsoft.com/build-2026/" target="_blank" rel="noopener">news.microsoft.com/build-2026/</a></dd></div>
+      <div><dt>基調講演トランスクリプト</dt><dd><a href="https://news.microsoft.com/source/wp-content/uploads/2026/06/06022026_Nadella_TRANSCRIPT_Build-Keynote.pdf" target="_blank" rel="noopener">Nadella Build Keynote 全文 (PDF)</a></dd></div>
+      <div><dt>取得手段</dt><dd>fetch_webpage（Microsoft 公式各種ブログ）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要テーマ</dt>
+        <dd class="badges">
+          <span class="badge">エージェント基盤</span>
+          <span class="badge">Microsoft IQ</span>
+          <span class="badge">MAI モデル</span>
+          <span class="badge">Microsoft Foundry</span>
+          <span class="badge">GitHub Copilot App</span>
+          <span class="badge">Windows × エージェント</span>
+          <span class="badge">Azure Cobalt 200</span>
+          <span class="badge">Majorana 2</span>
+          <span class="badge">Project Solara</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>キーワードは <strong>「エージェント・プラットフォーム」</strong>。Microsoft IQ（コンテキスト）、Foundry（実行）、Agent 365（統治）、GitHub（開発）、Windows／Surface（端末）を <strong>ひとつの統合システム</strong> として束ね、エンタープライズ・エージェントを構築・運用するための基盤が出揃った。</li>
+        <li>独自モデル <strong>MAI シリーズ 7 種</strong>（Thinking-1、Code-1-Flash、Image-2.5、Transcribe-1.5、Voice-2 ほか）を発表し、Foundry／OpenRouter／Fireworks／Baseten で配信。Mayo Clinic との医療フロンティアモデル共同開発も合意。</li>
+        <li>ハード／OS では <strong>Azure Cobalt 200</strong>（自社 Arm CPU、50% 性能向上）、<strong>Surface RTX Spark Dev Box</strong>、<strong>DGX Station for Windows</strong>、量子チップ <strong>Majorana 2</strong>（1,000 倍信頼性、2029 年に拡張可能な量子計算機を目指す）、エージェント特化端末構想 <strong>Project Solara</strong> を投入。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. イベント概要と 3 つの戦略テーマ</h2>
+      <p>
+        Microsoft Build 2026 は 2026 年 6 月 2 日、サンフランシスコで開催された。Satya Nadella の基調講演に続き、Microsoft AI CEO の Mustafa Suleyman が新モデル群を、Windows + Devices 担当 EVP の Pavan Davuluri が Windows プラットフォームを、Applied Sciences Group の Steven Bathiche が Project Solara を発表。NVIDIA の Jensen Huang、Qualcomm の Cristiano Amon、Mayo Clinic CEO の Gianrico Farrugia なども登壇した。
+      </p>
+      <p>
+        Microsoft が今回のメッセージの軸にしたのは、開発者向けに公開された GitHub の Kyle Daigle 名義の公式ブログで明示された <strong>3 つのテーマ</strong> である。
+      </p>
+
+      <div class="grid-cards">
+        <div class="card">
+          <h4>① Intelligence that's truly yours</h4>
+          <p>Microsoft Agent Platform × Microsoft IQ で、コンテキスト・ガバナンス・モデル選択をトレードオフなく統合した「自社のものになる知能」を提供する。</p>
+        </div>
+        <div class="card">
+          <h4>② The full stack, your way</h4>
+          <p>シリコン → OS → 開発ツール → クラウドまで、開発者が好きなツール・モデル・ワークフローで構築できる選択肢を、Windows を中心に拡張する。</p>
+        </div>
+        <div class="card">
+          <h4>③ The future belongs to builders</h4>
+          <p>エージェント基盤を、コードを超えて科学・量子・新しい端末形態にまで広げる。Microsoft Discovery GA、Majorana 2、Project Solara が代表例。</p>
+        </div>
+      </div>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://blogs.microsoft.com/blog/2026/06/02/microsoft-build-2026-be-yourself-at-work/" target="_blank" rel="noopener">Microsoft Build 2026: Be yourself at work（Official Microsoft Blog）</a> ／
+        <a href="https://blogs.microsoft.com/blog/2026/06/02/ai-alone-wont-change-your-business-the-system-running-it-will/" target="_blank" rel="noopener">AI alone won't change your business. The system running it will.（Jay Parikh, Microsoft）</a>
+      </p>
+    </section>
+
+    <section id="s2">
+      <h2>2. Microsoft Agent Platform ― 6 ステップの統合システム</h2>
+      <p>
+        Jay Parikh のブログで提示された、エンタープライズ向けエージェントを「単一の統合システム」として運用するための 6 ステップ。各層で発表されたプロダクトが連結する全体像になっている。
+      </p>
+
+      <div class="mermaid">
+flowchart LR
+  A["01 Build<br/>GitHub"] --> B["02 Contextualize<br/>Microsoft IQ"]
+  B --> C["03 Run<br/>Microsoft Foundry"]
+  C --> D["04 Govern<br/>Agent 365"]
+  D --> E["05 Improve<br/>Foundry Optimization"]
+  E --> F["06 Surface<br/>Teams / M365"]
+  F -.feedback.-> E
+      </div>
+
+      <table>
+        <thead><tr><th>ステップ</th><th>役割</th><th>主要プロダクト</th></tr></thead>
+        <tbody>
+          <tr><td>① Build（構築）</td><td>エージェントの設計・コード化・evals・観測性</td><td>GitHub Copilot App、Copilot SDK、Copilot CLI</td></tr>
+          <tr><td>② Contextualize（文脈付与）</td><td>業務データ・知識・Web で根拠付け</td><td>Microsoft IQ（Work IQ／Fabric IQ／Foundry IQ／Web IQ）、Frontier Tuning</td></tr>
+          <tr><td>③ Run（実行）</td><td>本番ランタイム・モデルルーター・ツール接続</td><td>Microsoft Foundry、Hosted Agents、Toolboxes、Voice Live、Fireworks AI on Foundry</td></tr>
+          <tr><td>④ Govern（統治）</td><td>カタログ・アクセス制御・ポリシー適用・コスト把握</td><td>Agent 365、Entra、Purview、Defender、ACS、ASSERT、MDASH</td></tr>
+          <tr><td>⑤ Improve（改善）</td><td>本番シグナルから継続的に学習</td><td>Foundry Optimizer、Agent Optimizer、Rubric、Tracing、ROI for agents</td></tr>
+          <tr><td>⑥ Surface（提供）</td><td>業務の現場へ配信</td><td>Microsoft Teams、Microsoft 365、Windows、Surface、Project Solara</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://blogs.microsoft.com/blog/2026/06/02/ai-alone-wont-change-your-business-the-system-running-it-will/" target="_blank" rel="noopener">AI alone won't change your business. The system running it will.</a>
+      </p>
+    </section>
+
+    <section id="s3">
+      <h2>3. Microsoft IQ ― エージェント向けの文脈レイヤー</h2>
+      <p>
+        Microsoft IQ は、エージェントを「世界の知識」と「組織の知識」の両方に接地（grounding）させる新しいコンテキストレイヤー。Build 2026 で <strong>GitHub Copilot／Microsoft Foundry／Copilot Studio で一般提供（GA）</strong> された。
+      </p>
+
+      <table>
+        <thead><tr><th>IQ ファミリー</th><th>役割</th><th>状態</th><th>出典</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Work IQ</strong></td>
+            <td>Microsoft 365、組織システム、外部ソース上の「実際の働き方」（人・メール・文書・会議とそのつながり）を捉える職場知能レイヤー。<strong>Work IQ API は 6/16 に GA 予定</strong>。</td>
+            <td><span class="status-badge status-ga">GA / API 6月16日 GA</span></td>
+            <td><a href="https://aka.ms/WorkIQAPI_GA" target="_blank" rel="noopener">aka.ms/WorkIQAPI_GA</a></td>
+          </tr>
+          <tr>
+            <td><strong>Fabric IQ</strong></td>
+            <td>構造化ビジネスデータ（Data Agents、Ontology、Semantic Models）に共有セマンティック基盤を提供。</td>
+            <td><span class="status-badge status-preview">Preview</span></td>
+            <td><a href="https://aka.ms/azure-data-Build26" target="_blank" rel="noopener">aka.ms/azure-data-Build26</a></td>
+          </tr>
+          <tr>
+            <td><strong>Foundry IQ</strong></td>
+            <td>企業知識と Web を横断する検索プランニング層。Knowledge Bases は GA、Serverless（Developer tier）は public preview、Foundry IQ MCP server で MCP 互換ホスト（Claude／ChatGPT／LangChain／Microsoft Agent Framework 等）から利用可能。</td>
+            <td><span class="status-badge status-ga">KB GA / Serverless Preview</span></td>
+            <td><a href="https://aka.ms/FoundryIQ" target="_blank" rel="noopener">aka.ms/FoundryIQ</a></td>
+          </tr>
+          <tr>
+            <td><strong>Web IQ</strong>（新）</td>
+            <td>エージェント向けの「AI ネイティブな Web 検索」。Bing インデックスをエージェント実行ループ向けに再設計した MCP 対応 API。<strong>P95 sub-165 ms</strong>、competitor 比 <strong>約 2.5 倍高速</strong>、ゼロデータリテンション、publisher preferences を尊重。</td>
+            <td><span class="status-badge status-preview">Limited Access</span></td>
+            <td><a href="https://aka.ms/nextgengrounding" target="_blank" rel="noopener">aka.ms/nextgengrounding</a>（<a href="https://aka.ms/WebIQ" target="_blank" rel="noopener">aka.ms/WebIQ</a>）</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Foundry IQ の主要更新</h3>
+      <ul>
+        <li><strong>Foundry IQ Serverless（Developer tier）</strong>：Compute Unit ベースの従量課金、アイドル時にゼロスケール。課金開始は 2026 年後半予定。</li>
+        <li><strong>新しい knowledge sources（preview）</strong>：Work IQ、Fabric IQ、File Search、Azure SQL、MCP Server をマルチソース KB で統合。</li>
+        <li><strong>Agentic retrieval 品質改善</strong>：回答品質ベンチマークを最大 20% 改善、single-shot RAG 比 <strong>recall を最大 54% 向上</strong>。</li>
+        <li><strong>Security 更新</strong>：cross-tenant CMK（federated identity）、Purview sensitivity-label auditing、incremental SharePoint permissions sync、APIM 統合、Shared Private Link / NSP は GA。</li>
+        <li><strong>Data pipeline</strong>：SharePoint ASPX / Lists の first-class インデックス、Azure Content Understanding chunking + image verbalization（preview）。</li>
+      </ul>
+    </section>
+
+    <section id="s4">
+      <h2>4. MAI モデル ― Microsoft AI 自社開発 7 モデル</h2>
+      <p>
+        Mustafa Suleyman 率いる Microsoft AI Superintelligence Team が、社内開発の 7 モデルからなる <strong>MAI ファミリー</strong> を発表。すべて <strong>ゼロ蒸留（zero distillation）／クリーンかつ商用ライセンス可能なデータ</strong> でゼロから学習。Foundry／GitHub Copilot／VS Code／PowerPoint／OneDrive に展開され、OpenRouter／Fireworks／Baseten 経由でも提供される。
+      </p>
+
+      <table>
+        <thead><tr><th>モデル</th><th>用途</th><th>特徴</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>MAI-Thinking-1</strong></td>
+            <td>推論／チャット／コーディング</td>
+            <td>35B アクティブパラメータの mid-size 推論モデル、<strong>256K コンテキスト</strong>。Blind test で Sonnet 4.6 を上回り、SWE Bench Pro で Opus 4.6 とコーディングが互角。Foundry で private preview。</td>
+          </tr>
+          <tr>
+            <td><strong>MAI-Code-1-Flash</strong></td>
+            <td>エージェント型コーディング</td>
+            <td>5B active parameters、Haiku 並み性能でより安価。GitHub Copilot／VS Code に深く統合。</td>
+          </tr>
+          <tr>
+            <td><strong>MAI-Image-2.5（+ Flash）</strong></td>
+            <td>画像生成・編集</td>
+            <td>text-to-image で Arena AI 3 位、<strong>image-to-image で 2 位（Nano Banana 2 を超え）</strong>。PowerPoint で稼働、OneDrive に展開中、Foundry で提供。</td>
+          </tr>
+          <tr>
+            <td><strong>MAI-Transcribe-1.5</strong></td>
+            <td>音声書き起こし</td>
+            <td><strong>43 言語</strong>で SOTA 精度、競合比 5 倍高速。speaker diarization と domain-specific terminology biasing 対応。ストリーミング対応近日。</td>
+          </tr>
+          <tr>
+            <td><strong>MAI-Voice-2（+ Flash 近日）</strong></td>
+            <td>テキスト読み上げ</td>
+            <td><strong>15 言語</strong>の自然な音声生成、短いサンプルから音声をクローン可能。新しい voice options 追加。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Microsoft AI は同時に、目標として <strong>「Humanist Superintelligence（人間中心の超知能）」</strong> を掲げ、独自シリコン Maia 200 と組み合わせて <strong>1.4 倍の効率向上</strong> を達成済みであることも公表した。
+      </p>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://microsoft.ai/news/building-a-hillclimbing-machine-launching-seven-new-mai-models/" target="_blank" rel="noopener">Building a hill-climbing machine: Launching seven new MAI models（Microsoft AI）</a> ／
+        <a href="https://aka.ms/MAI-Build" target="_blank" rel="noopener">aka.ms/MAI-Build</a>
+      </p>
+
+      <h3>Mayo Clinic との医療フロンティアモデル共同開発</h3>
+      <p>
+        Microsoft と Mayo Clinic は、Mayo Clinic の臨床知見・de-identified 臨床データ・長期インサイトと、Microsoft の基盤 AI を組み合わせた <strong>医療向けフロンティアモデル</strong> を共同開発すると発表。まず Mayo Clinic 環境内で診断・治療計画を支援し、検証後に Azure Foundry 経由で他組織にも提供。モデルの所有権は Mayo Clinic 側に残る。
+      </p>
+    </section>
+
+    <section id="s5">
+      <h2>5. Microsoft Foundry の Build 2026 アップデート</h2>
+      <p>
+        Microsoft Foundry は、本番エージェントに必要な「ランタイム・ツール・メモリ・知識・モデル・観測性・統治」のすべてを揃えるプラットフォーム。Build 2026 では特に <strong>本番エージェントのホスティング、ツール接続、メモリ、評価／統治</strong> が前進した。
+      </p>
+
+      <h3>5-1. 開発者ツールと SDK</h3>
+      <ul>
+        <li><strong>Microsoft Agent Framework</strong>：エージェントハーネス（skills／memory／middleware）、GitHub Copilot SDK／Claude Agent SDK 連携、Magentic-One ほかマルチエージェント・オーケストレーション・パターンが <span class="status-badge status-ga">Stable</span>。File system tools／memory tools／deep research agent は <span class="status-badge status-preview">Public Preview</span>。</li>
+        <li><strong>Foundry Toolkit for VS Code</strong>：テンプレートまたは GitHub Copilot からエージェントを生成、ローカル debug、Toolboxes 連携、Foundry Agent Service へ deploy。<span class="status-badge status-ga">GA</span></li>
+      </ul>
+
+      <h3>5-2. エージェント本番運用</h3>
+      <ul>
+        <li><strong>Hosted Agents in Foundry Agent Service</strong>：セッションごとの sandbox、専用 compute／memory／filesystem。<strong>2026 年 7 月初頭に GA 予定</strong>。Responses API（OpenAI 互換）と Invocations protocol（schema-free）両対応。OpenClaw／Hermes 等の long-running 自律エージェントもサポート。<strong>Routines</strong>（タイマー／スケジュール）も preview。</li>
+        <li><strong>Toolboxes in Foundry</strong>：あらゆるツール種別を 1 つの managed エンドポイントに集約、認証・ライフサイクル・統治を Foundry が引き受け。<span class="status-badge status-preview">Public Preview</span></li>
+        <li><strong>Skills（preview）</strong>：プロジェクトスコープのカタログで version 管理、MCP リソースとして発見可能。Tool search も preview。</li>
+        <li><strong>Voice Live</strong>：音声認識・TTS・割り込み処理・アバター等を 1 API に統合。Prompt agents 向けは <span class="status-badge status-ga">GA</span>、Hosted Agents + Voice Live は <span class="status-badge status-preview">Public Preview</span>。</li>
+        <li><strong>Memory in Foundry Agent Service（preview）</strong>：<em>Procedural Memory</em>（新／Tau-bench で +7〜14% 絶対成功率向上）／User Memory／Session Memory の 3 種類。</li>
+        <li><strong>Microsoft Teams / Microsoft 365 Copilot への publish</strong>：あらゆる Foundry エージェントを Teams や M365 Copilot に直接配置可能。<strong>2026 年 6 月に GA 予定</strong>。</li>
+      </ul>
+
+      <h3>5-3. モデルとコンピュート</h3>
+      <ul>
+        <li><strong>新 MAI モデル群</strong>：Thinking-1／Image-2.5／Transcribe-2／Voice-2 が Foundry catalog で public preview に。</li>
+        <li><strong>Fireworks AI on Foundry</strong>：オープンモデル推論を単一 Azure エンドポイントから提供。<span class="status-badge status-ga">GA</span>、PTU Data Zone 対応、SOC 2 ready。</li>
+        <li><strong>Managed Compute in Foundry Models</strong>：リージョン GPU 制約を回避し、グローバルにワークロードをルーティング。</li>
+        <li><strong>Fine-tuning / Frontier Tuning</strong>：<strong>GPT-5.5 比で 10 倍以上コスト効率</strong>（技術ドキュメント生成タスク）。Frontier Tuning は private preview。</li>
+      </ul>
+
+      <h3>5-4. 信頼・観測性・セキュリティ</h3>
+      <ul>
+        <li><strong>ASSERT</strong>：ポリシーを実行可能な評価に変換する OSS フレームワーク。LangChain／CrewAI／LightLLM／OpenAI 等に対応。<a href="https://aka.ms/assert" target="_blank" rel="noopener">aka.ms/assert</a></li>
+        <li><strong>Agent Control Specification（ACS）</strong>：input／LLM／state／tool execution／output の 5 チェックポイントで decisive な制御を定義するオープン業界仕様。YAML で portable。Infosys／KPMG／IBM／Aviatrix／BigSpin／CrewAI 等が参画。</li>
+        <li><strong>Guided Guardrail Setup</strong>：質問形式で PII フィルタ／jailbreak 保護／task adherence などを自動推奨。<span class="status-badge status-preview">Public Preview</span></li>
+        <li><strong>Rubric evaluator</strong>：エージェント定義から評価基準を自動生成し、重み付き集約スコアを Agent Optimizer に供給。</li>
+        <li><strong>Tracing & Evaluations for any framework</strong>：LangChain／Semantic Kernel／カスタム framework のエージェントにも Foundry の production-grade tracing を適用。</li>
+        <li><strong>Agent Optimizer in Foundry Agent Service</strong>：Foundry の評価スイートを AI Operations Service 内で実行し、本番シグナルから ranked な改善案にループ。近日 public preview。</li>
+        <li><strong>ROI for agents in Foundry（private preview）</strong>：task completion rate、time saved、cost efficiency を計測。</li>
+        <li><strong>Codename MDASH</strong>：100+ エージェントを deploy する <strong>multi-model agentic security system</strong>。data flow／business logic／exploit chains を推論して exploitable bugs を発見、Defender Portal で context-aware fixes を提供。</li>
+      </ul>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/FoundryBuildNews" target="_blank" rel="noopener">What's new in Microsoft Foundry | Build Edition</a> ／
+        <a href="https://aka.ms/BuildFoundryAgents" target="_blank" rel="noopener">aka.ms/BuildFoundryAgents</a> ／
+        <a href="https://aka.ms/FoundryIQ" target="_blank" rel="noopener">aka.ms/FoundryIQ</a>
+      </p>
+    </section>
+
+    <section id="s6">
+      <h2>6. GitHub Copilot ― エージェントネイティブ開発体験</h2>
+      <p>
+        GitHub の Chief Product Officer Mario Rodriguez が公開したブログで、エージェント時代の開発体験を全面再設計した <strong>GitHub Copilot app</strong> と関連アップデートが発表された。Microsoft 全体の中でも、最も実装が進んでいる「Build（構築）」レイヤーの主役にあたる。
+      </p>
+
+      <h3>6-1. GitHub Copilot app（technical preview）</h3>
+      <ul>
+        <li>エージェントネイティブなデスクトップ体験。Pro／Pro+／Business／Enterprise ユーザーが対象。</li>
+        <li><strong>My Work</strong> ビューで、接続済みリポジトリ横断のセッション・issue・PR・background automations を一元管理。</li>
+        <li>各セッションは独立した <strong>git worktree</strong> で隔離実行。手動セットアップやブランチ管理不要。</li>
+        <li><strong>Agent Merge</strong>：CI／reviewer／checks を監視し、設定した条件まで PR を自動運用。<strong>Copilot Max</strong>（Pro／Pro+／EDU からのアップグレード）で大量利用に対応。</li>
+      </ul>
+
+      <h3>6-2. Canvas ― 意図を検査可能な作業面に</h3>
+      <p>
+        チャット履歴ではなく、計画／PR／ブラウザセッション／ターミナル／ダッシュボード等を <strong>双方向に編集できる canvas</strong> を提供。エージェントは canvas を更新し、開発者はその場で承認・並び替え・redirect できる（agent experience = AX）。
+      </p>
+
+      <h3>6-3. Cloud and Local Sandboxes for GitHub Copilot</h3>
+      <ul>
+        <li><strong>Local sandboxes</strong>：ファイルシステム・ネットワーク・システム機能のアクセスを制限した分離環境で Copilot を実行。中央でポリシー設定可。</li>
+        <li><strong>Cloud sandboxes</strong>：GitHub がホストする完全分離・ephemeral な Linux 環境。任意のデバイスから session を継続できる remote control 対応。</li>
+      </ul>
+
+      <h3>6-4. Copilot code review の拡張</h3>
+      <ul>
+        <li><strong>Medium tier review</strong>：高推論モデルで PR をレビューし精度・recall を向上。リポジトリ別に low / medium を設定可能。</li>
+        <li><strong>カスタム agent skills、MCP server connection、Actions workflows</strong> でレビュー基準を組織標準に拡張可。</li>
+        <li><code>/security-review</code> skill、<code>/rubberduck</code> skill（GA、複数モデルで実装を批評）。</li>
+        <li><strong>Azure DevOps でも Copilot code review がネイティブに利用可能</strong>に。</li>
+      </ul>
+
+      <h3>6-5. ひとつのランタイム：SDK・CLI・cloud agent</h3>
+      <ul>
+        <li><strong>GitHub Copilot SDK</strong>：Node.js／TypeScript／Python／Go／.NET／Rust／Java で <span class="status-badge status-ga">GA</span>。Copilot app と同じ agentic runtime を利用。</li>
+        <li><strong>Copilot CLI</strong>：TUI を刷新、<strong>voice input</strong>（on-device speech-to-text、音声はマシンから出ない）、<code>/every</code> による定期タスク。</li>
+        <li><strong>Copilot cloud agent</strong>：schedule／GitHub events トリガで issue 起票やコメント返信。デフォルトで write 前に確認、信頼後に autopilot へ。</li>
+        <li><strong>Memory++ と <code>/chronicle</code></strong>：アプリ・CLI・VS Code・GitHub にまたがるセッション履歴の継続参照。</li>
+        <li><strong>Partner agent apps</strong>：LaunchDarkly、Bright、Amplitude、Sonar、Endor Labs、Octopus Deploy、Packfiles、PagerDuty、Miro 等。</li>
+      </ul>
+
+      <h3>6-6. ハイブリッド compute と GitHub Copilot CLI <code>/fleet</code></h3>
+      <p>
+        GitHub Copilot CLI の <code>/fleet</code> で、クラウド上の primary agent が計画を立て、タスクの複雑度を評価し、ローカルモデルで処理可能なものを自動で local subagent に委譲。<strong>Surface RTX Spark Dev Box などローカル compute を活かしてコスト削減</strong>。
+      </p>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://github.blog/news-insights/product-news/github-copilot-app-the-agent-native-desktop-experience/" target="_blank" rel="noopener">GitHub Copilot app: The agent-native desktop experience（GitHub Blog）</a>
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. Windows ― エージェントを開発・実行する最も信頼されるプラットフォーム</h2>
+      <p>
+        Pavan Davuluri が発表した Windows プラットフォームのアップデートは、<strong>「Windows for developers, period.」</strong>（Windows 開発者のための Windows ではなく、すべての開発者のための Windows）を掲げ、開発者体験、エージェント実行基盤、オンデバイス AI の 3 つを大幅に強化。
+      </p>
+
+      <h3>7-1. 開発者最適化された Windows 11 体験</h3>
+      <table>
+        <thead><tr><th>項目</th><th>内容</th><th>状態</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Coreutils for Windows</strong></td><td>Rust 製の GNU Coreutils 互換 CLI 群（uutils ベース）。Linux／macOS／WSL／コンテナ／クラウド間でコマンドを統一。</td><td><span class="status-badge status-ga">GA</span></td></tr>
+          <tr><td><strong>WSL containers</strong></td><td>Windows 上で Linux コンテナを built-in で実行する CLI／API。IT 管理者向けの policy-based 制御。</td><td><span class="status-badge status-coming">Public Preview 近日</span></td></tr>
+          <tr><td><strong>Windows Developer Configurations</strong></td><td><code>dev-config.winget</code> 1 行で VS Code／GitHub Copilot／WSL／PowerShell 7／Git／GitHub CLI／Python と開発者向け設定を一括導入。</td><td><span class="status-badge status-ga">GA</span></td></tr>
+          <tr><td><strong>Intelligent Terminal</strong></td><td>ACP（Agent Communication Protocol）で agent CLI を Windows Terminal に統合。失敗コマンドの修正提案を agent pane に表示。</td><td><span class="status-badge status-preview">Experimental</span></td></tr>
+          <tr><td><strong>Windows Development Skills</strong></td><td>WinUI3 skills + winapp CLI でエージェントにネイティブ Windows app 構築の知識を付与。</td><td><span class="status-badge status-ga">GA</span></td></tr>
+          <tr><td><strong>Windows 365 with Developer configuration</strong></td><td>クラウド PC として、同じ開発者向け構成を提供。</td><td><span class="status-badge status-preview">Public Preview</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>7-2. エージェントを安全に実行する OS 基盤</h3>
+      <ul>
+        <li><strong>Microsoft Execution Containers（MXC）</strong>：policy-driven な実行レイヤー。開発者がファイル／ネットワーク等のアクセスを宣言、Windows が runtime で強制。GitHub Copilot CLI が <strong>fast process isolation</strong> を採用済み。Process／session isolation は Windows Insider に近日提供。<a href="https://github.com/microsoft/mxc" target="_blank" rel="noopener">github.com/microsoft/mxc</a></li>
+        <li><strong>Agent 365 と MXC のネイティブ統合</strong>：Defender／Entra／Intune／Purview 保護を 2026 年 7 月に preview で適用、ローカルエージェントを企業ガバナンス配下に。</li>
+        <li><strong>OpenClaw on Windows</strong>：node／gateway を MXC で contained 実行、Windows companion app から claws を管理。</li>
+        <li><strong>NVIDIA OpenShell on Windows</strong>：MXC ベースの autonomous agent runtime に policy management／inference routing／PII obfuscation を追加。</li>
+        <li><strong>Windows 365 for Agents</strong>：Intune-managed Cloud PC で computer-using agent を実行。<span class="status-badge status-ga">GA</span></li>
+        <li><strong>Hermes Agent / Manus / OpenAI Codex</strong> が MXC を採用または評価中。</li>
+      </ul>
+
+      <h3>7-3. オンデバイス AI ― Unmetered Intelligence on Windows</h3>
+      <ul>
+        <li><strong>Aion 1.0 Instruct</strong>：Windows 既存 SLM より小型・高速・効率的。summarization／rewrite／intents／accessibility 用途。Edge Insider channels で preview 配布、7 月に Hugging Face で open weights 公開予定。</li>
+        <li><strong>Aion 1.0 Plan</strong>：<strong>14B パラメータの reasoning + tool-calling モデル（32K コンテキスト）</strong>。capable device に in-box 提供、フルローカルなエージェントワークフローを実現。</li>
+        <li><strong>Speech Recognition API</strong>：on-device の real-time / batch speech-to-text。NPU／CPU で実行可能。最初は英語のみ、順次拡大。</li>
+        <li><strong>Windows AI APIs を CPU／GPU に拡大</strong>：既存 inbox SLM（Phi Silica）が capable GPU で動作、Video Super Resolution / Speech Recognition が CPU 対応に。<span class="status-badge status-preview">Public Preview</span></li>
+        <li><strong>Microsoft Foundry on Windows</strong>：ローカル AI を Foundry 経由で組み込む経路を提供。</li>
+      </ul>
+
+      <h3>7-4. Windows のセキュリティ強化（デフォルトで risk を下げる）</h3>
+      <ul>
+        <li>Post-Quantum Cryptography（PQC）：Windows TLS の PQ hybrid key exchange、CNG API での composite PQC アルゴリズム、ADCS による PQ 証明書発行。</li>
+        <li>IAKerb と LocalKDC を Windows Insider Preview の Server / Client で設定可能に。NTLM 利用削減。</li>
+        <li>Windows Hardware Compatibility Program（WHCP）認証ドライバをデフォルト化する staged transition。</li>
+        <li>Smart App Control と App Control for Business の reputation-based enforcement を拡張。</li>
+      </ul>
+
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://blogs.windows.com/windowsdeveloper/2026/06/02/build-2026-furthering-windows-as-the-trusted-platform-for-development/" target="_blank" rel="noopener">Build 2026: Furthering Windows as the trusted platform for development（Windows Blog）</a>
+      </p>
+    </section>
+
+    <section id="s8">
+      <h2>8. ハードウェア ― 開発者専用デバイスとエージェント特化端末</h2>
+
+      <h3>8-1. Surface RTX Spark Dev Box</h3>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">1 PFLOP</div><div class="label">AI 計算性能（FP4 sparsity）</div></div>
+        <div class="stat-card"><div class="num">128 GB</div><div class="label">CPU/GPU 共有 unified memory</div></div>
+        <div class="stat-card"><div class="num">120B</div><div class="label">ローカル実行可能な LLM パラメータ</div></div>
+        <div class="stat-card"><div class="num">1M tokens</div><div class="label">エージェントの context window</div></div>
+      </div>
+      <p>
+        NVIDIA RTX Spark 搭載、長時間学習・エージェントパイプライン・ローカル fine-tuning 向けに設計。WSL2 にネイティブ GPU passthrough と CUDA を pre-configure、VS Code／GitHub Copilot／Intelligent Terminal／Coreutils が初期インストール。アルミ削り出しの 3D プリントボディに 1,000 個の通気孔（1,000 TFLOPS を象徴）。<strong>2026 年内に米国 Microsoft.com で発売予定</strong>。
+      </p>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://www.microsoft.com/en-us/surface/devices/surface-rtx-spark-dev-box" target="_blank" rel="noopener">Surface RTX Spark Dev Box（公式ページ）</a>
+      </p>
+
+      <h3>8-2. DGX Station for Windows</h3>
+      <p>
+        <strong>NVIDIA GB300 Grace Blackwell Ultra Superchip</strong> を Windows プラットフォームに統合した、deskside の AI スーパーコンピュータ。<strong>最大 1 兆パラメータのフロンティアモデルをローカル実行可能</strong>、常時起動の frontier AI エージェントを企業内アプリ／ワークフローに接続できる。<strong>2026 年 Q4 提供予定</strong>。
+      </p>
+
+      <h3>8-3. Project Solara ― エージェント特化デバイス向けプラットフォーム</h3>
+      <p>
+        Steven Bathiche（Applied Sciences Group）が発表した、<strong>「アプリ中心」から「エージェント中心」へと computing を再設計する chip-to-cloud プラットフォーム</strong>。just-in-time UI（適応的に生成される UI）、企業向け manageability／identity／security を組み込み、複数エージェントを共存させる open multi-agent 世界を前提とする。
+      </p>
+      <ul>
+        <li>OS 基盤：<strong>Microsoft Device Ecosystem Platform（MDEP）</strong>（AOSP ベースの enterprise OS）、Intune、Entra ID、Hello for Business、物理マイクミュート等。</li>
+        <li><strong>2 つのリファレンス端末コンセプト</strong>：
+          <ul>
+            <li><strong>Badge concept（携帯型／Qualcomm wearable シリコン）</strong>：タッチスクリーン、指紋認証、far-field マイクアレイ、サイドカメラ、5G／WiFi／Bluetooth／GNSS。胸元バッジの形態で常時エージェントを携帯。</li>
+            <li><strong>Desk concept（据置型／MediaTek IoT シリコン）</strong>：タッチスクリーン、顔認証、UWB プレゼンスセンサー、デュアル far-field マイク。USB-C 接続で Windows 365 Client へ変身可。</li>
+          </ul>
+        </li>
+        <li><strong>パイロット参加企業</strong>：AccuWeather、Best Buy、CVS Health、Levi's、Target ほか。</li>
+        <li><strong>シリコンパートナー</strong>：Qualcomm（wearable）／MediaTek（stationary）。</li>
+        <li>Microsoft 内では <strong>Microsoft 365 Copilot（voice）／Researcher／Facilitator／Priority Agent</strong>、外部では GitHub Copilot や Dragon Copilot が活用を検討。</li>
+      </ul>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://commandline.microsoft.com/project-solara-build-2026/" target="_blank" rel="noopener">Composing a new platform for agent-first devices（Command Line）</a> ／ <a href="https://aka.ms/ProjectSolara" target="_blank" rel="noopener">aka.ms/ProjectSolara</a>
+      </p>
+    </section>
+
+    <section id="s9">
+      <h2>9. Azure Cobalt 200 ― 自社 Arm CPU の第 2 世代</h2>
+      <p>
+        Azure 自社設計の cloud-native CPU の第 2 世代 <strong>Azure Cobalt 200 Arm-based VMs</strong> が早期アクセスプレビューで提供開始。Cobalt 100 比で 50% の世代間性能向上を実現し、agentic AI ワークロードに最適化。
+      </p>
+
+      <h3>9-1. Cobalt 200 SoC の主要スペック</h3>
+      <ul>
+        <li>Arm Neoverse V3 ベース、TSMC 3nm（N3P）プロセス、chiplet アーキテクチャ。</li>
+        <li>1 コアあたり <strong>3 MB の L2 cache</strong>、システム全体 192 MB の L3 cache。</li>
+        <li>カスタムアクセラレータ（圧縮・暗号）、カスタムメモリコントローラ、<strong>メモリ暗号化をデフォルト有効化</strong>。</li>
+        <li>最大 <strong>128 vCPU</strong>、Azure Boost 統合により remote storage IOPS +20%／throughput +10%、NW 帯域 +15%。</li>
+      </ul>
+
+      <h3>9-2. 世代間性能向上（vs Cobalt 100）</h3>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">+50%</div><div class="label">CPU 性能</div></div>
+        <div class="stat-card"><div class="num">+135%</div><div class="label">クラウド DB ワークロード</div></div>
+        <div class="stat-card"><div class="num">+80%</div><div class="label">キャッシング</div></div>
+        <div class="stat-card"><div class="num">+45%</div><div class="label">通信暗号化</div></div>
+        <div class="stat-card"><div class="num">+40%</div><div class="label">Web サービング</div></div>
+      </div>
+
+      <h3>9-3. 新 VM ファミリー</h3>
+      <table>
+        <thead><tr><th>ファミリー</th><th>vCPU</th><th>メモリ比</th><th>主な用途</th></tr></thead>
+        <tbody>
+          <tr><td>General Purpose Dplsv7 / Dpldsv7</td><td>1–128</td><td>2:1</td><td>microservices／small DB／cache／game server</td></tr>
+          <tr><td>General Purpose Dpsv7 / Dpdsv7</td><td>1–128</td><td>4:1</td><td>web／app server／中規模 DB</td></tr>
+          <tr><td>Memory Optimized Epsv7 / Epdsv7</td><td>1–128</td><td>8:1</td><td>大規模 RDB／NoSQL、Redis／Memcached</td></tr>
+          <tr><td><strong>（新）High Memory Mpsv4 / Mpdsv4</strong></td><td>1–84</td><td>16:1</td><td>巨大 in-memory DB／ERP／analytics</td></tr>
+          <tr><td><strong>（新）Storage Optimized Lpsv5</strong></td><td>1–128</td><td>8:1</td><td>local NVMe 必須のデータ前処理、big data／search index</td></tr>
+        </tbody>
+      </table>
+
+      <h3>9-4. 提供リージョン（preview）</h3>
+      <p>
+        West US3、East US2、Central US、Sweden Central、East US、West US2、Spain Central、Indonesia Central。Teradata／Elastic／Arm／Canonical／Microsoft Defender for Endpoint／Dataverse／Azure SQL Database が早期検証中。
+      </p>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/Cobalt200VMs" target="_blank" rel="noopener">New Azure Cobalt 200 VMs deliver 50% performance improvement（Azure Blog）</a>
+      </p>
+    </section>
+
+    <section id="s10">
+      <h2>10. データ・データベース・分析プラットフォーム</h2>
+
+      <h3>10-1. Azure HorizonDB（public preview）</h3>
+      <p>
+        新しい <strong>エンタープライズ対応 Postgres 互換 DB サービス</strong>。Microsoft Entra ID 統合、プライベートエンドポイント、保存／通信暗号化、Postgres 拡張エコシステムへの完全互換に加え、AI 時代の機能をネイティブ統合。
+      </p>
+      <ul>
+        <li><strong>最大 128 TB の DB、最大 15 read replica、サブミリ秒の AZ 跨ぎコミットレイテンシ</strong>。比較対象の自己管理セットアップに対し 3 倍以上のスループット。</li>
+        <li><strong>DiskANN + spherical quantization</strong> による高速・省メモリの vector search を Postgres に統合。</li>
+        <li><strong>Hybrid search</strong>：pgvector + pg_textsearch 拡張で semantic + keyword 検索を 1 クエリに。</li>
+        <li><strong>AI モデル管理</strong>：GPT モデル／ランキングモデルを DB と並走で登録・バージョン管理。</li>
+        <li><strong>AI Functions（azure_ai 拡張）</strong>：SQL／アプリロジックから直接モデル推論を呼び出し。</li>
+        <li><strong>AI Pipelines</strong>：データ変更をトリガに event-driven なモデル実行・データ処理。VS Code 拡張で可視化。</li>
+        <li>提供リージョン（preview 開始）：Australia East、Central US、Sweden Central、West US 2、West US 3。今後 East US、Canada Central、Indonesia Central、Italy North、Japan East、Korea Central、Poland Central。</li>
+      </ul>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/HorizonDB-Build-blog" target="_blank" rel="noopener">Azure HorizonDB: Enterprise-Ready Postgres, Engineered for the AI Era</a>
+      </p>
+
+      <h3>10-2. Rayfin ― AI ファーストなアプリケーションバックエンド</h3>
+      <p>
+        Microsoft Fabric 上で動作する <strong>open-source SDK + CLI</strong>。データモデル／API／アクセスポリシー／ビジネスロジックをコードで定義し、Fabric へ deploy するだけで enterprise-grade のアプリバックエンドが構築される。GitHub Copilot などのコーディングエージェントが scaffold・拡張できるよう strongly typed。<strong>Replit と統合</strong>し、Replit でビルドしたアプリを Fabric tenant に deploy する経路を提供。Leatherman などが先行採用。
+      </p>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/rayfin-blog" target="_blank" rel="noopener">Introducing Rayfin（Microsoft Fabric Community Blog）</a> ／ <a href="https://aka.ms/rayfin" target="_blank" rel="noopener">aka.ms/rayfin</a>
+      </p>
+
+      <h3>10-3. Microsoft Fabric / Databases の Build 関連発表</h3>
+      <ul>
+        <li><strong>GPU Accelerated Fabric Data Warehouse</strong>：エージェントアプリ向けに DWH を GPU 加速。<a href="https://aka.ms/GPUAcceleratedFabricDW" target="_blank" rel="noopener">aka.ms/GPUAcceleratedFabricDW</a></li>
+        <li><strong>Agentic retrieval and memory toolkits for Azure Cosmos DB</strong>：<a href="https://aka.ms/build26/CosmosDBAgents" target="_blank" rel="noopener">aka.ms/build26/CosmosDBAgents</a></li>
+        <li><strong>Building agentic apps with Microsoft Fabric and Microsoft Databases</strong> ハブ記事：<a href="https://aka.ms/Azure-Data-Build26" target="_blank" rel="noopener">aka.ms/Azure-Data-Build26</a></li>
+        <li><strong>Managed File Shares（MFS）GA</strong>：<a href="https://aka.ms/MFS/GA" target="_blank" rel="noopener">aka.ms/MFS/GA</a></li>
+        <li><strong>Azure Files on macOS with Microsoft Entra ID</strong>：<a href="https://aka.ms/azurefilesmacos" target="_blank" rel="noopener">aka.ms/azurefilesmacos</a></li>
+      </ul>
+    </section>
+
+    <section id="s11">
+      <h2>11. Microsoft Discovery（GA）と Majorana 2 ― 次のフロンティア</h2>
+
+      <h3>11-1. Microsoft Discovery がエンタープライズ GA</h3>
+      <p>
+        Azure 上の <strong>科学ワークフロー向け agentic AI プラットフォーム</strong>が一般提供開始。BHP が銅 leaching の解決策発見を「年単位→月単位」に短縮、Syensqo が半導体 R&D を加速、GSK が創薬を反復。<strong>無料の Discovery local app</strong> も発表され、GitHub Copilot アカウントだけで利用可能（preview）。
+      </p>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/MicrosoftDiscoveryBlog" target="_blank" rel="noopener">aka.ms/MicrosoftDiscoveryBlog</a>
+      </p>
+
+      <h3>11-2. Majorana 2 ― トポロジカル量子プロセッサの第 2 世代</h3>
+      <p>
+        Microsoft Quantum の次世代量子チップ <strong>Majorana 2</strong> を発表。AI 支援で設計された新材料スタック（<strong>アルミ → 鉛</strong>、半導体に InAs + InAsSb）でトポロジカル位相を安定化。
+      </p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">1,000×</div><div class="label">前世代比の qubit 信頼性</div></div>
+        <div class="stat-card"><div class="num">20 sec</div><div class="label">平均 qubit 寿命（最大 1 分超）</div></div>
+        <div class="stat-card"><div class="num">100 万</div><div class="label">手のひらサイズチップで目指す qubit 数</div></div>
+        <div class="stat-card"><div class="num">2029</div><div class="label">スケーラブルな量子計算機の到達目標年</div></div>
+      </div>
+      <ul>
+        <li>従来の Majorana 1 で 1〜12 ms だった qubit 寿命を 20 秒超に延ばし、トポロジカルギャップが 2 倍以上に拡大。</li>
+        <li>DARPA の Quantum Benchmarking Initiative（US2QC プログラム）の最終フェーズで Microsoft が選定済み。</li>
+        <li><strong>scalable quantum machine の到達目標を 2029 年に半減</strong>（従来予定の半分の期間で）。</li>
+      </ul>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/m2blog" target="_blank" rel="noopener">Majorana 2 – Microsoft's Scalable Quantum Processor（Microsoft Quantum）</a> ／ <a href="https://aka.ms/AA10vjcq" target="_blank" rel="noopener">Source blog: Majorana 2 を AI で設計した話</a>
+      </p>
+    </section>
+
+    <section id="s12">
+      <h2>12. Microsoft Scout と Autopilots ― 仕事のための新パーソナルエージェント</h2>
+      <p>
+        Microsoft IQ と OpenClaw をベースに、<strong>Microsoft Scout</strong>（コードネーム Project Lobster）が Frontier 顧客向けに提供開始。Teams や Outlook など既存ツールを通じて、ミーティング準備、スケジュール調整、ルーティンタスクを <strong>能動的（聞き返さずに）</strong> 処理する常時稼働型エージェント。基調講演では <strong>Autopilots</strong> として一連の自律エージェントも紹介された。
+      </p>
+      <p style="font-size: 13.5px; color: var(--text-dim);">
+        出典：<a href="https://aka.ms/ProjectLobster-Blog" target="_blank" rel="noopener">aka.ms/ProjectLobster-Blog</a>
+      </p>
+    </section>
+
+    <section id="s13">
+      <h2>13. 主要パートナーシップ</h2>
+      <table>
+        <thead><tr><th>パートナー</th><th>登場した発表</th></tr></thead>
+        <tbody>
+          <tr><td><strong>NVIDIA</strong>（Jensen Huang）</td><td>RTX Spark（Surface RTX Spark Dev Box）、GB300（DGX Station for Windows）、OpenShell on Windows（MXC ベース）</td></tr>
+          <tr><td><strong>Qualcomm</strong>（Cristiano Amon）</td><td>Project Solara の wearable／portable リファレンス端末向け Snapdragon シリコン</td></tr>
+          <tr><td><strong>MediaTek</strong></td><td>Project Solara の stationary 端末向け IoT シリコン</td></tr>
+          <tr><td><strong>Mayo Clinic</strong>（Gianrico Farrugia）</td><td>医療向けフロンティア AI モデルの共同開発、Mayo 環境への deploy 後 Azure Foundry で提供</td></tr>
+          <tr><td><strong>OpenAI</strong></td><td>Codex を MXC で execute する pattern を共同検証</td></tr>
+          <tr><td><strong>OpenClaw</strong></td><td>Node／Gateway を Windows + MXC で contained 実行、専用 companion app 提供</td></tr>
+          <tr><td><strong>Hermes / Nous Research</strong>（Dillon Rolnick CEO）</td><td>常時稼働ローカルエージェント Hermes Agent が OpenShell + MXC を採用</td></tr>
+          <tr><td><strong>Manus</strong>（Tao Zhang CPO）</td><td>MXC を採用した自律エージェントの enterprise deploy</td></tr>
+          <tr><td><strong>Fireworks AI</strong></td><td>Foundry 上で GA、open model 推論を単一 Azure エンドポイントから</td></tr>
+          <tr><td><strong>Replit</strong>（Amjad Masad CEO）</td><td>Rayfin と統合し、Replit ビルドのアプリを Fabric tenant に deploy</td></tr>
+          <tr><td><strong>Avanade</strong>（David Jobling）</td><td>GitHub Copilot app の Forward Deployed Engineer 活用事例</td></tr>
+          <tr><td><strong>Teradata／Elastic／Arm／Canonical</strong></td><td>Azure Cobalt 200 VMs の早期 preview パートナー</td></tr>
+          <tr><td><strong>BHP／Syensqo／GSK</strong></td><td>Microsoft Discovery の活用事例</td></tr>
+          <tr><td><strong>AccuWeather／Best Buy／CVS Health／Levi's／Target</strong></td><td>Project Solara のプライベートパイロット</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s14">
+      <h2>14. 状態別マトリックス ― GA / Preview / Coming</h2>
+      <table>
+        <thead><tr><th>区分</th><th>項目</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="status-badge status-ga">GA / 提供開始</span></td>
+            <td>
+              Microsoft IQ（GitHub Copilot／Foundry／Copilot Studio）、Foundry IQ Knowledge Bases、Microsoft Agent Framework（stable）、Foundry Toolkit for VS Code、Voice Live（prompt agents）、Fireworks AI on Foundry、Microsoft Discovery、Coreutils for Windows、Windows Developer Configurations、Windows Development Skills、Windows 365 for Agents、Microsoft IQ、Azure Files MFS、Copilot SDK（複数言語）
+            </td>
+          </tr>
+          <tr>
+            <td><span class="status-badge status-preview">Public / Limited / Private Preview</span></td>
+            <td>
+              MAI-Thinking-1（Foundry, private preview）、MAI モデル群（Foundry catalog public preview）、Frontier Tuning（private preview）、Web IQ、Foundry IQ Serverless（Developer tier）、Hosted Agents、Toolboxes、Skills、Memory in Foundry、Voice Live（Hosted Agents）、Rubric、Tracing for any framework、ROI for agents（private）、Codename MDASH、Azure HorizonDB、Azure Cobalt 200 VMs、MXC（early preview）、Intelligent Terminal（experimental）、Windows 365 with Developer configuration、Aion 1.0 Instruct（Edge Insider）、Speech Recognition API、Windows AI APIs（CPU/GPU）、GitHub Copilot app（technical preview）、Discovery local app、Microsoft Scout（Frontier 顧客）
+            </td>
+          </tr>
+          <tr>
+            <td><span class="status-badge status-coming">予告／近日</span></td>
+            <td>
+              Hosted Agents in Foundry Agent Service <strong>2026年7月初頭 GA</strong>、Microsoft Teams / M365 Copilot への publish <strong>2026年6月 GA</strong>、Work IQ API <strong>2026年6月16日 GA</strong>、Agent 365 + MXC 統合（2026年7月 preview）、WSL Containers、Agent Optimizer in Foundry、Microsoft AI for Mayo Clinic モデル、Surface RTX Spark Dev Box <strong>2026年内発売</strong>、DGX Station for Windows <strong>2026年 Q4</strong>、Aion 1.0 Instruct OSS <strong>2026年7月 Hugging Face</strong>、Project Solara のパイロット拡大
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s15">
+      <h2>15. まとめ ― 「単一のエージェントシステム」を成立させる年</h2>
+      <p>
+        Microsoft Build 2026 の発表を俯瞰すると、過去数年で散発的に投入してきた要素（Foundry、Agent 365、Copilot、IQ、Windows、Surface、Azure シリコン、量子）が、<strong>「エンタープライズエージェントを構築・運用するためのひとつの統合システム」</strong>として整列した年だったといえる。
+      </p>
+      <ul>
+        <li><strong>「自社のものになる知能」</strong>として、Microsoft IQ（Work／Fabric／Foundry／Web）と Frontier Tuning が、企業のデータと業務を学習できる仕組みを提供。</li>
+        <li><strong>「フルスタックを好きなように」</strong>として、Windows（MXC、Aion、Intelligent Terminal、Coreutils）と Foundry（Hosted Agents、Toolboxes、Voice Live、Memory）が、ローカル／クラウド／IDE／CLI のあらゆる流儀に対応。</li>
+        <li><strong>「次のフロンティア」</strong>として、Project Solara（端末）、Majorana 2（量子）、Microsoft Discovery（科学）、Mayo Clinic 連携（医療）、Maia 200 + GB200 / GB300（コンピュート）が、開発者プラットフォームを越えた未来軸を提示。</li>
+      </ul>
+      <p>
+        セキュリティとガバナンスの面でも、<strong>ASSERT / ACS / MDASH</strong> など open standard と OSS を組み合わせ、エンタープライズ／開発者コミュニティ両方を巻き込む姿勢が強い。MAI モデルの「ゼロ蒸留」と Mayo Clinic との「モデル所有権は顧客側」など、責任ある AI に関する明示的なメッセージも一貫している。
+      </p>
+    </section>
+
+    <section id="s16">
+      <h2>16. 参考リンク集</h2>
+
+      <h3>ハブ・基調講演</h3>
+      <ul>
+        <li><a href="https://news.microsoft.com/build-2026/" target="_blank" rel="noopener">Microsoft Build 2026 公式ハブ（news.microsoft.com）</a></li>
+        <li><a href="https://news.microsoft.com/source/wp-content/uploads/2026/06/06022026_Nadella_TRANSCRIPT_Build-Keynote.pdf" target="_blank" rel="noopener">Nadella 基調講演 全文トランスクリプト（PDF）</a></li>
+        <li><a href="https://build.microsoft.com/en-US/home" target="_blank" rel="noopener">Microsoft Build セッションカタログ</a></li>
+        <li><a href="https://aka.ms/microsoft-build-2026-live-blog" target="_blank" rel="noopener">Microsoft Build Live Blog</a></li>
+        <li><a href="https://commandline.microsoft.com/" target="_blank" rel="noopener">Command Line（Microsoft 開発者向けブログ）</a></li>
+      </ul>
+
+      <h3>戦略・コンセプト</h3>
+      <ul>
+        <li><a href="https://blogs.microsoft.com/blog/2026/06/02/microsoft-build-2026-be-yourself-at-work/" target="_blank" rel="noopener">Microsoft Build 2026: Be yourself at work（Kyle Daigle）</a></li>
+        <li><a href="https://blogs.microsoft.com/blog/2026/06/02/ai-alone-wont-change-your-business-the-system-running-it-will/" target="_blank" rel="noopener">AI alone won't change your business. The system running it will.（Jay Parikh）</a></li>
+      </ul>
+
+      <h3>Microsoft IQ / Foundry</h3>
+      <ul>
+        <li><a href="https://aka.ms/FoundryBuildNews" target="_blank" rel="noopener">What's new in Microsoft Foundry | Build Edition</a></li>
+        <li><a href="https://aka.ms/BuildFoundryAgents" target="_blank" rel="noopener">Build Foundry Agents 概要</a></li>
+        <li><a href="https://aka.ms/FoundryIQ" target="_blank" rel="noopener">Foundry IQ</a> ／ <a href="https://aka.ms/FoundryIQ-new" target="_blank" rel="noopener">Foundry IQ 詳細</a></li>
+        <li><a href="https://aka.ms/nextgengrounding" target="_blank" rel="noopener">Microsoft Web IQ 発表（Bing Blog）</a> ／ <a href="https://aka.ms/WebIQ" target="_blank" rel="noopener">Web IQ サイト</a></li>
+        <li><a href="https://aka.ms/WorkIQAPI_GA" target="_blank" rel="noopener">Work IQ API GA</a></li>
+        <li><a href="https://aka.ms/azure-data-Build26" target="_blank" rel="noopener">Fabric IQ / Building agentic apps with Fabric and Databases</a></li>
+        <li><a href="https://aka.ms/frontiertuningblog" target="_blank" rel="noopener">Frontier Tuning</a></li>
+        <li><a href="https://aka.ms/BuildFoundryModels" target="_blank" rel="noopener">Fireworks AI on Foundry / Model lifecycle</a></li>
+        <li><a href="https://aka.ms/Build2026HostedAgents" target="_blank" rel="noopener">Hosted Agents</a> ／ <a href="https://aka.ms/Build2026Toolbox" target="_blank" rel="noopener">Toolboxes</a> ／ <a href="https://aka.ms/Build2026FoundryMemory" target="_blank" rel="noopener">Foundry Memory</a></li>
+        <li><a href="https://aka.ms/speech_build2026" target="_blank" rel="noopener">Voice Live</a></li>
+        <li><a href="https://aka.ms/BuildFoundryRAI" target="_blank" rel="noopener">Responsible AI（ASSERT / ACS / Rubric / Guided Guardrail Setup）</a> ／ <a href="https://aka.ms/assert" target="_blank" rel="noopener">ASSERT GitHub</a> ／ <a href="https://aka.ms/AgentControlSpecification" target="_blank" rel="noopener">Agent Control Specification</a></li>
+        <li><a href="https://aka.ms/Build2026/SecureLocalAgents" target="_blank" rel="noopener">Agent 365 for local agents</a></li>
+        <li><a href="https://aka.ms/AgenticDevSecOps" target="_blank" rel="noopener">Codename MDASH</a></li>
+      </ul>
+
+      <h3>MAI モデル</h3>
+      <ul>
+        <li><a href="https://microsoft.ai/news/building-a-hillclimbing-machine-launching-seven-new-mai-models/" target="_blank" rel="noopener">Building a hill-climbing machine: Launching seven new MAI models</a></li>
+        <li><a href="https://microsoft.ai/news/introducing-mai-thinking-1/" target="_blank" rel="noopener">MAI-Thinking-1</a></li>
+        <li><a href="https://microsoft.ai/news/introducingmai-code-1-flash/" target="_blank" rel="noopener">MAI-Code-1-Flash</a></li>
+        <li><a href="https://microsoft.ai/news/introducing-mai-image-2-5/" target="_blank" rel="noopener">MAI-Image-2.5</a></li>
+        <li><a href="https://microsoft.ai/news/mai-transcribe-1-5more-accurate-context-aware-and-built-for-production/" target="_blank" rel="noopener">MAI-Transcribe-1.5</a></li>
+        <li><a href="https://microsoft.ai/news/mai-voice-2expressive-speech-in-10-languages/" target="_blank" rel="noopener">MAI-Voice-2</a></li>
+      </ul>
+
+      <h3>GitHub Copilot</h3>
+      <ul>
+        <li><a href="https://github.blog/news-insights/product-news/github-copilot-app-the-agent-native-desktop-experience/" target="_blank" rel="noopener">GitHub Copilot app: The agent-native desktop experience</a></li>
+        <li><a href="https://github.com/github/app" target="_blank" rel="noopener">GitHub Copilot app（リポジトリ）</a></li>
+        <li><a href="https://github.com/features/ai/github-app" target="_blank" rel="noopener">GitHub Copilot app（製品ページ）</a></li>
+        <li><a href="https://github.com/microsoft/Build-CLI" target="_blank" rel="noopener">microsoft/Build-CLI（Build セッション × GitHub Copilot CLI）</a></li>
+      </ul>
+
+      <h3>Windows / Surface / デバイス</h3>
+      <ul>
+        <li><a href="https://blogs.windows.com/windowsdeveloper/2026/06/02/build-2026-furthering-windows-as-the-trusted-platform-for-development/" target="_blank" rel="noopener">Build 2026: Furthering Windows as the trusted platform for development</a></li>
+        <li><a href="https://github.com/microsoft/mxc" target="_blank" rel="noopener">Microsoft Execution Containers（MXC）</a></li>
+        <li><a href="https://github.com/microsoft/coreutils" target="_blank" rel="noopener">Coreutils for Windows</a></li>
+        <li><a href="https://github.com/microsoft/WindowsDeveloperConfig/" target="_blank" rel="noopener">Windows Developer Configurations</a></li>
+        <li><a href="https://github.com/microsoft/wsl" target="_blank" rel="noopener">WSL（オープンソース）</a></li>
+        <li><a href="https://github.com/openclaw/openclaw-windows-node" target="_blank" rel="noopener">OpenClaw Windows Node</a></li>
+        <li><a href="https://aka.ms/Windows-Build2026" target="_blank" rel="noopener">Windows × OpenClaw 連携</a></li>
+        <li><a href="https://www.microsoft.com/en-us/surface/devices/surface-rtx-spark-dev-box" target="_blank" rel="noopener">Surface RTX Spark Dev Box</a></li>
+        <li><a href="https://commandline.microsoft.com/project-solara-build-2026/" target="_blank" rel="noopener">Project Solara（Command Line）</a> ／ <a href="https://aka.ms/ProjectSolara" target="_blank" rel="noopener">aka.ms/ProjectSolara</a></li>
+        <li><a href="https://aka.ms/aion-prerelease-in-edge-blog" target="_blank" rel="noopener">Aion 1.0 Instruct on Edge Insider</a></li>
+      </ul>
+
+      <h3>Azure インフラ・データ</h3>
+      <ul>
+        <li><a href="https://aka.ms/Cobalt200VMs" target="_blank" rel="noopener">Azure Cobalt 200 VMs</a> ／ <a href="https://aka.ms/Cobalt200VMs-signup" target="_blank" rel="noopener">早期アクセス申込</a></li>
+        <li><a href="https://aka.ms/HorizonDB-Build-blog" target="_blank" rel="noopener">Azure HorizonDB</a> ／ <a href="https://aka.ms/HorizonDB-documentation" target="_blank" rel="noopener">ドキュメント</a></li>
+        <li><a href="https://aka.ms/rayfin-blog" target="_blank" rel="noopener">Introducing Rayfin</a> ／ <a href="https://aka.ms/rayfin/GH" target="_blank" rel="noopener">Rayfin GitHub</a> ／ <a href="https://aka.ms/replitfabric" target="_blank" rel="noopener">Replit × Fabric</a></li>
+        <li><a href="https://aka.ms/GPUAcceleratedFabricDW" target="_blank" rel="noopener">GPU Accelerated Fabric Data Warehouse</a></li>
+        <li><a href="https://aka.ms/build26/CosmosDBAgents" target="_blank" rel="noopener">Azure Cosmos DB エージェント機能</a></li>
+        <li><a href="https://aka.ms/MFS/GA" target="_blank" rel="noopener">Managed File Shares GA</a> ／ <a href="https://aka.ms/azurefilesmacos" target="_blank" rel="noopener">Azure Files on macOS + Entra ID</a></li>
+      </ul>
+
+      <h3>研究・量子・Discovery</h3>
+      <ul>
+        <li><a href="https://aka.ms/m2blog" target="_blank" rel="noopener">Majorana 2（Microsoft Quantum）</a> ／ <a href="https://aka.ms/AA10vjcq" target="_blank" rel="noopener">Source: Majorana 2 を AI で設計</a></li>
+        <li><a href="https://aka.ms/MicrosoftDiscoveryBlog" target="_blank" rel="noopener">Microsoft Discovery（GA 発表）</a></li>
+        <li><a href="https://aka.ms/ProjectLobster-Blog" target="_blank" rel="noopener">Microsoft Scout（Project Lobster）</a></li>
+      </ul>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        主な出典: <a href="https://news.microsoft.com/build-2026/" target="_blank" rel="noopener">news.microsoft.com/build-2026/</a> ほか各種 Microsoft 公式ブログ ／ 取得手段: fetch_webpage ／ 生成日: 2026年6月4日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
+  <div class="diagram-modal-head">
+    <strong>Mermaid 図</strong>
+    <div class="diagram-modal-tools">
+      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
+      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
+    </div>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas"></div>
+  </div>
+</dialog>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  (function () {
+    const diagrams = document.querySelectorAll('.mermaid');
+    const dialog = document.getElementById('diagram-modal');
+    if (!diagrams.length || !dialog) return;
+
+    const canvas = dialog.querySelector('.diagram-modal-canvas');
+    const zoom = dialog.querySelector('#diagram-zoom');
+    const zoomValue = dialog.querySelector('#diagram-zoom-value');
+    const closeButton = dialog.querySelector('[data-close-diagram]');
+
+    const applyZoom = () => {
+      const value = Number(zoom.value) / 100;
+      canvas.style.setProperty('--diagram-zoom', String(value));
+      zoomValue.textContent = zoom.value + '%';
+    };
+
+    const openDiagram = (diagram) => {
+      canvas.innerHTML = '';
+      const clone = diagram.cloneNode(true);
+      clone.removeAttribute('role');
+      clone.removeAttribute('tabindex');
+      clone.removeAttribute('aria-label');
+      clone.removeAttribute('title');
+      canvas.appendChild(clone);
+      zoom.value = '120';
+      applyZoom();
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    };
+
+    diagrams.forEach((diagram) => {
+      diagram.setAttribute('role', 'button');
+      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+      diagram.setAttribute('title', 'クリックで拡大表示');
+      diagram.tabIndex = 0;
+      diagram.addEventListener('click', () => openDiagram(diagram));
+      diagram.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDiagram(diagram);
+        }
+      });
+    });
+
+    zoom.addEventListener('input', applyZoom);
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    const toc = document.getElementById('toc');
+    const sections = document.querySelectorAll('main section[id]');
+    const links = new Map();
+
+    sections.forEach((sec) => {
+      const h2 = sec.querySelector('h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+      toc.appendChild(li);
+      links.set(sec.id, a);
+
+      sec.querySelectorAll('h3').forEach((h3, i) => {
+        if (!h3.id) h3.id = sec.id + '-h3-' + i;
+        const subLi = document.createElement('li');
+        subLi.className = 'lvl-3';
+        const subA = document.createElement('a');
+        subA.href = '#' + h3.id;
+        subA.textContent = h3.textContent.trim();
+        subLi.appendChild(subA);
+        toc.appendChild(subLi);
+        links.set(h3.id, subA);
+      });
+    });
+
+    const targets = [
+      ...document.querySelectorAll('main section[id]'),
+      ...document.querySelectorAll('main h3[id]')
+    ];
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const a = links.get(entry.target.id);
+        if (!a) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    targets.forEach((t) => observer.observe(t));
+  })();
+</script>
+</body>
+</html>

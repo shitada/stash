@@ -130,7 +130,42 @@
   .mermaid {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px; margin: 18px 0;
-    text-align: center; overflow-x: auto;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px;
+  }
+
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+    color: var(--text); padding: 4px 10px; cursor: pointer;
+  }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas {
+    --diagram-zoom: 1.2;
+    transform: scale(var(--diagram-zoom)); transform-origin: top left;
+    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
+  }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
   }
 
   footer.page {
@@ -538,10 +573,76 @@ flowchart LR
   </main>
 </div>
 
+<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
+  <div class="diagram-modal-head">
+    <strong>Mermaid 図</strong>
+    <div class="diagram-modal-tools">
+      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
+      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
+    </div>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas"></div>
+  </div>
+</dialog>
+
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
   const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
   mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  (function () {
+    const diagrams = document.querySelectorAll('.mermaid');
+    const dialog = document.getElementById('diagram-modal');
+    if (!diagrams.length || !dialog) return;
+
+    const canvas = dialog.querySelector('.diagram-modal-canvas');
+    const zoom = dialog.querySelector('#diagram-zoom');
+    const zoomValue = dialog.querySelector('#diagram-zoom-value');
+    const closeButton = dialog.querySelector('[data-close-diagram]');
+
+    const applyZoom = () => {
+      const value = Number(zoom.value) / 100;
+      canvas.style.setProperty('--diagram-zoom', String(value));
+      zoomValue.textContent = zoom.value + '%';
+    };
+
+    const openDiagram = (diagram) => {
+      canvas.innerHTML = '';
+      const clone = diagram.cloneNode(true);
+      clone.removeAttribute('role');
+      clone.removeAttribute('tabindex');
+      clone.removeAttribute('aria-label');
+      clone.removeAttribute('title');
+      canvas.appendChild(clone);
+      zoom.value = '120';
+      applyZoom();
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    };
+
+    diagrams.forEach((diagram) => {
+      diagram.setAttribute('role', 'button');
+      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+      diagram.setAttribute('title', 'クリックで拡大表示');
+      diagram.tabIndex = 0;
+      diagram.addEventListener('click', () => openDiagram(diagram));
+      diagram.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDiagram(diagram);
+        }
+      });
+    });
+
+    zoom.addEventListener('input', applyZoom);
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
 </script>
 
 <script>
