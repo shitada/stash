@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Windows ML と Microsoft Foundry on Windows ― ローカル AI 開発の全体像</title>
+<meta name="description" content="Microsoft Build 2026 セッション BRK260 の内容に加え、Windows ML、Windows AI APIs、Foundry Local、WebNN、DirectML の公式情報と過去経緯を参照してまとめた非公式日本語レポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 920px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; border-bottom: none; display: block; padding: 0; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  section h4 { font-size: 15px; margin: 16px 0 6px; }
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  td a { word-break: break-word; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+  .status-badge { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .03em; }
+  .status-ga { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+  .status-preview { background: rgba(249,115,22,.12); color: var(--accent); border: 1px solid rgba(249,115,22,.3); }
+  .status-note { background: rgba(96,165,250,.12); color: var(--link); border: 1px solid rgba(96,165,250,.3); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); padding: 4px 10px; cursor: pointer; }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas { --diagram-zoom: 1.2; transform: scale(var(--diagram-zoom)); transform-origin: top left; width: calc(100% / var(--diagram-zoom)); min-width: 720px; }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
+  }
+  footer.page { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 BRK260 / Windows ML</div>
+      <h1>Windows ML と Microsoft Foundry on Windows ― ローカル AI 開発の全体像</h1>
+      <p class="lead">
+        Microsoft Build 2026 のセッション「Build Apps w/ Local AI for Unmetered Intelligence on every Windows PC」の内容を軸に、
+        公式ドキュメントと過去の Windows ML / DirectML の位置づけも参照しながら、Windows ML で何ができるのかを日本語で整理した非公式レポートです。
+      </p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>主出典</dt><dd><a href="https://www.youtube.com/watch?v=vzMXOmZXSJ8" target="_blank" rel="noopener">Build Apps w/ Local AI for Unmetered Intelligence on every Windows PC | BRK260</a></dd></div>
+      <div><dt>チャンネル</dt><dd>Microsoft Developer</dd></div>
+      <div><dt>公開日</dt><dd>2026-06-04</dd></div>
+      <div><dt>長さ</dt><dd>41分59秒</dd></div>
+      <div><dt>登壇者</dt><dd>Anastasiya Tarnouskaya / Aditi Narvekar / Clipchamp / Voicemod</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（英語字幕 + info.json） / fetch_webpage（公式資料）</dd></div>
+      <div><dt>補足出典</dt><dd><a href="https://aka.ms/build26/BRK260" target="_blank" rel="noopener">BRK260 GitHub リソース</a> / <a href="https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/overview" target="_blank" rel="noopener">Windows ML docs</a></dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要テーマ</dt>
+        <dd class="badges">
+          <span class="badge">Windows ML</span>
+          <span class="badge">Windows AI APIs</span>
+          <span class="badge">Foundry Local</span>
+          <span class="badge">WebNN</span>
+          <span class="badge">ONNX Runtime</span>
+          <span class="badge">CPU / GPU / NPU</span>
+          <span class="badge">ローカル AI</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li><strong>Windows ML は「Windows が保守する ONNX Runtime + ハードウェア別 Execution Provider」を中核にしたローカル推論基盤</strong>。CPU、GPU、NPU を抽象化し、Windows Update / EP カタログ経由で各ベンダー最適化をアプリに届ける。</li>
+        <li><strong>Microsoft Foundry on Windows は 3 層構成</strong>。既製機能なら Windows AI APIs、一般的な OSS モデルなら Foundry Local、独自・変換済み ONNX モデルなら Windows ML を使う。Web アプリは WebNN + ONNX Runtime Web で Windows ML の加速を受けられる。</li>
+        <li>Build 2026 では、AI APIs の CPU/GPU 拡大、Foundry Local GA、Windows ML CLI preview、Windows ML 2.0、WebNN preview、実運用事例（Clipchamp / Voicemod / Adobe / Canva Affinity / Speechify など）が示され、ローカル AI が実験段階から本番配布の段階へ進んだ。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. まず結論: Windows ML は何のためのものか</h2>
+      <p>
+        Windows ML は、Windows 上で AI モデルをローカル実行するための統一推論フレームワークである。公式ドキュメントでは、
+        <strong>ONNX Runtime を基盤に、NPU / GPU / CPU 上の推論を Windows が管理する Execution Provider（EP）で加速する仕組み</strong> と説明されている。
+        旧来の「WinML」という高レベル API だけを指すより広い意味で、2026 年時点の Windows ML は、ONNX Runtime、DirectML、ベンダー EP、Windows App SDK、モデル配布、開発ツールを含む「Windows 向けローカル AI の実行基盤」と考えると理解しやすい。
+      </p>
+      <p>
+        セッションの合言葉は <strong>Unmetered Intelligence</strong>。つまり、すべてをクラウド API に送るのではなく、ユーザーの PC 上の GPU / NPU / CPU を使って、
+        トークン課金、ネットワーク依存、データ持ち出しを減らすという発想である。登壇者は「1 billion Windows devices」を対象に、日常的な Windows PC を AI-capable にしていくと説明した。
+      </p>
+
+      <div class="grid-cards">
+        <div class="card"><h4>プライバシー</h4><p>音声、画像、文書、企業データを端末内で処理し、クラウドに送らない設計を取りやすい。</p></div>
+        <div class="card"><h4>低レイテンシ</h4><p>クラウド往復が不要。音声変換、映像処理、入力補助などリアルタイム用途に向く。</p></div>
+        <div class="card"><h4>オフライン</h4><p>ネットワークが弱い現場でも、端末内モデルなら推論を継続できる。</p></div>
+        <div class="card"><h4>コスト</h4><p>すべての処理をクラウドトークン課金に乗せず、端末リソースを使える。</p></div>
+      </div>
+
+      <div class="mermaid" tabindex="0">
+flowchart TD
+  A["アプリの AI 要件"] --> B{"既製 API で足りる?"}
+  B -->|Yes| C["Windows AI APIs<br/>OCR / Speech / Phi Silica / Imaging / VSR"]
+  B -->|No| D{"一般的な OSS モデルで足りる?"}
+  D -->|Yes| E["Foundry Local<br/>LLM / VLM / Whisper など"]
+  D -->|No| F["Windows ML<br/>独自 ONNX モデル / Hugging Face / 自社モデル"]
+  F --> G["Execution Providers<br/>CPU / DirectML GPU / QNN / OpenVINO / TensorRT RTX / MIGraphX / VitisAI"]
+  C --> H["Windows ML が下支え"]
+  E --> H
+  G --> H
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. Microsoft Foundry on Windows の 3 層</h2>
+      <p>
+        セッションでは、ローカル AI を始める方法を <strong>Windows AI APIs / Foundry Local / Windows ML</strong> の 3 段階に整理していた。これは公式の Foundry on Windows 概要ページの意思決定ツリーとも一致している。
+      </p>
+
+      <table>
+        <thead><tr><th>選択肢</th><th>向いている場面</th><th>できること</th><th>主な対象</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Windows AI APIs</strong></td>
+            <td>既製の AI 機能を数行のコードで使いたい。モデル選定や最適化を自分で持ちたくない。</td>
+            <td>Phi Silica、要約、構造化 JSON、OCR、画像説明、背景抽出、オブジェクト消去、画像 / 動画スーパー解像、音声認識など。</td>
+            <td>主に Copilot+ PC と Windows App SDK 対応アプリ。一部 API は CPU / GPU へ拡大中。</td>
+          </tr>
+          <tr>
+            <td><strong>Foundry Local</strong></td>
+            <td>Qwen、Phi、Mistral、DeepSeek、Whisper など、一般的な OSS モデルを端末内で使いたい。</td>
+            <td>モデル取得、キャッシュ、ハードウェア加速、OpenAI 互換 API、SDK からの in-process 推論、任意のローカルサーバー。</td>
+            <td>Windows / macOS Apple silicon / Linux。クライアントアプリ向けの単一ユーザー推論が中心。</td>
+          </tr>
+          <tr>
+            <td><strong>Windows ML</strong></td>
+            <td>自分で選んだ、変換した、学習した ONNX モデルを Windows PC の CPU / GPU / NPU で直接走らせたい。</td>
+            <td>ONNX Runtime API、EP カタログ、モデルカタログ、Windows ML CLI、Foundry Toolkit、WebNN 経由のブラウザ推論。</td>
+            <td>Windows 10 以降、Windows Server 2019 以降、Windows 365。高度なカスタム推論向け。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        重要なのは、これらが競合ではなく積み重なっている点である。Windows AI APIs や Foundry Local は「すぐ使える」上位レイヤーで、
+        Windows ML はそれらを支える基盤であり、さらに独自モデルを持つ開発者が直接触る低レベル寄りの選択肢でもある。
+      </p>
+    </section>
+
+    <section id="s3">
+      <h2>3. 動画の内容: Unmetered Token Cafe デモの流れ</h2>
+      <p>
+        セッションは「Unmetered Token Cafe」という架空のカフェを題材に、ローカル AI を業務アプリへ段階的に組み込むデモとして構成されていた。カフェはクラウド AI コストを抑えたい、ネットワークに依存したくない、既存 PC で業務を回したい、という設定である。
+      </p>
+
+      <table>
+        <thead><tr><th>デモ</th><th>使った技術</th><th>何を示したか</th></tr></thead>
+        <tbody>
+          <tr><td>ドライブスルー注文の音声入力</td><td>Windows AI APIs / Speech Recognition API</td><td>マイク、音声ファイル、音声ストリームをテキストに変換。Copilot+ PC の NPU で強く、CPU でも動く。</td></tr>
+          <tr><td>注文テキストを JSON に構造化</td><td>Phi Silica / Phi 系 SLM on GPU / structured output API</td><td>非構造テキストから drink、size、modifiers、quantity などを JSON へ抽出。GPU 使用のスパイクも表示。</td></tr>
+          <tr><td>Clipchamp の Video Super Resolution</td><td>Windows AI APIs / VSR / AMD NPU</td><td>古い動画や解像度の合わないクリップをフレーム単位でアップスケールし、エディタ内で完結。</td></tr>
+          <tr><td>Aion と Prompt API のプレビュー</td><td>Aion / Edge Canary Prompt API</td><td>Aion は Phi Silica の後継と説明され、品質、コンテキスト長、tokens/sec の改善が示された。</td></tr>
+          <tr><td>在庫画像の認識</td><td>Foundry Local / Qwen 3.5 VLM</td><td>配送品の写真をアップロードし、VLM が品目を分類・説明。モデル取得、ロード、レスポンス生成を SDK で実行。</td></tr>
+          <tr><td>新メニューのレビュー感情分析</td><td>Windows ML / Windows ML CLI / WebNN</td><td>Cardiff NLP の感情分類モデルを ONNX 化・最適化し、Web アプリで CPU / NPU 推論。</td></tr>
+          <tr><td>Voicemod のリアルタイム音声変換</td><td>Windows ML / NPU・GPU オフロード</td><td>45 ms 未満の低レイテンシを狙う speech-to-speech。Windows ML により複数シリコン向け展開を高速化。</td></tr>
+        </tbody>
+      </table>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">300 ms</div><div class="label">WebNN + CPU での感情分析デモのレイテンシ目安</div></div>
+        <div class="stat-card"><div class="num">30 ms</div><div class="label">同じ Web アプリを NPU に切り替えた時のレイテンシ目安</div></div>
+        <div class="stat-card"><div class="num">11+/sec</div><div class="label">NPU デモで処理したレビュー分類数</div></div>
+        <div class="stat-card"><div class="num">&lt;45 ms</div><div class="label">Voicemod が目指すリアルタイム音声変換レイテンシ</div></div>
+      </div>
+    </section>
+
+    <section id="s4">
+      <h2>4. Windows AI APIs で何ができるか</h2>
+      <p>
+        Windows AI APIs は、モデル探し・配布・最適化をほぼ意識せず、Windows アプリにローカル AI 機能を組み込むための API 群である。公式ドキュメントでは「Windows ML によって支えられた hardware-abstracted AI APIs」と説明されている。
+      </p>
+
+      <table>
+        <thead><tr><th>カテゴリ</th><th>機能例</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>言語</td><td>Phi Silica、会話要約、テキスト要約、Text to Table、構造化出力、LoRA fine-tuning、Aion preview</td><td>チャット、要約、業務入力の構造化、自然言語 UI、補助エージェント。</td></tr>
+          <tr><td>音声・動画</td><td>Speech Recognition API、Video Super Resolution</td><td>音声入力、会議 / 通話の文字起こし、動画編集、低品質映像の改善。</td></tr>
+          <tr><td>画像</td><td>OCR、Image Super Resolution、Image Object Extractor、Image Description、Object Erase</td><td>文書読み取り、画像説明、背景抽出、不要物除去、アクセシビリティ。</td></tr>
+          <tr><td>検索・RAG</td><td>App Content Search / Semantic Search、RAG、コンテンツ安全性</td><td>アプリ内ドキュメント検索、意味検索、ローカル知識ベース。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Build 2026 で特に強調されたのは、当初 NPU / Copilot+ PC 中心だった API の一部を <strong>CPU と GPU にも拡大</strong> していることだ。これにより、NPU 搭載 PC だけでなく、より広い Windows PC にローカル AI 体験を届けられる。ただし API ごとの対応状況、Windows App SDK のバージョン、地域制限は確認が必要である。
+      </p>
+    </section>
+
+    <section id="s5">
+      <h2>5. Foundry Local で何ができるか</h2>
+      <p>
+        Foundry Local は、端末上で OSS モデルを動かすためのエンドツーエンドのローカル AI ソリューションで、Build 2026 セッションでは <span class="status-badge status-ga">GA</span> と紹介された。公式ドキュメントでは、C#、JavaScript、Rust、Python SDK、最適化済みモデルカタログ、自動ハードウェア加速、OpenAI 互換 API を提供すると説明されている。
+      </p>
+
+      <div class="grid-cards">
+        <div class="card"><h4>モデル取得とキャッシュ</h4><p>初回利用時にモデルを取得し、端末内にキャッシュ。以後の起動を速くし、モデル管理をアプリから隠す。</p></div>
+        <div class="card"><h4>ハードウェア自動選択</h4><p>GPU / NPU があれば加速し、なければ CPU にフォールバック。開発者がデバイス判定コードを持たなくてよい。</p></div>
+        <div class="card"><h4>OpenAI 互換 API</h4><p>既存の OpenAI SDK をローカル endpoint に向け替えやすい。Responses API 形式にも対応。</p></div>
+        <div class="card"><h4>軽量ランタイム</h4><p>公式資料では runtime はアプリパッケージに約 20 MB 追加と説明される。</p></div>
+      </div>
+
+      <p>
+        セッションの在庫管理デモでは、Qwen 3.5 の vision-language model を使って、配送品の写真からアイテムを識別・説明した。コード上は、モデルを取得し、ダウンロードし、メモリにロードし、responses client で画像とプロンプトを渡すという流れで、複雑な EP 選定やモデル配置は Foundry Local 側が引き受ける。
+      </p>
+
+      <div class="callout">
+        <strong>注意点:</strong> Foundry Local は「本番クライアントアプリに埋め込む軽量な単一ユーザー推論」に最適化されている。公式 FAQ でも、vLLM や Triton のような多ユーザー・サーバー推論基盤の置き換えではないと説明されている。
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2>6. Windows ML で何ができるか</h2>
+      <p>
+        Windows ML を直接使う場面は、既製 API や Foundry Local のモデルカタログに収まらないときである。たとえば、自社で学習したモデル、Hugging Face から取得して fine-tune したモデル、PyTorch / TensorFlow / scikit-learn 由来のモデルを ONNX に変換して Windows 上で配布したい場合だ。
+      </p>
+
+      <h3>6-1. 実行できるモデル</h3>
+      <ul>
+        <li>Windows ML は ONNX Runtime を基盤とするため、基本的には <strong>ONNX 形式</strong> のモデルを扱う。</li>
+        <li>Hugging Face の ONNX モデル、Foundry Toolkit で ready-to-optimize なモデル、PyTorch / TensorFlow などから変換したモデル、自社で学習したモデルが候補になる。</li>
+        <li>モデルは CPU では追加設定なしに動き、必要に応じて NPU / GPU 向けの Execution Provider を追加する。</li>
+        <li>モデル互換性や性能は、ONNX Runtime バージョン、対応オペレーター、対象ハードウェア、量子化方式に左右される。</li>
+      </ul>
+
+      <h3>6-2. ハードウェア加速</h3>
+      <table>
+        <thead><tr><th>シリコン</th><th>主な EP</th><th>向いている用途</th></tr></thead>
+        <tbody>
+          <tr><td>NPU</td><td>OpenVINO（Intel）、QNN（Qualcomm）、VitisAI（AMD）</td><td>省電力で継続的な端末内推論。Copilot+ PC の常時 AI 体験。</td></tr>
+          <tr><td>GPU</td><td>MIGraphX（AMD）、NvTensorRtRtx（NVIDIA）、OpenVINO（Intel）、QNN（Qualcomm）、DirectML（included / legacy）</td><td>画像、動画、生成 AI、高スループット推論。</td></tr>
+          <tr><td>CPU</td><td>ORT CPU EP（included）、OpenVINO（Intel）</td><td>全端末へのフォールバック、小型モデル、低セットアップの初期導入。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        EP は「ハードウェアごとの最適化を ONNX Runtime に接続する部品」で、グラフ分割、カーネル登録、オペレーター実行を担う。Windows ML の特徴は、これらの EP をアプリが全部バンドルするのではなく、
+        <strong>Windows ML の ExecutionProviderCatalog API を通じて、Windows 認証済み EP を動的取得できる</strong> 点にある。これにより、デバイスごとのビルド分岐や大量のネイティブ依存関係を減らせる。
+      </p>
+
+      <h3>6-3. 配布とアプリサイズ</h3>
+      <table>
+        <thead><tr><th>方式</th><th>特徴</th><th>向いているケース</th></tr></thead>
+        <tbody>
+          <tr><td>Framework-dependent</td><td>Windows App SDK Runtime に依存。Windows ML バイナリをシステム側で共有し、アプリを小さくしやすい。Microsoft 推奨。</td><td>Microsoft Store 配布、一般ユーザー向けアプリ、更新を OS / SDK 側に任せたい場合。</td></tr>
+          <tr><td>Self-contained</td><td>Windows ML バイナリをアプリに同梱。公式資料では onnxruntime.dll、DirectML.dll など合計約 41 MB。</td><td>厳密なバージョン固定、管理端末、外部ランタイム依存を避けたい場合。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6-4. モデルカタログ</h3>
+      <p>
+        Windows ML には、巨大なモデルファイルをアプリに同梱せず、オンライン catalog から端末へダウンロードして共有する Model Catalog API もある。複数アプリが同じ SHA256 のモデルを必要とする場合は、端末内で重複ダウンロードを避けて共有できる。さらに、現在のハードウェアと EP に合うモデルだけを絞り込める。
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. Windows ML CLI とモデル最適化</h2>
+      <p>
+        Build 2026 の新発表として、<strong>Windows ML CLI</strong> が preview で紹介された。これは、モデルを Windows ML 向けに変換、解析、最適化、ベンチマークするためのワンストップのツールチェーンで、GitHub Copilot などのエージェントワークフローにも組み込みやすいよう agent skills を持つ。
+      </p>
+
+      <div class="mermaid" tabindex="0">
+flowchart LR
+  A["Hugging Face / 自社モデル"] --> B["inspect<br/>適性確認"]
+  B --> C["export<br/>ONNX 変換"]
+  C --> D["analyze<br/>EP / operator 対応確認"]
+  D --> E["optimize<br/>graph rewrite / fusion"]
+  E --> F["analyze 再実行<br/>unsupported を確認"]
+  F --> G["perf<br/>throughput / latency / 利用率"]
+  G --> H["Windows ML / WebNN で本番推論"]
+      </div>
+
+      <p>
+        動画では Cardiff NLP の感情分析モデルを例に、<code>winml catalog</code> で候補を見つけ、<code>inspect</code> で適性を確認し、<code>export</code> で ONNX へ変換し、<code>analyze</code> で Qualcomm などターゲット EP の operator 対応状況を見ていた。緑は完全対応、黄は部分対応または CPU fallback、赤は非対応を示す。続いて <code>optimize</code> でグラフを書き換え、operator fusion を行い、再度 <code>analyze</code> で緑に近づけ、最後に <code>perf</code> で NPU 利用率や throughput を確認していた。
+      </p>
+      <p>
+        重要な含意は、Windows ML が EP 配布を楽にしても、<strong>モデル最適化そのものは自動で完全解決されるわけではない</strong> という点である。公式ドキュメントも「Windows ML handles execution provider distribution, not model optimization」と明記している。CLI と Foundry Toolkit は、その最適化作業を人間とエージェントが扱いやすくする道具である。
+      </p>
+    </section>
+
+    <section id="s8">
+      <h2>8. WebNN: Web アプリでも Windows ML を使う</h2>
+      <p>
+        Windows ML はネイティブ Windows アプリだけの話ではない。セッションでは、Chromium 系ブラウザの WebNN preview を使い、ONNX Runtime Web から Windows ML ベースのハードウェア加速に乗るデモが行われた。
+      </p>
+      <p>
+        WebNN は、Web アプリから GPU、CPU、NPU などの端末内 AI アクセラレータを利用するための Web 標準 API である。ONNX Runtime Web では execution provider に <code>webnn</code> を指定し、<code>deviceType</code> として <code>cpu</code>、<code>gpu</code>、<code>npu</code> を選ぶ。Windows ではその下に Windows ML が位置づく。
+      </p>
+
+      <table>
+        <thead><tr><th>要素</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td>ONNX Runtime Web</td><td>JavaScript から ONNX モデルを実行する framework API。</td></tr>
+          <tr><td>WebNN EP</td><td>ブラウザ内で WebNN を使う ONNX Runtime の execution provider。</td></tr>
+          <tr><td>WebNN API</td><td>ブラウザが端末内 AI アクセラレータを使う標準 API。</td></tr>
+          <tr><td>Windows ML</td><td>Windows 上で WebNN の下にあるネイティブ推論・加速基盤。</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>現状:</strong> セッション時点では WebNN は preview で、Edge / Chrome の experimental flags が必要と説明された。ONNX Runtime Web の WebNN EP も活発に開発中で、operator 対応や deviceType の挙動はモデルとブラウザ実装に依存する。
+      </div>
+    </section>
+
+    <section id="s9">
+      <h2>9. 過去情報: WinML / DirectML から 2026 年の Windows ML へ</h2>
+      <p>
+        Windows ML の名前は以前から存在していたが、2026 年の文脈では役割がかなり再編されている。歴史を短く整理すると、次のようになる。
+      </p>
+
+      <table>
+        <thead><tr><th>時期・技術</th><th>位置づけ</th><th>現在の見方</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Windows Machine Learning / WinML</td>
+            <td>ONNX モデルを Windows アプリに組み込む高レベル API。Load / Bind / Evaluate に近いモデル中心ワークフロー。</td>
+            <td>旧 docs は残るが、新しい Windows ML docs では ONNX Runtime ベースの統一基盤へ説明が移っている。</td>
+          </tr>
+          <tr>
+            <td>DirectML</td>
+            <td>DirectX 12 スタイルの低レベル ML API。GPU 上で operator や graph を実行し、ゲームやエンジンに深く統合できる。</td>
+            <td>公式 docs では「sustained engineering」。新規 feature 開発は Windows ベース ONNX Runtime deployment 向けの Windows ML に移動。</td>
+          </tr>
+          <tr>
+            <td>ONNX Runtime + DirectML EP</td>
+            <td>DirectML を直接書かず、ONNX Runtime から DirectML を EP として使う経路。</td>
+            <td>互換性とスケールの観点で、多くの開発者にはこの経路の方が現実的。</td>
+          </tr>
+          <tr>
+            <td>Windows ML 2.0</td>
+            <td>Windows が保守する ORT、EP カタログ、Windows App SDK ML、モデルカタログ、CLI / Tooling を含む新しい中心軸。</td>
+            <td>2026 年時点の推奨理解。CPU / GPU / NPU にまたがる本番ローカル AI 配布の基盤。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        DirectML は今でも低レベル制御が必要なゲーム、エンジン、レンダリングパイプラインでは価値がある。一方で、一般的なアプリ開発者にとっては、DirectML を直接扱うより、ONNX Runtime / Windows ML / Windows AI APIs / Foundry Local を通じて使う方が、配布、互換性、更新、ハードウェア差分の扱いが楽になる。
+      </p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 2026 年の新情報</h2>
+      <table>
+        <thead><tr><th>発表・更新</th><th>内容</th><th>状態</th></tr></thead>
+        <tbody>
+          <tr><td>AI APIs の CPU / GPU 拡大</td><td>当初 NPU 中心だった多くの API を、より広いハードウェアへ拡大。</td><td><span class="status-badge status-note">拡大中</span></td></tr>
+          <tr><td>Foundry Local GA</td><td>OSS モデルを端末内で実行する SDK / runtime / catalog が GA。</td><td><span class="status-badge status-ga">GA</span></td></tr>
+          <tr><td>Windows ML CLI</td><td>モデルの inspect / export / analyze / optimize / perf をまとめる CLI と agent skills。</td><td><span class="status-badge status-preview">Preview</span></td></tr>
+          <tr><td>Windows ML 2.0</td><td>ONNX Runtime 改善、新しいベンダー plug-in EP、互換性・fundamentals 改善。</td><td><span class="status-badge status-ga">Shipped</span></td></tr>
+          <tr><td>GenAI throughput 改善</td><td>モデルによって最大 2.6 倍の throughput 改善と説明。</td><td><span class="status-badge status-note">モデル依存</span></td></tr>
+          <tr><td>WebNN preview</td><td>Chromium ベースブラウザで、Web アプリから Windows ML 加速を利用。</td><td><span class="status-badge status-preview">Preview</span></td></tr>
+          <tr><td>新デバイス対応</td><td>AMD Ryzen AI 400、Intel Core Ultra Series 3、NVIDIA RTX Spark / DGX Station、Qualcomm Snapdragon X2 Elite などに言及。</td><td><span class="status-badge status-note">順次対応</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s11">
+      <h2>11. 実装判断: どれを選ぶべきか</h2>
+      <table>
+        <thead><tr><th>やりたいこと</th><th>最初に見るもの</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>OCR、画像補正、動画アップスケール、要約、音声認識を手早く入れたい</td><td>Windows AI APIs</td><td>モデル管理と最適化を Microsoft 側に寄せられる。実装も短い。</td></tr>
+          <tr><td>ローカル LLM / VLM / Whisper をアプリに組み込みたい</td><td>Foundry Local</td><td>モデルカタログ、OpenAI 互換 API、SDK、ハードウェア自動選択がある。</td></tr>
+          <tr><td>自社の分類器、検出器、埋め込みモデルなどを Windows で配布したい</td><td>Windows ML</td><td>ONNX モデルを Windows PC 全体に広く届け、EP で加速できる。</td></tr>
+          <tr><td>Web アプリのまま端末内推論を使いたい</td><td>ONNX Runtime Web + WebNN</td><td>ブラウザ経由で Windows ML の GPU / NPU / CPU 加速を使える可能性がある。</td></tr>
+          <tr><td>DirectX エンジンやゲーム描画パイプラインに ML operator を深く統合したい</td><td>DirectML</td><td>低レベル制御、スケジューリング、リソース管理が必要な特殊領域ではまだ有効。</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>現実的な始め方:</strong> まず Windows AI APIs / Foundry Local で要件を満たせるかを見る。足りない場合に Windows ML へ進み、Windows ML CLI / Foundry Toolkit で ONNX 変換と最適化を試す。ハードウェア最適化の成果はモデル、operator、量子化、ドライバー、EP に大きく依存するため、早めに実機で perf を測るのが肝心である。
+      </div>
+    </section>
+
+    <section id="s12">
+      <h2>12. 制約と注意点</h2>
+      <ul>
+        <li><strong>ローカル AI は万能ではない。</strong> 大規模推論、重いマルチユーザー処理、最新の最大モデルが必要な処理はクラウドや専用サーバーの方が向く。</li>
+        <li><strong>モデル最適化は別問題。</strong> Windows ML は EP 配布や実行基盤を助けるが、モデル変換、量子化、operator 対応、性能調整は開発者側の作業として残る。</li>
+        <li><strong>NPU 最適化には条件がある。</strong> ハードウェア最適化 EP の動的取得は Windows 11 24H2 以降や特定ドライバーを要求する場合がある。</li>
+        <li><strong>API ごとに availability が違う。</strong> Windows AI APIs は Windows App SDK バージョン、Copilot+ PC、地域、limited access feature の条件を確認する必要がある。</li>
+        <li><strong>WebNN は preview。</strong> ブラウザ flags、operator 対応、fallback、deviceType の挙動が変わりうる。</li>
+        <li><strong>EP のライセンス確認が必要。</strong> QNN、OpenVINO、NvTensorRtRtx、MIGraphX、VitisAI などは各ベンダーのライセンスとサポート条件を確認する。</li>
+      </ul>
+    </section>
+
+    <section id="s13">
+      <h2>13. 参照した主な公式情報</h2>
+      <table>
+        <thead><tr><th>出典</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://www.youtube.com/watch?v=vzMXOmZXSJ8" target="_blank" rel="noopener">YouTube: BRK260</a></td><td>Build 2026 セッション本編。字幕を取得して要約。</td></tr>
+          <tr><td><a href="https://aka.ms/build26/BRK260" target="_blank" rel="noopener">BRK260 GitHub リソース</a></td><td>デモ、Getting Started、Windows ML CLI、WebNN、Foundry Local などのリンク集。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/overview" target="_blank" rel="noopener">What is Windows ML?</a></td><td>新 Windows ML の概要、利点、ハードウェア加速、ONNX Runtime との関係。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/accelerate-ai-models" target="_blank" rel="noopener">Accelerate AI models with Windows ML</a></td><td>Execution Provider の考え方、EP 取得方法、シリコン対応。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/supported-execution-providers" target="_blank" rel="noopener">Windows ML execution providers</a></td><td>CPU、DirectML、MIGraphX、NvTensorRtRtx、OpenVINO、QNN、VitisAI。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/windows/ai/apis/" target="_blank" rel="noopener">What are Windows AI APIs?</a></td><td>Phi Silica、OCR、画像、VSR、コンテンツ安全性など。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local" target="_blank" rel="noopener">What is Foundry Local?</a></td><td>Foundry Local の特徴、動機、FAQ。</td></tr>
+          <tr><td><a href="https://onnxruntime.ai/docs/tutorials/web/ep-webnn.html" target="_blank" rel="noopener">ONNX Runtime WebNN EP</a></td><td>WebNN EP の使い方、deviceType、IO binding。</td></tr>
+          <tr><td><a href="https://learn.microsoft.com/en-us/windows/ai/directml/dml" target="_blank" rel="noopener">DirectML Overview</a></td><td>DirectML の過去経緯と、現在は Windows ML へ新機能開発が移っている点。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=vzMXOmZXSJ8" target="_blank" rel="noopener">https://www.youtube.com/watch?v=vzMXOmZXSJ8</a> ／ 取得手段: yt-dlp（英語字幕 + info.json）・fetch_webpage ／ 生成日: 2026-06-08</p>
+    </footer>
+  </main>
+</div>
+
+<dialog class="diagram-modal" id="diagramModal" aria-label="図の拡大表示">
+  <div class="diagram-modal-head">
+    <div class="diagram-modal-tools">
+      <label for="diagramZoom">倍率</label>
+      <input id="diagramZoom" type="range" min="80" max="220" value="120" />
+      <span id="diagramZoomLabel">120%</span>
+    </div>
+    <button class="diagram-modal-close" id="diagramClose" type="button">閉じる</button>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas" id="diagramCanvas"></div>
+  </div>
+</dialog>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default' });
+
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  const toc = document.getElementById('toc');
+
+  headings.forEach((heading, index) => {
+    const section = heading.closest('section');
+    if (!heading.id) heading.id = `${section.id}-h${index}`;
+    const li = document.createElement('li');
+    li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+    const a = document.createElement('a');
+    a.href = `#${heading.id}`;
+    a.textContent = heading.textContent;
+    li.appendChild(a);
+    toc.appendChild(li);
+  });
+
+  const links = [...toc.querySelectorAll('a')];
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    if (!visible) return;
+    links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`));
+  }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+
+  headings.forEach(heading => observer.observe(heading));
+
+  const modal = document.getElementById('diagramModal');
+  const canvas = document.getElementById('diagramCanvas');
+  const close = document.getElementById('diagramClose');
+  const zoom = document.getElementById('diagramZoom');
+  const zoomLabel = document.getElementById('diagramZoomLabel');
+
+  function openDiagram(source) {
+    canvas.innerHTML = source.outerHTML;
+    zoom.value = 120;
+    zoomLabel.textContent = '120%';
+    canvas.style.setProperty('--diagram-zoom', '1.2');
+    modal.showModal();
+  }
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', '図を拡大表示');
+    diagram.addEventListener('click', () => openDiagram(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagram(diagram);
+      }
+    });
+  });
+
+  zoom.addEventListener('input', () => {
+    const value = Number(zoom.value);
+    zoomLabel.textContent = `${value}%`;
+    canvas.style.setProperty('--diagram-zoom', String(value / 100));
+  });
+  close.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+</script>
+</body>
+</html>

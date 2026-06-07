@@ -1,6 +1,6 @@
 ---
 name: content-summarizer
-description: "Use when the user asks to summarize, recap, or digest external content (YouTube videos, web articles, PDFs, podcasts, transcripts, pasted text) into a saved HTML report under reports/. Triggers include 要約, まとめ, summarize, recap, digest, transcript, 文字起こし, YouTube 要約, レポート化. Procedure: detect source type, fetch the actual content (for YouTube use yt-dlp; for web use fetch_webpage; for local files read directly), STOP if content cannot be obtained, then produce a faithful no-omission Japanese summary HTML rich in tables and diagrams (Mermaid for flows/sequences) with a sticky left sidebar TOC that scroll-spies the current section, source metadata header (URL/author/published date/etc.), and a fixed unofficial-summary disclaimer in the footer. Output is saved to reports/. Cleans up temporary work files."
+description: "Use when the user asks to summarize, recap, or digest external content (YouTube videos, web articles, PDFs, podcasts, transcripts, pasted text) into a saved HTML report under reports/. Triggers include 要約, まとめ, summarize, recap, digest, transcript, 文字起こし, YouTube 要約, レポート化. Procedure: detect source type, fetch the actual content (for YouTube use yt-dlp; for web use fetch_webpage; for local files use read_file), STOP if content cannot be obtained, then produce a faithful no-omission Japanese summary HTML with useful tables/diagrams, click-to-enlarge resizable Mermaid diagrams, sticky scroll-spy TOC, source metadata, and fixed unofficial-summary disclaimer. Always update index.html with a categorized link/card for the new HTML, reconsider report categories, clean up temporary work files, commit the report/index changes, and push to GitHub."
 argument-hint: "<URL or file path> [要約言語]"
 ---
 
@@ -25,13 +25,16 @@ argument-hint: "<URL or file path> [要約言語]"
 1. **取得できなければ止める。** ソースの本文・字幕・テキストを実取得できない場合、推測で書かない。理由を簡潔に説明して停止し、代替手段（手動貼り付け、字幕アップロード等）を提案する。
 2. **省略しない要約をデフォルトにする。** 主要トピックを 1 つも落とさない。冗長表現は圧縮してよいが、論点・固有名詞・発表事項・例示は残す。
 3. **出力は単一 HTML、保存先は `reports/`**。ファイル名は `kebab-case` で内容を表す英語名（例: `andrew-ng-future-of-ai-coding.html`）。
-4. **視覚化は「必要に応じて」使う。** 比較・分類・対応関係が複数並ぶときは **表**、フロー／プロセス／シーケンス／状態遷移／関係図のように **言葉だけでは関係性が伝わりにくいとき** は **Mermaid**、強調したい数値や短い注記には **生 HTML/CSS の装飾**（バッジ・カード等）を使う。一方で、単純な内容にまで図表を付けて情報密度を下げてはいけない（**過剰な視覚化は禁止**）。素直に段落・箇条書きで書いた方が伝わるなら、視覚要素は省略してよい。
+4. **視覚化は「必要に応じて」使う。** 比較・分類・対応関係が複数並ぶときは **表**、フロー／プロセス／シーケンス／状態遷移／関係図のように **言葉だけでは関係性が伝わりにくいとき** は **Mermaid**、強調したい数値や短い注記には **生 HTML/CSS の装飾**（バッジ・カード等）を使う。一方で、単純な内容にまで図表を付けて情報密度を下げてはいけない（**過剰な視覚化は禁止**）。素直に段落・箇条書きで書いた方が伝わるなら、視覚要素は省略してよい。**Mermaid 図を入れる場合は、クリックで拡大表示でき、拡大表示内で大きさ（モーダル枠または表示倍率）を変えられるようにする。**
 5. **左サイドバーに目次を常設し、スクロールスパイで現在地をハイライトする。** デスクトップ幅では本文の左横に固定表示、モバイル幅では上部の折りたたみメニューに切り替える。テンプレート内蔵の `IntersectionObserver` を使うこと。
 6. **ソースのメタデータを冒頭に簡潔にまとめる。** URL、著者／登壇者、公開日、媒体／チャンネル、ライセンス表記、所要時間／文字数など、取得できたものを **メタ情報カード** として配置する。長くなりすぎないよう 1 行 1 項目で、最大 8 項目程度。
 7. **フッターに以下の免責文を必ず入れる。**
    > 本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
-8. **スタイルは既存に合わせる。** リポジトリ既存の [index.html](../../../index.html) と同じ CSS 変数・ダーク/ライト両対応・日本語フォントスタックを踏襲する。下の [HTML テンプレート](#html-テンプレート) を出発点に使う。
+8. **スタイルは既存に合わせる。** リポジトリ既存の [index.html](../../../index.html) と同じ CSS 変数・ダーク/ライト両対応・日本語フォントスタックを踏襲する。下の **HTML テンプレート** を出発点に使う。
 9. **作業用一時ファイルは削除する。** `.tmp/` などに置いた中間ファイル（字幕・素テキスト等）は要約完成後に削除する。
+10. **新しい HTML を作成したら必ず `index.html` にリンクを追加する。** ルートの [index.html](../../../index.html) を更新し、生成した HTML への相対リンク、タイトル、短い説明、出典・生成日などのメタ情報を既存カード形式で追加する。
+11. **`index.html` 更新時は毎回カテゴリ分けを見直す。** 既存のリンク集カテゴリを確認し、新規カテゴリの作成、既存カテゴリの名称変更・マージ、カードの移動、生成 HTML をどのカテゴリに入れるかを内容に基づいて判断する。カテゴリ変更は必要最小限にし、一覧性が上がる場合だけ行う。
+12. **HTML 作成と `index.html` 更新が完了したら毎回 GitHub に push する。** 生成 HTML、[index.html](../../../index.html)、必要な関連ファイルだけを stage し、無関係な変更は混ぜない。commit 後に現在の追跡ブランチへ push し、push に失敗した場合は理由を報告して停止する。
 
 ## Procedure
 
@@ -137,6 +140,8 @@ grep -vE '^\s*$|^[0-9]+$|-->' <ID>.<lang>.srt | awk '!seen[$0]++' > transcript.t
 
 **入れない判断も積極的にする**：要素が 2 つだけの比較、1 ステップしかない手順、1 つの数字、すでに箇条書きで足りる内容などは、表や図にせず素直に書く。短い段落と箇条書きが大半を占めるレポートでも、内容が読みやすければそれで良い。
 
+Mermaid 図を採用する場合は、テンプレートの「Mermaid 図クリック拡大 + サイズ変更」機能を残す。各 `.mermaid` ブロックはクリック／Enter／Space で拡大モーダルを開き、モーダルは `resize: both` で枠サイズ変更でき、倍率スライダーで 80〜220% 程度に拡大縮小できること。
+
 ### 5. レポート本文を構成する
 
 下記構造を基準に組み立てる（不要な節は省略可、追加は自由）。
@@ -156,10 +161,23 @@ grep -vE '^\s*$|^[0-9]+$|-->' <ID>.<lang>.srt | awk '!seen[$0]++' > transcript.t
 - `prefers-color-scheme` でダーク／ライト両対応
 - 既存 [index.html](../../../index.html) と同じカラートークンを使う
 - Mermaid は CDN から読み込み（`https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs`）。`initialize({ startOnLoad: true, theme: 'dark' or 'default' })` をダーク／ライト判定で切り替える。
+- Mermaid 図を入れる場合は、下のテンプレートに含まれるクリック拡大モーダルと倍率スライダーを必ず残す。拡大モーダルはユーザーが枠サイズを変更できるよう `resize: both` とし、図の表示倍率も変更できるようにする。
 
-下の [HTML テンプレート](#html-テンプレート) をそのまま土台にする。
+下の **HTML テンプレート** をそのまま土台にする。
 
-### 7. 後片付け
+### 7. `index.html` のリンク集を更新する
+
+新しい HTML レポートを保存したら、必ずルートの [index.html](../../../index.html) も更新する。
+
+1. [index.html](../../../index.html) の既存セクション、カテゴリ名、カードの並びを確認する。
+2. `reports/` 配下の HTML と index 上のリンクを照合し、リンク漏れや重複がないか確認する。
+3. 新規レポートの主題に最も合う既存カテゴリへカードを追加する。
+4. 既存カテゴリでは不自然な場合は、新規カテゴリを作成する。
+5. カテゴリが細かくなりすぎている、または意味が重なっている場合は、カテゴリのマージや名称変更を検討する。
+6. カードには相対リンク、レポートタイトル、1〜2 文の説明、出典・取得手段・生成日などのメタ情報を入れる。
+7. `test -f` や同等の確認で、index に追加したリンク先 HTML が実在することを検証する。
+
+### 8. 後片付け
 
 ```sh
 rm -rf .tmp
@@ -167,13 +185,26 @@ rm -rf .tmp
 
 ユーザーに「中間ファイルを削除しました」と一行で報告する。残したい意向が事前にあれば残す。
 
-### 8. ユーザーへの最終報告
+### 9. GitHub に commit / push する
+
+HTML レポート作成、[index.html](../../../index.html) 更新、後片付け、検証が終わったら、毎回 GitHub に push する。
+
+1. `git status --short` で作業ツリーを確認する。
+2. 生成した `reports/<name>.html`、更新した [index.html](../../../index.html)、必要な関連ファイルだけを `git add` する。作業前から存在する無関係な変更は stage しない。
+3. `git diff --cached --check` を実行し、空白エラーなどを確認する。
+4. 内容が分かる commit message で commit する。
+5. 現在の追跡ブランチへ push する。通常は `git push`、追跡ブランチがない場合は remote / branch を確認してから push する。
+6. push 後に commit hash と push 先 branch を最終報告に含める。
+
+### 10. ユーザーへの最終報告
 
 - 生成ファイルへの相対パスリンク（例: `reports/<name>.html`）
+- [index.html](../../../index.html) に追加したカテゴリ名、またはカテゴリを変更した場合は変更内容
 - ソース取得手段（yt-dlp / fetch_webpage / 手動貼り付け 等）
 - セクション数または見出し一覧
 - 含めた表／Mermaid 図の数
 - 削除した一時ファイルの有無
+- GitHub に push した commit hash と branch
 
 ## HTML テンプレート
 
@@ -322,7 +353,43 @@ rm -rf .tmp
   .mermaid {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px; margin: 18px 0;
-    text-align: center; overflow-x: auto;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px;
+  }
+
+  /* Mermaid 図クリック拡大 + サイズ変更 */
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+    color: var(--text); padding: 4px 10px; cursor: pointer;
+  }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas {
+    --diagram-zoom: 1.2;
+    transform: scale(var(--diagram-zoom)); transform-origin: top left;
+    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
+  }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
   }
 
   footer.page {
@@ -429,11 +496,78 @@ sequenceDiagram
   </main>
 </div>
 
+<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
+  <div class="diagram-modal-head">
+    <strong>Mermaid 図</strong>
+    <div class="diagram-modal-tools">
+      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
+      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
+    </div>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas"></div>
+  </div>
+</dialog>
+
 <script type="module">
   // Mermaid（ダーク/ライト連動）
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
   const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
   mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+</script>
+
+<script>
+  // Mermaid 図クリック拡大 + サイズ変更
+  (function () {
+    const diagrams = document.querySelectorAll('.mermaid');
+    const dialog = document.getElementById('diagram-modal');
+    if (!diagrams.length || !dialog) return;
+
+    const canvas = dialog.querySelector('.diagram-modal-canvas');
+    const zoom = dialog.querySelector('#diagram-zoom');
+    const zoomValue = dialog.querySelector('#diagram-zoom-value');
+    const closeButton = dialog.querySelector('[data-close-diagram]');
+
+    const applyZoom = () => {
+      const value = Number(zoom.value) / 100;
+      canvas.style.setProperty('--diagram-zoom', String(value));
+      zoomValue.textContent = zoom.value + '%';
+    };
+
+    const openDiagram = (diagram) => {
+      canvas.innerHTML = '';
+      const clone = diagram.cloneNode(true);
+      clone.removeAttribute('role');
+      clone.removeAttribute('tabindex');
+      clone.removeAttribute('aria-label');
+      clone.removeAttribute('title');
+      canvas.appendChild(clone);
+      zoom.value = '120';
+      applyZoom();
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    };
+
+    diagrams.forEach((diagram) => {
+      diagram.setAttribute('role', 'button');
+      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+      diagram.setAttribute('title', 'クリックで拡大表示');
+      diagram.tabIndex = 0;
+      diagram.addEventListener('click', () => openDiagram(diagram));
+      diagram.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDiagram(diagram);
+        }
+      });
+    });
+
+    zoom.addEventListener('input', applyZoom);
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
 </script>
 
 <script>
@@ -511,6 +645,7 @@ sequenceDiagram
 - 出力 HTML をリポジトリの既存 CSS と完全に違うデザインで作る
 - **ノルマ的に毎セクションへ表／図／カードを詰め込み、情報密度を下げる**（必要なときだけ使う）
 - 2 項目の比較を表にする／1 ステップしかない手順を Mermaid 化するなど、視覚化のための視覚化をする
+- Mermaid 図を静的表示だけにして、クリック拡大・枠サイズ変更・倍率変更の操作を付け忘れる
 - 一方で、何ページも続く長文を 1 つの図表も無しで流す（読み手が構造を掴めないなら、要所には視覚要素を入れる）
 - サイドバー目次やスクロールスパイを省略する
 - 免責フッター（Hard Rule #7）を入れ忘れる
