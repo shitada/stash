@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Future of Developer Productivity: Microsoft EngThrive Framework in Practice - 日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 BRK210『Future of Developer Productivity: Microsoft’s EngThrive Framework in Practice』を、AI時代の開発者生産性、EngThrive、成果指標、組織改善事例まで日本語で整理した非公式レポート。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 920px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; border-bottom: none; display: block; padding: 0; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  section h4 { font-size: 15px; margin: 16px 0 6px; }
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  td a { word-break: break-word; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .diagram-modal {
+    width: min(96vw, 1160px); height: min(88vh, 780px);
+    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  }
+  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
+  .diagram-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
+  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
+  .diagram-modal-close { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); padding: 4px 10px; cursor: pointer; }
+  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
+  .diagram-modal-canvas { --diagram-zoom: 1.2; transform: scale(var(--diagram-zoom)); transform-origin: top left; width: calc(100% / var(--diagram-zoom)); min-width: 720px; }
+  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
+  @media (max-width: 720px) {
+    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
+    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
+    .diagram-modal-tools input[type="range"] { width: 120px; }
+  }
+  footer.page { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 BRK210 / Developer Productivity</div>
+      <h1>Future of Developer Productivity: Microsoft EngThrive Framework in Practice - 日本語要約</h1>
+      <p class="lead">
+        AI がコード生成を速くする時代に、開発者生産性を「どれだけコードを書いたか」ではなく、
+        <strong>どれだけ価値を速く、楽に、品質高く届けられるか</strong>として測るための Microsoft EngThrive フレームワークを整理します。
+      </p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=wDqipcHkaEM" target="_blank" rel="noopener">YouTube - Future of Developer Productivity: Microsoft’s EngThrive Framework in Practice | BRK210</a></dd></div>
+      <div><dt>チャンネル</dt><dd>Microsoft Developer</dd></div>
+      <div><dt>公開日</dt><dd>2026-06-04</dd></div>
+      <div><dt>長さ</dt><dd>47分45秒</dd></div>
+      <div><dt>登壇者</dt><dd>Tim Bozarth（メタデータタグより）</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（英語字幕 VTT + info.json）</dd></div>
+      <div><dt>動画ID</dt><dd>wDqipcHkaEM</dd></div>
+      <div><dt>視聴回数（取得時点）</dt><dd>625 回</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>主要テーマ</dt>
+        <dd class="badges">
+          <span class="badge">EngThrive</span>
+          <span class="badge">Developer Productivity</span>
+          <span class="badge">Speed / Ease / Quality</span>
+          <span class="badge">Outcome Metrics</span>
+          <span class="badge">Focus Time</span>
+          <span class="badge">AI時代のSDLC</span>
+          <span class="badge">Microsoft Build 2026</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>このセッションの中心メッセージは、AI 時代の開発者生産性を <strong>活動量ではなく成果</strong> で測るべきだということ。コード行数、PR 数、トークン消費量は行動変化を見る補助指標ではあるが、目標にすると簡単に歪む。</li>
+        <li>Microsoft の EngThrive は、開発体験を <strong>Speed（速さ） / Ease（楽さ） / Quality（品質）</strong> の 3 軸で捉え、「fast and easy to build great work」を目指す。個人を採点する仕組みではなく、エンジニアが動くシステムのボトルネックを測る枠組みである。</li>
+        <li>事例として、Focus Time 改善では 8 週間で 1人あたり週 2.1 時間の集中時間を回復し、Time to First PR 改善では First Mate エージェントなどにより新メンバーの初回 PR 到達を 1 週間未満へ圧縮した。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. セッションの狙い</h2>
+      <p>
+        冒頭で登壇者は、AI の価値提案には大きく 2 つあると整理する。ひとつは、AI を製品に組み込み、顧客体験を変えること。もうひとつは、AI によって開発者自身の働き方を変えること。このセッションは後者、つまり <strong>「AI を使ってソフトウェア開発の仕事そのものをどう変えるか」</strong> に焦点を当てている。
+      </p>
+      <p>
+        登壇者は、AI によって仕事の進め方が大きく変わるなかで、組織が「エンジニアは何倍コードを書けるようになったのか」という問いに飛びつきやすいことを認める。しかし、それは不安に対する分かりやすい答えであって、変革を進めるための有用な答えではない。むしろ、活動量を目標化すると逆効果になる。
+      </p>
+    </section>
+
+    <section id="s2">
+      <h2>2. なぜコード量では生産性を測れないのか</h2>
+      <p>
+        セッションは、業界が長年かけて「コード行数」や「PR 数」を個人の生産性指標として使うべきではないと学んできたにもかかわらず、AI ブームのなかで同じ発想が戻ってきている、と警告する。AI によってコード生成量が急増するからこそ、コード量はさらに危うい指標になる。
+      </p>
+      <p>
+        Microsoft の縦断研究では、成熟した組織における開発者の時間は、おおまかに次の 3 つへ分かれる。
+      </p>
+
+      <table>
+        <thead><tr><th>時間の分類</th><th>おおよその割合</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>Innovation</td><td>約 40%</td><td>新しい価値や機能を作る時間。</td></tr>
+          <tr><td>Run the business / Keep the lights on</td><td>約 45%</td><td>既存システムの維持、運用、改善、移行、依存関係対応など。</td></tr>
+          <tr><td>Organizational responsibilities</td><td>約 15%</td><td>会議、研修、組織市民として必要な活動。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        さらに深掘りすると、エンジニアが技術システムと直接やり取りする時間はその一部であり、実際に能動的にコードを書いている時間は週の <strong>10〜15%</strong> 程度だという。つまり、コードを書く時間だけを速くしても、ソフトウェア開発全体のボトルネックを見誤る可能性が高い。
+      </p>
+    </section>
+
+    <section id="s3">
+      <h2>3. AI による開発ループの変化</h2>
+      <p>
+        登壇者は、AI と開発者の関係を 3 つの波として説明する。ChatGPT 的な対話から始まり、非同期タスクを任せるエージェント、そして複雑な目標を持つエージェントとの協働へ進んでいる。
+      </p>
+
+      <div class="mermaid" tabindex="0">
+flowchart LR
+  A["Wave 1<br/>質問と回答"] --> B["Wave 2<br/>非同期タスクとツール使用"]
+  B --> C["Wave 3<br/>複雑な目標、記憶、権限、ツールを持つエージェント"]
+  C --> D["開発者の仕事<br/>計画、検証、判断、設計、品質責任へ移動"]
+      </div>
+
+      <p>
+        従来の SDLC は、計画、作成、検証、デプロイ、運用で構成される。平均的には、運用が 75〜80%、作成が 10〜15%、残りが計画・検証・デプロイに割かれる。しかし、AI エージェントを高いレベルで使うチームでは、時間とエネルギーが <strong>計画と検証</strong> に大きく移り、コード作成の時間は急速に縮小しているという。
+      </p>
+      <blockquote>
+        コードは、これまでシステムへの入力であり、真実の源泉だった。しかし今後は、コードがシステムの出力になっていく。
+      </blockquote>
+      <p>
+        ただし、AI の進歩は SDLC 全体で均等ではない。単一行のコード生成は非常に強くなっているが、システム設計、持続可能なアーキテクチャ、検証、運用、そして「taste（良い判断・審美眼）」はまだ人間の役割が大きい。特に taste は、優れたエンジニアが今後も持ち込む重要な価値だと強調された。
+      </p>
+    </section>
+
+    <section id="s4">
+      <h2>4. EngThrive: fast and easy to build great work</h2>
+      <p>
+        EngThrive は、Microsoft が AI 時代の開発者生産性を理解し、改善プログラムを設計するために使っているフレームワークである。そのミッションは <strong>「fast and easy to build great work」</strong>。速く、楽に、優れた仕事を作れるようにすることだ。
+      </p>
+
+      <div class="mermaid" tabindex="0">
+flowchart TD
+  A["EngThrive"] --> B["Speed<br/>Idea to Customer"]
+  A --> C["Ease<br/>Innovation Time / Focus Time"]
+  A --> D["Quality<br/>Defect Escape / Resilience / Experience"]
+  B --> E["価値を速く届ける"]
+  C --> F["開発者が流れに乗れる"]
+  D --> G["顧客体験と信頼を守る"]
+      </div>
+
+      <table>
+        <thead><tr><th>軸</th><th>意味</th><th>代表的な成果指標</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Speed</strong></td><td>アイデアが顧客価値になるまでの速さ。</td><td>Idea to Customer、Time to First PR、Time to nth PR。</td></tr>
+          <tr><td><strong>Ease</strong></td><td>開発者がどれだけ摩擦なく仕事に集中できるか。</td><td>Innovation Time、Focus Time、Bad Developer Day。</td></tr>
+          <tr><td><strong>Quality</strong></td><td>速さや楽さを犠牲にせず、製品品質と顧客体験を保つこと。</td><td>Defect Escape Rate、Incidents per PR、Mean Time to Mitigate、顧客体験指標。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        3 軸はトレードオフとして扱わない。速さだけを上げて品質を落としたり、品質だけを強めて開発者体験を悪化させたりするのではなく、3 つを同時に引き上げることを目指す。
+      </p>
+    </section>
+
+    <section id="s5">
+      <h2>5. 活動指標ではなく成果指標を見る</h2>
+      <p>
+        セッションで最も重要な概念として語られたのが、<strong>activity vs outcome</strong> である。活動は「何をしたか」を表し、成果は「何を達成したか」を表す。活動は motion、成果は progress と言い換えられる。
+      </p>
+
+      <table>
+        <thead><tr><th>種類</th><th>例</th><th>使い方</th><th>危険な使い方</th></tr></thead>
+        <tbody>
+          <tr><td>活動指標</td><td>AI 利用率、トークン消費量、PR 数、agent-generated PR 数、コード行数。</td><td>行動や働き方の変化を観察する補助情報として使う。</td><td>目標値や評価指標にする。token maxing や意味のない PR 量産を誘発する。</td></tr>
+          <tr><td>成果指標</td><td>Idea to Customer、Innovation Time、Focus Time、Defect Escape、Time to First PR。</td><td>システムのボトルネックを特定し、改善対象として扱う。</td><td>単独で個人の人事評価に使う。文脈なしに比較する。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        活動指標を目標にすると、開発者は簡単にそれを最大化できる。例えば、無意味なコードを大量生成し、数百行ごとにコミットすれば、トークン消費とコード行数は増える。しかし価値は増えない。これが活動指標を目標にする危うさである。
+      </p>
+      <p>
+        一方、成果指標を「攻略」すると、望んでいた成果が生まれる。例えば Time to First PR を短くするために、最初の PR が no-op だったとしても、開発環境、権限、CI、レビュー、デプロイ経路を通過できたこと自体に価値がある。
+      </p>
+    </section>
+
+    <section id="s6">
+      <h2>6. 個人ではなくシステムを測る</h2>
+      <p>
+        EngThrive は個人を採点するための仕組みではない。開発者が働く <strong>システム</strong> を測るための仕組みである。例えば、ビルドが遅い、環境構築が複雑、レビューの待ち時間が長い、会議が分断的に入るといった問題は、個人の能力ではなくシステムの摩擦である。
+      </p>
+      <p>
+        登壇者は、従業員パフォーマンス評価はもっと複雑で別の話だと明確に切り分ける。生産性の測定は、チームや組織がより良く働けるように、システムを改善するためのものである。
+      </p>
+    </section>
+
+    <section id="s7">
+      <h2>7. 代表的な成果指標</h2>
+      <h3>Idea to Customer</h3>
+      <p>
+        Speed の代表指標。アイデアが生まれてから、それが顧客の手元で価値を生むまでの暦日・時間を測る。アイデアは PRD、チケット、設計案などとして始まり、実験、canary、デプロイ、顧客利用までを含む。この全体を測ることで、どこにボトルネックがあるかを分解できる。
+      </p>
+
+      <h3>Innovation Time</h3>
+      <p>
+        Ease の代表指標。開発者が新しい価値を作るために使える時間の割合を測る。登壇者は、39% 程度からできるだけ高く、80〜90% に近づけることを理想として語った。AI により、これまで長年当然とされてきた運用・移行・雑務のボトルネックを壊せる可能性がある。
+      </p>
+
+      <h3>Quality</h3>
+      <p>
+        品質は比較的よく理解されている領域として、Defect Escape Rate、Incidents per PR、Mean Time to Mitigate、顧客体験や製品愛着を測る指標などが挙げられた。重要なのは、速度と楽さを上げるときにも品質を一緒に見ることである。
+      </p>
+    </section>
+
+    <section id="s8">
+      <h2>8. EngThrive の運用原則</h2>
+      <p>
+        指標を持つだけでは変革は進まない。登壇者は、EngThrive を実際の組織改善プログラムとして動かすための運用原則を説明した。
+      </p>
+
+      <div class="grid-cards">
+        <div class="card"><h4>1. ボトルネックに集中する</h4><p>SDLC のどこで価値提供が詰まっているかを見つけ、そこを改善する時間と責任を作る。</p></div>
+        <div class="card"><h4>2. リーダーに責任を持たせる</h4><p>開発者体験は現場任せではなく、最上位レベルのリーダーシップが説明責任を持つ。</p></div>
+        <div class="card"><h4>3. ベンチマーク達成ではなく継続改善</h4><p>組織変更やチーム差で数字は揺れる。罰するためではなく、継続的に改善するために見る。</p></div>
+        <div class="card"><h4>4. 共通言語と共通指標</h4><p>会社全体で同じ定義の指標を使うことで、比較と学習と再利用が可能になる。</p></div>
+      </div>
+
+      <p>
+        特に強調されたのは、company-wide consistent metrics の重要性である。チームごとに指標定義がばらばらだと、組織全体のボトルネックを理解できない。リアルタイムに近いダッシュボード、ビジネスレビューのリズム、成功パターンの共有が必要になる。
+      </p>
+    </section>
+
+    <section id="s9">
+      <h2>9. ケーススタディ1: Focus Time 改善</h2>
+      <p>
+        1つ目の事例は、開発者の Focus Time を改善するプログラムである。Focus Time は、会議などで分断されず、深く考え続けられる時間を指す。開発者が flow に入るための時間として、Microsoft では <strong>120分の連続ブロック</strong> を重視している。
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">8週間</div><div class="label">改善プログラムの期間</div></div>
+        <div class="stat-card"><div class="num">+2.1h</div><div class="label">1人あたり週の Focus Time 回復量（P50）</div></div>
+        <div class="stat-card"><div class="num">+13%</div><div class="label">PR velocity の増加（活動変化の補助指標）</div></div>
+        <div class="stat-card"><div class="num">-25%</div><div class="label">Bad Developer Day telemetry の減少</div></div>
+        <div class="stat-card"><div class="num">55,000h</div><div class="label">会議 hygiene 改善などで回復したエンジニアリング時間の換算</div></div>
+      </div>
+
+      <p>
+        この改善は、AI ツールそのものを導入したからではなく、AI による分析で得たデータを使い、組織運営を変えたことで実現された。流れはシンプルで、まずシニアリーダーが 1 つの指標を選び、各リーダーに明確な責任を割り当て、2週間ごとのレビューでデータ、仮説、施策、結果を確認した。
+      </p>
+      <p>
+        また、Focus Time を奪っていた運用作業やシステム健全性タスクに AI を適用する動きもあり、これが SRE agent の起点になったと説明された。SRE が退屈な作業に追われるのではなく、より深いシステム理解や信頼性設計に集中できるようにする狙いである。
+      </p>
+    </section>
+
+    <section id="s10">
+      <h2>10. ケーススタディ2: Time to First PR 改善</h2>
+      <p>
+        2つ目の事例は、新入社員やチーム移動者が、そのチームで最初の PR を出すまでの時間を短縮する取り組みである。Microsoft 全体で多くのエンジニアに関わる指標であり、目標は <strong>1週間未満</strong> だった。
+      </p>
+
+      <table>
+        <thead><tr><th>施策</th><th>内容</th><th>狙い</th></tr></thead>
+        <tbody>
+          <tr><td>First Mate エージェント</td><td>Day 0 から新メンバーに付き、所属チームや作業環境を理解したうえで、最初の PR から 10件目、30件目までの道筋を支援する。</td><td>オンボーディングを個人の探索に任せず、文脈付き支援にする。</td></tr>
+          <tr><td>PR ワークフロー文書の改善</td><td>PR 作成、レビュー、CI、デプロイの手順を整備する。</td><td>人間だけでなく、First Mate が参照できる質の高い grounding data にする。</td></tr>
+          <tr><td>動画演習</td><td>社内固有ツールやフローの視覚的な使い方を示す。</td><td>新しい環境で迷いやすい内部ツールの理解を速める。</td></tr>
+          <tr><td>マネージャーへの期待値設定</td><td>全社リーダー向けの場で、新メンバーが早く開発体験に入れることの重要性を共有。</td><td>オンボーディング速度を個別努力でなく組織責任にする。</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        この指標は「no-op の PR で簡単に攻略できるのでは」という疑問を呼びやすい。しかし登壇者は、それでよいと答える。no-op であっても、ローカル環境が動き、権限があり、インフラにつながり、レビューと CI とデプロイ経路を通れたという事実には価値があるからだ。成果指標を攻略すると、狙った成果そのものが起きる。
+      </p>
+      <p>
+        Time to First PR、Time to 10th PR、Time to 30th PR は、その後の開発活動、innovation time、idea to production の速さとも強く相関する。最初の摩擦を減らすことは、短期のオンボーディング改善にとどまらず、長期の成功軌道に影響する。
+      </p>
+    </section>
+
+    <section id="s11">
+      <h2>11. Q&A の要点</h2>
+      <h3>Teams メッセージやデイリースタンドアップは Focus Time を壊すのか</h3>
+      <p>
+        Teams メッセージは、リモートチームにおける通常の会話や協働として機能するため、Focus Time を壊すものとしては単純にカウントしていない。ただし、通知設定やベストプラクティスにより、不要な割り込みを減らすことは推奨している。
+      </p>
+      <p>
+        スタンドアップや一部の recurring meeting については、会議の性質、参加人数、リズム、タイトルなどから working meeting として検出できるものもある。重要なのは、会議をブロック化し、IC が午後以降を会議で細切れにされないようにすること、そして会議には agenda、purpose、outcome が必要だと明確にすることだった。これらが不明確な会議は断ることを期待として伝えている。
+      </p>
+
+      <h3>Focus Time は何分必要か</h3>
+      <p>
+        業界研究では、flow に入るための連続時間として 60分、90分、120分という考え方がある。登壇者は、過去には 60〜90分派だったが、Microsoft での研究と成果を見て、現在は 120分の連続ブロックを重視していると説明した。
+      </p>
+
+      <h3>活動指標はまったく使わないのか</h3>
+      <p>
+        使わないわけではない。AI 利用量、トークン消費、coding velocity などは、チームが AI 活用のどの波にいるか、行動がどう変化しているかを見る補助情報として有用である。ただし、それを目標や評価にした瞬間に、指標としての意味を失う。
+      </p>
+
+      <h3>経営層の理解をどう得るか</h3>
+      <p>
+        登壇者は、IC や第一線マネージャーにも想像以上に力があると答えた。現場のエンジニアは「正しいことをするのが難しすぎる」「speed、ease、quality を上げるにはこのボトルネックを直す必要がある」と具体的に声を上げられる。AI により、かつては大規模チームでなければ解けなかった問題を、小さなチームが短期間で改善できるようになっている。
+      </p>
+    </section>
+
+    <section id="s12">
+      <h2>12. 実践するなら何から始めるか</h2>
+      <ol>
+        <li><strong>活動量ではなく成果を選ぶ。</strong> コード量やトークン量ではなく、Idea to Customer、Focus Time、Time to First PR、Defect Escape など、システム改善につながる指標を選ぶ。</li>
+        <li><strong>最初は 1 つの指標に絞る。</strong> 組織全体に一気に多くの指標を投げず、開発者調査や現場の痛みから最も効きそうな指標を選ぶ。</li>
+        <li><strong>リーダーのレビューリズムを作る。</strong> 2週間ごとなど短い周期で、データ、仮説、施策、結果を確認する。</li>
+        <li><strong>個人評価ではなくシステム改善として説明する。</strong> 数字を罰に使うと、組織は防御的になり、指標も歪む。</li>
+        <li><strong>AI は万能薬ではなく、古いボトルネックを壊す手段として使う。</strong> 文書理解、オンボーディング支援、運用作業削減、データ分析など、低摩擦で効果が大きい場所から始める。</li>
+      </ol>
+    </section>
+
+    <section id="s13">
+      <h2>13. まとめ</h2>
+      <p>
+        このセッションは、AI ツールの導入率やコード生成量を自慢する話ではない。むしろ、AI 時代だからこそ、開発者生産性をより厳密に、より人間的に、よりシステム的に捉える必要があるという話である。
+      </p>
+      <p>
+        EngThrive の核は単純で、速く、楽に、良い仕事を作れるようにすることだ。そのためには、活動ではなく成果を測り、個人ではなくシステムを改善し、継続的にボトルネックを解く必要がある。AI はそのための強力な道具だが、測るべきものを間違えると、より速く間違った場所へ進むだけになる。
+      </p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=wDqipcHkaEM" target="_blank" rel="noopener">https://www.youtube.com/watch?v=wDqipcHkaEM</a> ／ 取得手段: yt-dlp（英語字幕 VTT + info.json） ／ 生成日: 2026-06-09</p>
+    </footer>
+  </main>
+</div>
+
+<dialog class="diagram-modal" id="diagramModal" aria-label="図の拡大表示">
+  <div class="diagram-modal-head">
+    <div class="diagram-modal-tools">
+      <label for="diagramZoom">倍率</label>
+      <input id="diagramZoom" type="range" min="80" max="220" value="120" />
+      <span id="diagramZoomLabel">120%</span>
+    </div>
+    <button class="diagram-modal-close" id="diagramClose" type="button">閉じる</button>
+  </div>
+  <div class="diagram-modal-body">
+    <div class="diagram-modal-canvas" id="diagramCanvas"></div>
+  </div>
+</dialog>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default' });
+
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  const toc = document.getElementById('toc');
+
+  headings.forEach((heading, index) => {
+    const section = heading.closest('section');
+    if (!heading.id) heading.id = `${section.id}-h${index}`;
+    const li = document.createElement('li');
+    li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+    const a = document.createElement('a');
+    a.href = `#${heading.id}`;
+    a.textContent = heading.textContent;
+    li.appendChild(a);
+    toc.appendChild(li);
+  });
+
+  const links = [...toc.querySelectorAll('a')];
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    if (!visible) return;
+    links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`));
+  }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+
+  headings.forEach(heading => observer.observe(heading));
+
+  const modal = document.getElementById('diagramModal');
+  const canvas = document.getElementById('diagramCanvas');
+  const close = document.getElementById('diagramClose');
+  const zoom = document.getElementById('diagramZoom');
+  const zoomLabel = document.getElementById('diagramZoomLabel');
+
+  function openDiagram(source) {
+    canvas.innerHTML = source.outerHTML;
+    zoom.value = 120;
+    zoomLabel.textContent = '120%';
+    canvas.style.setProperty('--diagram-zoom', '1.2');
+    modal.showModal();
+  }
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', '図を拡大表示');
+    diagram.addEventListener('click', () => openDiagram(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagram(diagram);
+      }
+    });
+  });
+
+  zoom.addEventListener('input', () => {
+    const value = Number(zoom.value);
+    zoomLabel.textContent = `${value}%`;
+    canvas.style.setProperty('--diagram-zoom', String(value / 100));
+  });
+  close.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+</script>
+</body>
+</html>
