@@ -135,37 +135,30 @@
   .mermaid:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 3px;
   }
-
-  .diagram-modal {
-    width: min(96vw, 1160px); height: min(88vh, 780px);
-    max-width: 96vw; max-height: 92vh; resize: both; overflow: hidden;
-    padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
-    background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow);
+  .mermaid { cursor: zoom-in; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.76); z-index: 50; padding: 22px;
   }
-  .diagram-modal::backdrop { background: rgba(0,0,0,.62); }
-  .diagram-modal-head {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
   }
-  .diagram-modal-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .diagram-modal-tools label { color: var(--text-dim); font-size: 13px; }
-  .diagram-modal-tools input[type="range"] { width: 150px; vertical-align: middle; }
-  .diagram-modal-close {
-    border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
-    color: var(--text); padding: 4px 10px; cursor: pointer;
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
   }
-  .diagram-modal-body { height: calc(100% - 54px); overflow: auto; padding: 18px; }
-  .diagram-modal-canvas {
-    --diagram-zoom: 1.2;
-    transform: scale(var(--diagram-zoom)); transform-origin: top left;
-    width: calc(100% / var(--diagram-zoom)); min-width: 720px;
-  }
-  .diagram-modal .mermaid { cursor: default; margin: 0; min-width: max-content; }
-
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
   @media (max-width: 720px) {
-    .diagram-modal { width: 96vw; height: 86vh; resize: vertical; }
-    .diagram-modal-head { align-items: flex-start; flex-direction: column; }
-    .diagram-modal-tools input[type="range"] { width: 120px; }
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
   }
 
   footer.page {
@@ -573,126 +566,144 @@ flowchart LR
   </main>
 </div>
 
-<dialog id="diagram-modal" class="diagram-modal" aria-label="Mermaid 図の拡大表示">
-  <div class="diagram-modal-head">
-    <strong>Mermaid 図</strong>
-    <div class="diagram-modal-tools">
-      <label for="diagram-zoom">倍率 <input id="diagram-zoom" type="range" min="80" max="220" value="120" step="10" /> <span id="diagram-zoom-value">120%</span></label>
-      <button type="button" class="diagram-modal-close" data-close-diagram>閉じる</button>
-    </div>
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid 図ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
   </div>
-  <div class="diagram-modal-body">
-    <div class="diagram-modal-canvas"></div>
-  </div>
-</dialog>
+  <div id="modalBody" class="modal-body"></div>
+</div>
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
-  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
-</script>
 
-<script>
-  (function () {
-    const diagrams = document.querySelectorAll('.mermaid');
-    const dialog = document.getElementById('diagram-modal');
-    if (!diagrams.length || !dialog) return;
-
-    const canvas = dialog.querySelector('.diagram-modal-canvas');
-    const zoom = dialog.querySelector('#diagram-zoom');
-    const zoomValue = dialog.querySelector('#diagram-zoom-value');
-    const closeButton = dialog.querySelector('[data-close-diagram]');
-
-    const applyZoom = () => {
-      const value = Number(zoom.value) / 100;
-      canvas.style.setProperty('--diagram-zoom', String(value));
-      zoomValue.textContent = zoom.value + '%';
-    };
-
-    const openDiagram = (diagram) => {
-      canvas.innerHTML = '';
-      const clone = diagram.cloneNode(true);
-      clone.removeAttribute('role');
-      clone.removeAttribute('tabindex');
-      clone.removeAttribute('aria-label');
-      clone.removeAttribute('title');
-      canvas.appendChild(clone);
-      zoom.value = '120';
-      applyZoom();
-      if (typeof dialog.showModal === 'function') dialog.showModal();
-      else dialog.setAttribute('open', '');
-    };
-
-    diagrams.forEach((diagram) => {
-      diagram.setAttribute('role', 'button');
-      diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
-      diagram.setAttribute('title', 'クリックで拡大表示');
-      diagram.tabIndex = 0;
-      diagram.addEventListener('click', () => openDiagram(diagram));
-      diagram.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          openDiagram(diagram);
-        }
-      });
-    });
-
-    zoom.addEventListener('input', applyZoom);
-    closeButton.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-  })();
-</script>
-
-<script>
-  (function () {
-    const toc = document.getElementById('toc');
-    const sections = document.querySelectorAll('main section[id]');
-    const links = new Map();
-
-    sections.forEach((sec) => {
-      const h2 = sec.querySelector('h2');
-      if (!h2) return;
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
       const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = '#' + sec.id;
-      a.textContent = h2.textContent.trim();
-      li.appendChild(a);
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
       toc.appendChild(li);
-      links.set(sec.id, a);
-
-      sec.querySelectorAll('h3').forEach((h3, i) => {
-        if (!h3.id) h3.id = sec.id + '-h3-' + i;
-        const subLi = document.createElement('li');
-        subLi.className = 'lvl-3';
-        const subA = document.createElement('a');
-        subA.href = '#' + h3.id;
-        subA.textContent = h3.textContent.trim();
-        subLi.appendChild(subA);
-        toc.appendChild(subLi);
-        links.set(h3.id, subA);
-      });
     });
 
-    const targets = [
-      ...document.querySelectorAll('main section[id]'),
-      ...document.querySelectorAll('main h3[id]')
-    ];
-
+    const links = [...toc.querySelectorAll('a')];
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const a = links.get(entry.target.id);
-        if (!a) return;
-        if (entry.isIntersecting) {
-          links.forEach((l) => l.classList.remove('active'));
-          a.classList.add('active');
-        }
-      });
-    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
 
-    targets.forEach((t) => observer.observe(t));
-  })();
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
 </script>
 </body>
 </html>
