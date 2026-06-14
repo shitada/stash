@@ -504,8 +504,23 @@
     els.noResults.hidden = sorted.length !== 0;
 
     if (s.grouped) {
+      // カテゴリ内を並び替えるだけだとカテゴリの並び順（固定）が見た目を支配し、
+      // 並び替えの変化が分かりにくい。そこでグループの表示順も選択したキーに追従させる。
+      // タイトル順のときはカテゴリ名順、それ以外（日付系）は各カテゴリ先頭（＝最も新しい/古い）
+      // アイテムが sorted 内で現れる位置順にカテゴリを並べる。
+      const usedCats = CATEGORY_ORDER.filter((cat) => sorted.some((r) => r.category === cat));
+      let orderedCats;
+      if (s.sort.startsWith("title")) {
+        orderedCats = usedCats.slice().sort((a, b) => a.localeCompare(b, "ja"));
+      } else {
+        orderedCats = usedCats.slice().sort(
+          (a, b) =>
+            sorted.findIndex((r) => r.category === a) -
+            sorted.findIndex((r) => r.category === b)
+        );
+      }
       let first = true;
-      CATEGORY_ORDER.forEach((cat) => {
+      orderedCats.forEach((cat) => {
         const items = sorted.filter((r) => r.category === cat);
         if (!items.length) return;
         const h = document.createElement("h3");
