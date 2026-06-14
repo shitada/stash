@@ -76,6 +76,58 @@
     background: var(--bg-elev); border: 1px solid var(--border);
     padding: 1px 6px; border-radius: 6px; font-size: 13px;
   }
+
+  /* --- Controls / toolbar --- */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+  }
+  .toolbar .field { display: flex; flex-direction: column; gap: 4px; }
+  .toolbar .field.grow { flex: 1 1 220px; }
+  .toolbar label {
+    font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .toolbar select, .toolbar input[type="search"] {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; font-family: inherit;
+  }
+  .toolbar select { min-width: 150px; }
+  .toolbar input[type="search"] { width: 100%; }
+  .toolbar select:focus, .toolbar input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .toggle {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13.5px; color: var(--text); cursor: pointer; padding: 7px 0;
+  }
+  .btn-reset {
+    background: var(--bg); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 14px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chips:empty { display: none; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg-elev); border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 12.5px;
+  }
+  .chip button {
+    background: none; border: none; color: inherit; cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 0 4px;
+  }
+  .result-count { font-size: 13px; color: var(--text-dim); margin-bottom: 14px; }
+  .group-title {
+    font-size: 18px; color: var(--text-dim); letter-spacing: .06em;
+    text-transform: uppercase; margin: 28px 0 14px;
+  }
+  .group-title.first { margin-top: 0; }
+  .no-results {
+    border: 1px dashed var(--border); border-radius: var(--radius);
+    padding: 24px; text-align: center; color: var(--text-dim); font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -89,123 +141,61 @@
     </p>
   </header>
 
-  <section>
-    <h2>Reports ― AI × ソフトウェア開発の未来</h2>
-    <div class="card-list">
-      <article class="card">
-        <a href="reports/scott-mark-agents-reshape-software-engineering-ja.html">
-          <h3>Scott と Mark が学ぶ ― エージェントはソフトウェアエンジニアリングをどう作り変えるか（BRK247）日本語要約</h3>
-          <p>
-            Microsoft Build 2026 のセッション BRK247 で Mark Russinovich と Scott Hanselman が「vibes を超えた仕事」を本音で語る回を日本語要約。アジェンティックコーディングのブーストと限界、AI の追従性とナンセンス、slop/vibes/AI 拡張の 3 段階、early in context、認知的負債（MIT 研究）、看護に学ぶプリセプター制までを網羅。
-          </p>
-          <div class="meta">出典: YouTube (Microsoft Build 2026 BRK247) / 公開: 2026年6月4日 / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月14日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/andrew-ng-future-of-ai-coding.html">
-          <h3>Andrew Ng「ソフトウェアエンジニアリングの未来」非公式まとめ</h3>
-          <p>
-            AI Dev 26 (SF) で Andrew Ng が語った AI コーディングの加速、ボトルネックの移動、Context Hub と Code Dream の新発表までを、省略なしで日本語に再構成。これからの開発者が身につけるべきスキルセットを整理。
-          </p>
-          <div class="meta">出典: YouTube (AI Dev 26 x SF) / 公開: 2026年5月20日 / 取得手段: yt-dlp</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/microsoft-engthrive-framework-developer-productivity-ja.html">
-          <h3>Future of Developer Productivity: Microsoft EngThrive Framework in Practice ― 日本語要約</h3>
-          <p>
-            Microsoft Build 2026 BRK210 セッションをもとに、AI 時代の開発者生産性をコード量ではなく Speed / Ease / Quality のアウトカムで測る Microsoft EngThrive フレームワークを整理。Focus Time と Time to First PR の改善事例、活動指標と成果指標の違い、Q&amp;A までを日本語で要約。
-          </p>
-          <div class="meta">出典: YouTube (Microsoft Build 2026 BRK210) / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月9日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/software-engineering-at-the-tipping-point.html">
-          <h3>Software engineering at the tipping point ― 日本語要約</h3>
-          <p>
-            Google I/O 2026 における Adam Bender 氏の講演を日本語要約。AI 時代のソフトウェア生態系にかかる 10x 圧力、エージェントから見た内部 API の扱い、ロールバック設計、内部データガバナンスなどを整理した非公式レポート。
-          </p>
-          <div class="meta">出典: YouTube (Google I/O 2026) / 公開: 2026年5月21日 / 取得手段: yt-dlp</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/tw-future-of-software-engineering-ja.html">
-          <h3>ソフトウェアエンジニアリングの未来 ― リトリート所見と戦略的洞察（日本語要約）</h3>
-          <p>
-            Thoughtworks のレポート『The future of software engineering — Retreat findings and strategic insights』(2026年2月) を
-            内容を省略せず日本語で要約したもの。AI 時代のコード品質・ミドルループ・エージェント設計・組織・セキュリティを網羅。
-          </p>
-          <div class="meta">原文: thoughtworks.com / 全17ページ / 公開: 2026年2月</div>
-        </a>
-      </article>
-    </div>
-  </section>
+  <section id="reports">
+    <h2>Reports</h2>
 
-  <section>
-    <h2>Reports ― AI モデル・研究論文</h2>
-    <div class="card-list">
-      <article class="card">
-        <a href="reports/mai-thinking-1-hill-climbing-machine-ja.html">
-          <h3>MAI-Thinking-1: Building a Hill-Climbing Machine ― 全章日本語要約</h3>
-          <p>
-            Microsoft AI が公開した自社初の本格的推論モデル MAI-Thinking-1（35B active / 1T total MoE）の技術レポート（109 ページ）を、本編 7 章＋付録 A–K まで含めて日本語に再構成した非公式まとめ。Hill-Climbing Machine の設計原則、Scaling Ladder / EG、データミックス、YOLO / Rocket、3 つの RL Climb、評価結果、Red Teaming、クラスタ運用までを網羅。
-          </p>
-          <div class="meta">原典: microsoft.ai PDF (2026年6月) / 取得手段: curl + pdftotext / 生成日: 2026年6月6日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/shipping-custom-models-at-scale-finetuning-inference-ja.html">
-          <h3>Shipping custom models at scale from fine-tuning to inference ― 日本語要約</h3>
-          <p>
-            Microsoft Build 2026 BRK234 のパネルをもとに、DeepSeek R1 以後の RL post-training、GRPO、reward 設計、LoRA、Unsloth、Torch Compile、CUDA graphs、GPU カーネル、speculative decoding、agentic workload の本番ボトルネックを日本語で整理。
-          </p>
-          <div class="meta">出典: YouTube (Microsoft Build 2026 BRK234) / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月9日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/tradingagents-multi-agents-llm-financial-trading-framework.html">
-          <h3>TradingAgents: Multi-Agents LLM Financial Trading Framework 非公式まとめ</h3>
-          <p>
-            arXiv:2412.20138 で発表された金融取引向けマルチエージェント LLM フレームワーク論文を、省略せず日本語で要約・再構成した非公式 HTML レポート。Fundamental / Sentiment / News / Technical アナリスト、Researcher、Trader、Risk Manager の役割分担と、モデル振り分け戦略を整理。
-          </p>
-          <div class="meta">原典: arXiv:2412.20138 (Quantitative Finance) / ライセンス: CC BY 4.0 / 取得手段: arXiv TeX Source</div>
-        </a>
-      </article>
+    <div class="toolbar">
+      <div class="field grow">
+        <label for="searchInput">検索</label>
+        <input type="search" id="searchInput" placeholder="タイトル・説明・イベント・発表者…" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="sortSel">並び替え</label>
+        <select id="sortSel">
+          <option value="generated:desc">生成日（新しい順）</option>
+          <option value="generated:asc">生成日（古い順）</option>
+          <option value="published:desc">公開・投稿日（新しい順）</option>
+          <option value="published:asc">公開・投稿日（古い順）</option>
+          <option value="title:asc">タイトル順（A→Z）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="catSel">カテゴリ</label>
+        <select id="catSel"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="eventSel">イベント / 媒体</label>
+        <select id="eventSel"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="speakerSel">発表者</label>
+        <select id="speakerSel"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="sourceSel">ソース種別</label>
+        <select id="sourceSel"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="yearSel">年</label>
+        <select id="yearSel"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="groupChk">表示</label>
+        <label class="toggle"><input type="checkbox" id="groupChk" checked /> カテゴリで分類</label>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button type="button" class="btn-reset" id="resetBtn">リセット</button>
+      </div>
     </div>
-  </section>
 
-  <section>
-    <h2>Reports ― カンファレンス・製品発表</h2>
-    <div class="card-list">
-      <article class="card">
-        <a href="reports/from-prototype-to-production-agents-at-scale-ja.html">
-          <h3>From prototype to production: build and run agents at scale ― 日本語要約</h3>
-          <p>
-            Microsoft Build 2026 BRK241 セッションをもとに、Foundry Agent Service と Microsoft Agent Framework で agent をローカル prototype から hosted agent、Teams 公開、trace replay、eval、Agent Optimizer、procedural memory まで本番運用へ進める流れを日本語で整理。
-          </p>
-          <div class="meta">出典: YouTube (Microsoft Build 2026 BRK241) / 公式 GitHub リソース併用 / 生成日: 2026年6月9日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/windows-ml-local-ai-on-windows-ja.html">
-          <h3>Windows ML と Microsoft Foundry on Windows ― ローカル AI 開発の全体像</h3>
-          <p>
-            Microsoft Build 2026 の BRK260 セッションを軸に、Windows ML、Windows AI APIs、Foundry Local、WebNN、DirectML の公式情報と過去経緯を参照して、ローカル AI で何ができるかを日本語で詳しく整理した非公式レポート。
-          </p>
-          <div class="meta">出典: YouTube (Microsoft Build 2026 BRK260) / 公式 Docs・GitHub リソース併用 / 生成日: 2026年6月8日</div>
-        </a>
-      </article>
-      <article class="card">
-        <a href="reports/microsoft-build-2026-announcements.html">
-          <h3>Microsoft Build 2026 発表まとめ ― 製品・アップデート完全レポート</h3>
-          <p>
-            2026 年 6 月 2 日サンフランシスコで開催された Microsoft Build 2026 で発表された
-            Microsoft Agent Platform、Microsoft IQ（Web/Work/Fabric/Foundry IQ）、MAI モデル 7 種、Foundry、GitHub Copilot App、Windows × MXC、Surface RTX Spark Dev Box、Azure Cobalt 200、HorizonDB、Majorana 2、Project Solara を出典 URL 付きで日本語まとめ。
-          </p>
-          <div class="meta">出典: news.microsoft.com/build-2026/ ほか公式ブログ多数 / 取得手段: fetch_webpage / 生成日: 2026年6月4日</div>
-        </a>
-      </article>
-    </div>
+    <div class="chips" id="activeChips" aria-label="適用中のフィルタ"></div>
+    <div class="result-count" id="resultCount" aria-live="polite"></div>
+    <div id="reportContainer"></div>
+    <p class="no-results" id="noResults" hidden>条件に一致するレポートがありません。</p>
+    <noscript>
+      <p class="no-results">この一覧の絞り込み・並び替えには JavaScript が必要です。各レポートは <code>reports/</code> ディレクトリにあります。</p>
+    </noscript>
   </section>
 
   <section>
@@ -221,5 +211,336 @@
     shitada/stash ・ GitHub Pages (main / root)
   </footer>
 </main>
+
+<script>
+  // 各レポートの構造化メタデータ（生成日・公開日・イベント・発表者・ソース種別でソート/絞り込み）。
+  // meta 文字列はカードにそのまま表示する原文（情報を欠落させないため保持）。
+  const REPORTS = [
+    {
+      href: "reports/scott-mark-agents-reshape-software-engineering-ja.html",
+      title: "Scott と Mark が学ぶ ― エージェントはソフトウェアエンジニアリングをどう作り変えるか（BRK247）日本語要約",
+      desc: "Microsoft Build 2026 のセッション BRK247 で Mark Russinovich と Scott Hanselman が「vibes を超えた仕事」を本音で語る回を日本語要約。アジェンティックコーディングのブーストと限界、AI の追従性とナンセンス、slop/vibes/AI 拡張の 3 段階、early in context、認知的負債（MIT 研究）、看護に学ぶプリセプター制までを網羅。",
+      category: "AI × ソフトウェア開発の未来",
+      event: "Microsoft Build 2026",
+      speakers: ["Mark Russinovich", "Scott Hanselman"],
+      source: "YouTube",
+      published: "2026-06-04",
+      generated: "2026-06-14",
+      meta: "出典: YouTube (Microsoft Build 2026 BRK247) / 公開: 2026年6月4日 / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月14日"
+    },
+    {
+      href: "reports/andrew-ng-future-of-ai-coding.html",
+      title: "Andrew Ng「ソフトウェアエンジニアリングの未来」非公式まとめ",
+      desc: "AI Dev 26 (SF) で Andrew Ng が語った AI コーディングの加速、ボトルネックの移動、Context Hub と Code Dream の新発表までを、省略なしで日本語に再構成。これからの開発者が身につけるべきスキルセットを整理。",
+      category: "AI × ソフトウェア開発の未来",
+      event: "AI Dev 26",
+      speakers: ["Andrew Ng"],
+      source: "YouTube",
+      published: "2026-05-20",
+      generated: null,
+      meta: "出典: YouTube (AI Dev 26 x SF) / 公開: 2026年5月20日 / 取得手段: yt-dlp"
+    },
+    {
+      href: "reports/microsoft-engthrive-framework-developer-productivity-ja.html",
+      title: "Future of Developer Productivity: Microsoft EngThrive Framework in Practice ― 日本語要約",
+      desc: "Microsoft Build 2026 BRK210 セッションをもとに、AI 時代の開発者生産性をコード量ではなく Speed / Ease / Quality のアウトカムで測る Microsoft EngThrive フレームワークを整理。Focus Time と Time to First PR の改善事例、活動指標と成果指標の違い、Q&A までを日本語で要約。",
+      category: "AI × ソフトウェア開発の未来",
+      event: "Microsoft Build 2026",
+      speakers: [],
+      source: "YouTube",
+      published: null,
+      generated: "2026-06-09",
+      meta: "出典: YouTube (Microsoft Build 2026 BRK210) / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月9日"
+    },
+    {
+      href: "reports/software-engineering-at-the-tipping-point.html",
+      title: "Software engineering at the tipping point ― 日本語要約",
+      desc: "Google I/O 2026 における Adam Bender 氏の講演を日本語要約。AI 時代のソフトウェア生態系にかかる 10x 圧力、エージェントから見た内部 API の扱い、ロールバック設計、内部データガバナンスなどを整理した非公式レポート。",
+      category: "AI × ソフトウェア開発の未来",
+      event: "Google I/O 2026",
+      speakers: ["Adam Bender"],
+      source: "YouTube",
+      published: "2026-05-21",
+      generated: null,
+      meta: "出典: YouTube (Google I/O 2026) / 公開: 2026年5月21日 / 取得手段: yt-dlp"
+    },
+    {
+      href: "reports/tw-future-of-software-engineering-ja.html",
+      title: "ソフトウェアエンジニアリングの未来 ― リトリート所見と戦略的洞察（日本語要約）",
+      desc: "Thoughtworks のレポート『The future of software engineering — Retreat findings and strategic insights』(2026年2月) を内容を省略せず日本語で要約したもの。AI 時代のコード品質・ミドルループ・エージェント設計・組織・セキュリティを網羅。",
+      category: "AI × ソフトウェア開発の未来",
+      event: "Thoughtworks",
+      speakers: [],
+      source: "Web",
+      published: "2026-02-01",
+      generated: null,
+      meta: "原文: thoughtworks.com / 全17ページ / 公開: 2026年2月"
+    },
+    {
+      href: "reports/mai-thinking-1-hill-climbing-machine-ja.html",
+      title: "MAI-Thinking-1: Building a Hill-Climbing Machine ― 全章日本語要約",
+      desc: "Microsoft AI が公開した自社初の本格的推論モデル MAI-Thinking-1（35B active / 1T total MoE）の技術レポート（109 ページ）を、本編 7 章＋付録 A–K まで含めて日本語に再構成した非公式まとめ。Hill-Climbing Machine の設計原則、Scaling Ladder / EG、データミックス、YOLO / Rocket、3 つの RL Climb、評価結果、Red Teaming、クラスタ運用までを網羅。",
+      category: "AI モデル・研究論文",
+      event: "Microsoft AI",
+      speakers: [],
+      source: "PDF",
+      published: "2026-06-01",
+      generated: "2026-06-06",
+      meta: "原典: microsoft.ai PDF (2026年6月) / 取得手段: curl + pdftotext / 生成日: 2026年6月6日"
+    },
+    {
+      href: "reports/shipping-custom-models-at-scale-finetuning-inference-ja.html",
+      title: "Shipping custom models at scale from fine-tuning to inference ― 日本語要約",
+      desc: "Microsoft Build 2026 BRK234 のパネルをもとに、DeepSeek R1 以後の RL post-training、GRPO、reward 設計、LoRA、Unsloth、Torch Compile、CUDA graphs、GPU カーネル、speculative decoding、agentic workload の本番ボトルネックを日本語で整理。",
+      category: "AI モデル・研究論文",
+      event: "Microsoft Build 2026",
+      speakers: [],
+      source: "YouTube",
+      published: null,
+      generated: "2026-06-09",
+      meta: "出典: YouTube (Microsoft Build 2026 BRK234) / 取得手段: yt-dlp 英語字幕 / 生成日: 2026年6月9日"
+    },
+    {
+      href: "reports/tradingagents-multi-agents-llm-financial-trading-framework.html",
+      title: "TradingAgents: Multi-Agents LLM Financial Trading Framework 非公式まとめ",
+      desc: "arXiv:2412.20138 で発表された金融取引向けマルチエージェント LLM フレームワーク論文を、省略せず日本語で要約・再構成した非公式 HTML レポート。Fundamental / Sentiment / News / Technical アナリスト、Researcher、Trader、Risk Manager の役割分担と、モデル振り分け戦略を整理。",
+      category: "AI モデル・研究論文",
+      event: "arXiv",
+      speakers: [],
+      source: "arXiv",
+      published: "2024-12-01",
+      generated: null,
+      meta: "原典: arXiv:2412.20138 (Quantitative Finance) / ライセンス: CC BY 4.0 / 取得手段: arXiv TeX Source"
+    },
+    {
+      href: "reports/from-prototype-to-production-agents-at-scale-ja.html",
+      title: "From prototype to production: build and run agents at scale ― 日本語要約",
+      desc: "Microsoft Build 2026 BRK241 セッションをもとに、Foundry Agent Service と Microsoft Agent Framework で agent をローカル prototype から hosted agent、Teams 公開、trace replay、eval、Agent Optimizer、procedural memory まで本番運用へ進める流れを日本語で整理。",
+      category: "カンファレンス・製品発表",
+      event: "Microsoft Build 2026",
+      speakers: [],
+      source: "YouTube",
+      published: null,
+      generated: "2026-06-09",
+      meta: "出典: YouTube (Microsoft Build 2026 BRK241) / 公式 GitHub リソース併用 / 生成日: 2026年6月9日"
+    },
+    {
+      href: "reports/windows-ml-local-ai-on-windows-ja.html",
+      title: "Windows ML と Microsoft Foundry on Windows ― ローカル AI 開発の全体像",
+      desc: "Microsoft Build 2026 の BRK260 セッションを軸に、Windows ML、Windows AI APIs、Foundry Local、WebNN、DirectML の公式情報と過去経緯を参照して、ローカル AI で何ができるかを日本語で詳しく整理した非公式レポート。",
+      category: "カンファレンス・製品発表",
+      event: "Microsoft Build 2026",
+      speakers: [],
+      source: "YouTube",
+      published: null,
+      generated: "2026-06-08",
+      meta: "出典: YouTube (Microsoft Build 2026 BRK260) / 公式 Docs・GitHub リソース併用 / 生成日: 2026年6月8日"
+    },
+    {
+      href: "reports/microsoft-build-2026-announcements.html",
+      title: "Microsoft Build 2026 発表まとめ ― 製品・アップデート完全レポート",
+      desc: "2026 年 6 月 2 日サンフランシスコで開催された Microsoft Build 2026 で発表された Microsoft Agent Platform、Microsoft IQ（Web/Work/Fabric/Foundry IQ）、MAI モデル 7 種、Foundry、GitHub Copilot App、Windows × MXC、Surface RTX Spark Dev Box、Azure Cobalt 200、HorizonDB、Majorana 2、Project Solara を出典 URL 付きで日本語まとめ。",
+      category: "カンファレンス・製品発表",
+      event: "Microsoft Build 2026",
+      speakers: [],
+      source: "Web",
+      published: "2026-06-02",
+      generated: "2026-06-04",
+      meta: "出典: news.microsoft.com/build-2026/ ほか公式ブログ多数 / 取得手段: fetch_webpage / 生成日: 2026年6月4日"
+    }
+  ];
+
+  const CATEGORY_ORDER = ["AI × ソフトウェア開発の未来", "AI モデル・研究論文", "カンファレンス・製品発表"];
+
+  const els = {
+    search: document.getElementById("searchInput"),
+    sort: document.getElementById("sortSel"),
+    cat: document.getElementById("catSel"),
+    event: document.getElementById("eventSel"),
+    speaker: document.getElementById("speakerSel"),
+    source: document.getElementById("sourceSel"),
+    year: document.getElementById("yearSel"),
+    group: document.getElementById("groupChk"),
+    reset: document.getElementById("resetBtn"),
+    chips: document.getElementById("activeChips"),
+    count: document.getElementById("resultCount"),
+    container: document.getElementById("reportContainer"),
+    noResults: document.getElementById("noResults")
+  };
+
+  const uniq = (arr) => [...new Set(arr)];
+  const yearOf = (r) => (r.published || r.generated || "").slice(0, 4);
+
+  function fillSelect(sel, values, counter) {
+    values.forEach((v) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = counter ? `${v}（${counter(v)}）` : v;
+      sel.append(o);
+    });
+  }
+
+  // フィルタ候補をデータから動的生成
+  fillSelect(
+    els.cat,
+    CATEGORY_ORDER.filter((c) => REPORTS.some((r) => r.category === c)),
+    (v) => REPORTS.filter((r) => r.category === v).length
+  );
+  fillSelect(
+    els.event,
+    uniq(REPORTS.map((r) => r.event)),
+    (v) => REPORTS.filter((r) => r.event === v).length
+  );
+  fillSelect(
+    els.speaker,
+    uniq(REPORTS.flatMap((r) => r.speakers || [])),
+    (v) => REPORTS.filter((r) => (r.speakers || []).includes(v)).length
+  );
+  fillSelect(
+    els.source,
+    uniq(REPORTS.map((r) => r.source)),
+    (v) => REPORTS.filter((r) => r.source === v).length
+  );
+  fillSelect(
+    els.year,
+    uniq(REPORTS.map(yearOf).filter(Boolean)).sort().reverse(),
+    (v) => REPORTS.filter((r) => yearOf(r) === v).length
+  );
+
+  function getState() {
+    return {
+      q: els.search.value.trim().toLowerCase(),
+      sort: els.sort.value,
+      category: els.cat.value,
+      event: els.event.value,
+      speaker: els.speaker.value,
+      source: els.source.value,
+      year: els.year.value,
+      grouped: els.group.checked
+    };
+  }
+
+  function matches(r, s) {
+    if (s.category && r.category !== s.category) return false;
+    if (s.event && r.event !== s.event) return false;
+    if (s.speaker && !(r.speakers || []).includes(s.speaker)) return false;
+    if (s.source && r.source !== s.source) return false;
+    if (s.year && yearOf(r) !== s.year) return false;
+    if (s.q) {
+      const hay = [r.title, r.desc, r.event, r.meta, (r.speakers || []).join(" ")]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(s.q)) return false;
+    }
+    return true;
+  }
+
+  function comparator(sortValue) {
+    const [key, dir] = sortValue.split(":");
+    if (key === "title") return (a, b) => a.title.localeCompare(b.title, "ja");
+    return (a, b) => {
+      const da = a[key];
+      const db = b[key];
+      // 日付が無いものは常に末尾へ
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return dir === "desc" ? db.localeCompare(da) : da.localeCompare(db);
+    };
+  }
+
+  function cardEl(r) {
+    const article = document.createElement("article");
+    article.className = "card";
+    const a = document.createElement("a");
+    a.href = r.href;
+    const h3 = document.createElement("h3");
+    h3.textContent = r.title;
+    const p = document.createElement("p");
+    p.textContent = r.desc;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = r.meta;
+    a.append(h3, p, meta);
+    article.append(a);
+    return article;
+  }
+
+  function listEl(items) {
+    const list = document.createElement("div");
+    list.className = "card-list";
+    items.forEach((r) => list.append(cardEl(r)));
+    return list;
+  }
+
+  function renderChips(s) {
+    els.chips.innerHTML = "";
+    const add = (label, onClear) => {
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.append(document.createTextNode(label));
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("aria-label", label + " を解除");
+      btn.textContent = "×";
+      btn.addEventListener("click", onClear);
+      chip.append(btn);
+      els.chips.append(chip);
+    };
+    if (s.q) add("検索: " + s.q, () => { els.search.value = ""; render(); });
+    if (s.category) add("カテゴリ: " + s.category, () => { els.cat.value = ""; render(); });
+    if (s.event) add("イベント: " + s.event, () => { els.event.value = ""; render(); });
+    if (s.speaker) add("発表者: " + s.speaker, () => { els.speaker.value = ""; render(); });
+    if (s.source) add("ソース: " + s.source, () => { els.source.value = ""; render(); });
+    if (s.year) add("年: " + s.year, () => { els.year.value = ""; render(); });
+  }
+
+  function render() {
+    const s = getState();
+    const filtered = REPORTS.filter((r) => matches(r, s));
+    const sorted = filtered.slice().sort(comparator(s.sort));
+
+    els.container.innerHTML = "";
+    els.noResults.hidden = sorted.length !== 0;
+
+    if (s.grouped) {
+      let first = true;
+      CATEGORY_ORDER.forEach((cat) => {
+        const items = sorted.filter((r) => r.category === cat);
+        if (!items.length) return;
+        const h = document.createElement("h3");
+        h.className = "group-title" + (first ? " first" : "");
+        h.textContent = cat;
+        first = false;
+        els.container.append(h, listEl(items));
+      });
+    } else {
+      els.container.append(listEl(sorted));
+    }
+
+    els.count.textContent = `全 ${REPORTS.length} 件中 ${sorted.length} 件を表示`;
+    renderChips(s);
+  }
+
+  [els.search, els.sort, els.cat, els.event, els.speaker, els.source, els.year, els.group]
+    .forEach((el) => {
+      el.addEventListener("input", render);
+      el.addEventListener("change", render);
+    });
+
+  els.reset.addEventListener("click", () => {
+    els.search.value = "";
+    els.sort.value = "generated:desc";
+    els.cat.value = "";
+    els.event.value = "";
+    els.speaker.value = "";
+    els.source.value = "";
+    els.year.value = "";
+    els.group.checked = true;
+    render();
+  });
+
+  render();
+</script>
 </body>
 </html>
