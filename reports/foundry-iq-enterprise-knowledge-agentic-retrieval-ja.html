@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Foundry IQ — エンタープライズ知識とエージェンティック検索でエージェントを動かす（BRK246）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 セッション BRK246『Foundry IQ: Fuel agents with enterprise knowledge and agentic retrieval』（登壇: Pablo Castro）を省略せず日本語で要約。Serverless Foundry IQ、知識ソース、エージェンティック検索の第2世代、評価指標までを網羅。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    aside.sidebar details > summary { cursor: pointer; padding: 4px 0; }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre code { display: block; padding: 12px 14px; overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.76); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 / BRK246</div>
+      <h1>Foundry IQ — エンタープライズ知識とエージェンティック検索でエージェントを動かす</h1>
+      <p class="lead">Pablo Castro（Foundry IQ チーム）による技術ディープダイブ。エージェントを企業の知識につなぐコンテキストエンジニアリング基盤 Foundry IQ の層構造、Serverless 版の新発表、知識ソース連携、第2世代のエージェンティック検索と評価結果までをライブデモ中心に解説。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=FRptM_WiBRg" target="_blank" rel="noopener">YouTube: Foundry IQ: Fuel agents with enterprise knowledge and agentic retrieval | BRK246</a></dd></div>
+      <div><dt>登壇者</dt><dd>Pablo Castro（Microsoft / Foundry IQ チーム）</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月4日</dd></div>
+      <div><dt>媒体 / チャンネル</dt><dd>Microsoft Developer（Microsoft Build 2026）</dd></div>
+      <div><dt>所要時間</dt><dd>約45分1秒（字幕 約8,000語）</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（手動英語字幕）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Foundry IQ</span>
+          <span class="badge">Azure AI Search</span>
+          <span class="badge">Agentic RAG</span>
+          <span class="badge">Context Engineering</span>
+          <span class="badge">Serverless</span>
+          <span class="badge">Evaluations</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>Foundry IQ は、エージェントを「あらゆる場所の知識」に接続する Microsoft のコンテキストエンジニアリング基盤。<strong>統合層 / 知識検索層 / コア検索エンジン</strong>の3層に整理され、どの層からでも使え、後から上下に移動できる。</li>
+        <li>目玉は <strong>Serverless Foundry IQ（パブリックプレビュー）</strong>。10〜20秒でサービス作成、未使用時はゼロにスケールしストレージ課金のみ。エージェントがサービスやインデックスを動的に作成・削除する用途に最適。</li>
+        <li>検索は <strong>第2世代エージェンティックリトリーバル</strong>へ刷新。クエリプランニングと反復検索で recall・正確性・完全性が全指標で改善し、<strong>より少ないトークンでより良い回答</strong>を実現。すべては単一の <code>retrieve</code> API / MCP 呼び出しの裏に隠蔽される。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. Foundry IQ とは — 3つの設計目標</h2>
+      <p>Pablo Castro は冒頭、Foundry IQ を「エージェントを知識に接続するためのもの」と定義する。AI モデルやエージェントを、アプリケーション・会社・必要なデータへつなぎ、仕事を完遂させるための基盤である。設計時に重視した要素は3つ。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>① 簡単に始められる</h4><p>立ち上げが「朝飯前（piece of cake）」であること。ファイルをドラッグ&ドロップして質問する程度の手軽さ。</p></div>
+        <div class="card"><h4>② 多用途（versatility）</h4><p>アプリが高度化し、要求が増え、問題が難しくなっても、同じプラットフォーム内に必要なものが揃っている。</p></div>
+        <div class="card"><h4>③ 最高品質</h4><p>AI 駆動の全コンポーネントで高品質。特に検索ではランキング・関連性・コンテンツ理解に優れる。</p></div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. 最速デモ — ファイルから1分で知識ベース＆MCP サーバー</h2>
+      <p>「簡単さ」を実証するため、Pablo は Foundry の <code>build &gt; knowledge</code> から新しい知識ベースを作成。Wikipedia から取った映画記事ファイルを「Movies wiki」という名前でドラッグ&ドロップし、エージェントが用途を判断できるよう説明（「映画に関するフル記事」）を付与して保存する。</p>
+      <ul>
+        <li>作成した知識ベースは特定の Foundry IQ インスタンス（デモでは <code>demo3</code>）内に存在し、Azure AI Search がバックエンド。</li>
+        <li>各知識ベースは <strong>追加作業ゼロで MCP サーバー</strong>として機能する。API で呼ぶことも、MCP として使うこともできる。</li>
+        <li>デモでは新規エージェントを書く代わりに <strong>GitHub Copilot をエージェント</strong>として利用。auth プロキシで MCP サーバー（<code>demo3.search.windows.net</code> + 知識ベース名 + API バージョン）を接続。</li>
+        <li>「Neo はどの薬を飲んだ？」と質問 → エージェントが知識ベースにグラウンディングし「Neo は赤い薬（red pill）を飲んだ、これは The Matrix から」と回答。</li>
+      </ul>
+      <blockquote>ゼロから、エージェントが MCP / API で接続できる動く知識ベースまで、わずか1分。</blockquote>
+    </section>
+
+    <section id="s3">
+      <h2>3. 層構造アーキテクチャ</h2>
+      <p>Foundry IQ は「選択肢を隠さず、使いたい層を選べる」よう層状に構築されている。</p>
+      <div class="mermaid">
+flowchart TB
+  subgraph FIQ[Foundry IQ]
+    A["Foundry 統合層<br/>（高速にエージェント構築）"]
+    B["知識検索層<br/>（エージェンティック検索・反復クエリ計画・複数ソース選択・Microsoft IQ 連携）"]
+    C["コア検索エンジン<br/>（ベクトル検索 + 字句検索 + SOTA ランキング）"]
+    A --> B --> C
+  end
+  C --> D["エンタープライズ級のセキュリティ・品質・スケール"]
+      </div>
+      <table>
+        <thead><tr><th>層</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td>Foundry 統合層（最上位）</td><td>最小の手間でエージェントを構築。デモで見せた手軽さの層。</td></tr>
+          <tr><td>知識検索層（中間）</td><td>必要に応じてエージェンティック検索を行う完全な検索システム。反復的クエリ計画、複数ソースの選択、Microsoft IQ サービス全体への接続。直接呼べる API も提供。</td></tr>
+          <tr><td>コア検索エンジン（基盤）</td><td>SOTA のベクトル検索・字句検索・両者の統合・ランキングモデル。ゼロから作り直さずに最高品質の結果を得る。</td></tr>
+        </tbody>
+      </table>
+      <p>利用の基本フローは <strong>① Foundry IQ インスタンスのプロビジョニング → ② 知識ベース作成 → ③ 知識ソース追加 → ④ 検索（retrieve）</strong>。以降、各段階の改善が解説される。</p>
+    </section>
+
+    <section id="s4">
+      <h2>4. 新発表 — Serverless Foundry IQ（パブリックプレビュー）</h2>
+      <p>これまで Foundry IQ と基盤の Azure AI Search は <strong>専有キャパシティ（dedicated capacity）</strong>の作成を必要としていた。専有は安定ワークロードに最適で予測可能・隔離されているが、必要量を事前に見積もる必要がある。これを容易にするのが Serverless 版。</p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">10〜20秒</div><div class="label">サービス作成にかかる時間</div></div>
+        <div class="stat-card"><div class="num">ゼロ</div><div class="label">未使用時はゼロにスケール（ストレージのみ課金）</div></div>
+        <div class="stat-card"><div class="num">本番対応</div><div class="label">そのまま production へ</div></div>
+      </div>
+
+      <p>Serverless は使用量ベースで、使うまで課金されない。動的ワークロード（エージェントがサービスを作成する、アプリが動的にサービスを作成・削除する等）に最適。既存 Foundry IQ スタックと同じ SOTA 技術（SOTA ランキング、即席 RAG スタック）が基盤。</p>
+
+      <table>
+        <thead><tr><th>観点</th><th>Serverless</th><th>Dedicated（専有）</th></tr></thead>
+        <tbody>
+          <tr><td>課金モデル</td><td>使用量ベース。使わなければ無料</td><td>高い予測可能性</td></tr>
+          <tr><td>得意なパターン</td><td>多数の中小インデックス、開発ワークフロー、ユニットテスト、エージェントによる動的作成</td><td>隔離キャパシティ、安定した大規模ワークロード</td></tr>
+          <tr><td>特記</td><td>その場で作成・削除する用途に強い</td><td>機密コンピューティング（confidential computing）を上から下まで実行可能</td></tr>
+        </tbody>
+      </table>
+
+      <h3>デモ：エージェントがサービスを自作する</h3>
+      <p>Pablo は IMDb の映画タイトルデータ（ファイル）を指し示し、エージェントに「そのファイルを見て、新しい Foundry IQ サービスとインデックスを作り、最初の100行をロードして」と一言で指示。並行して Foundry 上の GUI からも、対応リージョン（West Central US 等）で「Serverless」を選んで新規サービスを作成（10〜20秒）。Azure ポータルでも同じものが作れる。</p>
+    </section>
+
+    <section id="s5">
+      <h2>5. 知識ベースと知識ソース</h2>
+      <p><strong>知識ベース（knowledge base）</strong>は「アクセス方法ではなく知識の範囲（スコープ）」であり、エージェントからは内部が隠蔽され関心が分離される。定義するのは「知識のドメイン」と「その情報の利用ポリシー」。</p>
+      <ul>
+        <li>検索の労力（quick に返すか、反復検索するか）を指定できる。</li>
+        <li>モデルの挙動に影響を与える <strong>steering instructions（操舵指示）</strong>を与えられる。</li>
+        <li>回答合成（answer synthesis）を行うかどうかを選べる。</li>
+      </ul>
+      <p>その下に<strong>知識ソース（knowledge sources）</strong>がぶら下がる。多くは「知識の場所を指し示すと、ベクトル/字句インデックスを作成」する方式だが、オンラインアクセスが必要なソースへの<strong>フェデレーション</strong>も可能。実行時の表現に関わらず、シナリオごとに使う知識ソースを選んでクエリできる。</p>
+
+      <h3>データの所在に応じた選択肢（スペクトラム）</h3>
+      <table>
+        <thead><tr><th>知識ソース</th><th>内容・特徴</th></tr></thead>
+        <tbody>
+          <tr><td>ファイル知識ソース</td><td>コンテンツをアップロード。ファイルと同じ手軽さだが、背後に検索エンジンがありインデックスを作成→高速検索。「100万 PDF を blob に持っている」ような規模ではローカルファイルアクセスでは捌けない（毎秒10〜20クエリは不可能）ため有効。</td></tr>
+          <tr><td>オブジェクトストア（Blob / OneLake / DB）</td><td>アプリが内部管理するコンテンツの着地点。指し示すだけで既定のインジェストパイプライン（チャンキング・ベクトル化）が走り高品質な結果。各ステップのカスタマイズ・独自ステップ注入も可能。マルチメディアにも対応。</td></tr>
+          <tr><td>Microsoft IQ プラットフォーム</td><td>Work IQ / Fabric IQ / Web IQ（後述）。</td></tr>
+          <tr><td>MCP サーバー（拡張）</td><td>組み込みオプションで足りないとき。データだけでなくアプリを「データとして」接続する普遍的な統合点。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>継続的インジェストと Azure Content Understanding</h3>
+      <p>Blob ストレージ等を指定すると、全コンテンツ処理（コンテンツ抽出、画像処理、ベクトル化）を実行。さらに <strong>一度きりではなく継続的に動作し変更を追跡</strong>、ソースに変更があると差分をインデックスへ増分反映するため、常に新鮮なインデックスが自動で保たれる。</p>
+      <p>PDF などの中身を理解するため、Foundry IQ は <strong>Azure Content Understanding</strong> と統合。OCR、ドキュメントレイアウト解析、読み順（reading order）の保持、ページをまたぐ表・疎な表の処理といった難所を高品質に抽出する。デモでは、手書きを含む表やチェックボックスまで markdown に抽出され、2カラムのビジネス文書のレイアウト・読み順・画像も正しく扱われた。構造化コンテンツには<strong>スキーマを与えて特定要素だけ抽出</strong>し、フィルタ等に使える。</p>
+    </section>
+
+    <section id="s6">
+      <h2>6. Microsoft IQ プラットフォームとの統合 — Work / Fabric / Web</h2>
+      <p>組織のデータは孤立して存在しない。Word 文書、カレンダー、メールは M365 テナントに、分析データはデータレイク/データウェアハウスにある。Foundry IQ は IQ プラットフォーム全体に箱から出してすぐ接続できる。</p>
+      <table>
+        <thead><tr><th>IQ コンポーネント</th><th>役割</th><th>設定のポイント</th></tr></thead>
+        <tbody>
+          <tr><td>Work IQ</td><td>M365 テナント（Word/カレンダー/メール等）への直接アクセス</td><td>テナントを指すだけで設定不要。ただしオフィスデータのためテナント管理者の同意が必要。</td></tr>
+          <tr><td>Fabric IQ</td><td>分析資産（データレイク、データウェアハウス）。自然言語→SQL、複数データソースのナビゲート</td><td>OneLake カタログ全体と統合。レイクハウス、データエージェント、オントロジー等のオブジェクトが見える。</td></tr>
+          <tr><td>Web IQ</td><td>Web へのアクセス（前日に発表）</td><td>MCP サーバー経由で web search ツールとして接続。</td></tr>
+        </tbody>
+      </table>
+      <p>各 IQ は単独でも動作するため、データが1か所にあるならそれだけ使えばよい。一方、自社アプリのデータ＋M365＋分析データを横断するエージェントも一般的なので、Foundry IQ は IQ プラットフォーム全体への統合をサポートする。</p>
+
+      <h3>デモ：1つの知識ベースに複数ソースを束ねる</h3>
+      <ul>
+        <li><strong>Work IQ</strong>：テナントを指定（管理者同意後すぐ動く）。</li>
+        <li><strong>Fabric IQ</strong>：OneLake のレイクハウスにある parquet（映画の評価などの統計）に対し、簡単な<strong>データエージェント</strong>を作成。自然言語の質問を Fabric が SQL に変換して実行。レイクハウス選択時はインデックス化オプションが出るが、データエージェントは検索時に質問を統合するためインデックス不要。</li>
+        <li><strong>Web IQ（MCP 経由）</strong>：「browse for more」から MCP サーバーを追加し、Web IQ のエンドポイントで認証、<code>web search</code> ツールを選択。</li>
+      </ul>
+      <p>結果、<strong>1つの知識ベース</strong>が、Wikipedia 記事（自前コンテンツ）・Web・Fabric データエージェントを必要に応じて使い分けて回答できるようになる。これを消費するエージェントは、裏で追加された可動部品を一切知る必要がない。</p>
+
+      <h3>MCP をデータ統合点に</h3>
+      <p>「エージェント版の ODBC があればよいが存在しない」。MCP はデータ統合専用ではないが<strong>どこにでもある</strong>ため優れた統合点になる。Foundry IQ は MCP の出力をヒューリスティックで<strong>項目指向のリスト</strong>に変換し、自前のランキングを上から適用して関連性を高める。例：GitHub MCP サーバーで Issue を1つのテーブルとして取り込む、といった使い方が「ただ動く」。</p>
+    </section>
+
+    <section id="s7">
+      <h2>7. ドキュメントレベルのセキュリティ</h2>
+      <p>RAG 黎明期は「全文書を入れてチャット UI を被せる」novelty が先行した。だが現実の企業では<strong>全員が全文書を見られるわけではない</strong>。ドキュメントレベルのセキュリティは後付けで間に合わせるものではなく、検索システム自体が元データと同じセキュリティモデルを支える必要がある。</p>
+      <ul>
+        <li><strong>アクセス制御の伝播</strong>：SharePoint や階層型名前空間付き Blob（ACL）などアクセス制御をサポートするソースから、構築するインデックスへ ACL を伝播。<strong>Entra と統合</strong>されグループメンバーシップ等も機能。</li>
+        <li><strong>クエリ時の権限適用</strong>：呼び出しユーザーの委任トークン（delegated token）を提示すると、そのユーザーが見られるサブセットだけが検索対象に見える。<strong>セキュリティはスタックの最下層で強制</strong>され、自前で上に重ねる必要がない。</li>
+        <li><strong>Purview 統合</strong>：機密度ラベルで暗号化された文書も、Purview 統合により復号→インデックス化→ACL で保護。誰が見られるかを制御し、機密度ラベルを構築中の UI に伝播できる（「アプリが Office のように振る舞う」）。完全なサンプルも公開。</li>
+      </ul>
+      <p>なお先に依頼していたエージェントは完了しており、Azure ポータルで確認すると Serverless サービス・100ドキュメントのインデックスが自動生成され、映画情報が格納されていた。「一言の指示で動くインデックスができた」。</p>
+    </section>
+
+    <section id="s8">
+      <h2>8. 検索（Retrieval）— 第2世代エージェンティックリトリーバル</h2>
+      <p>検索は「すべての作業が価値に変わる瞬間」。検索エンジンは<strong>上位3〜4件がエージェントの求めるグラウンディングそのもの</strong>になった瞬間に有用になる。Foundry IQ にはエージェンティック手法を用いた検索パイプラインが組み込まれている（生インデックスだけ使うことも可能）。</p>
+
+      <div class="mermaid">
+flowchart LR
+  Q["エージェントからの<br/>質問・データ要求"] --> P["クエリプランニング<br/>（対象ソース選択・分解）"]
+  P --> S["複数検索を実行"]
+  S --> E{"求める結果が<br/>得られたか？"}
+  E -->|No・設定した検索努力に応じ反復| P
+  E -->|Yes| R["最終結果を<br/>エージェントへ提示"]
+      </div>
+
+      <p>パイプラインはまずクエリプランニングで「どのデータソースを見るか」「クエリをどう分解するか」を決め、いくつか検索を実行→結果を見て十分か判断→不足なら設定した<strong>検索努力（retrieval effort）</strong>に応じて反復→最終結果を生成する。現在は<strong>第2世代</strong>。昨年10月から現在までにモデルがツール呼び出しループ等で大きく向上したため、最新モデルの実力を活かすべく検索スタックを大幅刷新した。</p>
+
+      <h3>評価結果 — 全指標で改善</h3>
+      <p>比較指標は recall、回答の正確性、回答の完全性、そして「答えが元データにあるのにモデルが『分からない』と言う頻度」。比較対象は字句インデックス（BM25）、ハイブリッド検索（ベクトル＋字句）、そしてエージェンティック検索オフの「minimal モード」。結果、<strong>全指標で実質的な改善</strong>。</p>
+      <div class="callout">
+        <p><strong>トレードオフはレイテンシ。</strong>検索インデックスは瞬時（レイテンシ予算に計上不要なほど高速）だが、retrieve 呼び出しは数秒、複数回反復すると10秒程度になることもある。</p>
+      </div>
+
+      <h3>改善の要因</h3>
+      <table>
+        <thead><tr><th>要因</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>言語モデルの向上</td><td>今日のモデルの作法に合わせて検索ワークフローを大幅更新。大きな差を生んだ。</td></tr>
+          <tr><td>新しいセマンティックランカー</td><td>長年ランカーを訓練しており、さらに境界を押し広げた。</td></tr>
+          <tr><td>回答合成（answer synthesis）</td><td>大幅な改善。</td></tr>
+          <tr><td>MCP パラメータバインディング等</td><td>モデルごとの差が大きいため、使用モデルに応じてプロンプトを調整し正確性を高めた。</td></tr>
+        </tbody>
+      </table>
+      <p>科学チームが評価方法の詳細なライトアップを公開しており、情報検索に関心があれば画面のデータを含む長文解説を参照できる（これで <strong>3年連続</strong>の評価公開）。</p>
+
+      <h3>トークン効率 — Pareto フロンティア</h3>
+      <p>近年重要なトークン効率について、「検索にかかるトークン」ではなく「<strong>正解を得るのにかかるトークン</strong>」で評価。誰でも数トークンで検索はできるが、問題は正解したか。グラフは「最少トークンで到達できる最良点（Pareto 線）」を示し、ハイブリッド検索（外側エージェントが追加オーケストレーションを担う）と、Foundry IQ がオーケストレーションを担う完全エージェンティック検索を自社比較。</p>
+      <ul>
+        <li><strong>より少ないトークンでより良い回答</strong>を生成。</li>
+        <li>プロンプト構築・自身のコンテキスト管理を<strong>トークンキャッシュ</strong>を意識して設計。プレフィックスキャッシュにヒットして高速、かつキャッシュトークンは常に安いため低コスト。</li>
+      </ul>
+    </section>
+
+    <section id="s9">
+      <h2>9. retrieve API のデモと内部の可視化</h2>
+      <p>Pablo は <code>retrieve</code> API を呼ぶ簡単なクライアントを用意し、medium の検索努力で内部を見せる。複数データソースを持ち一部がオンラインのため、知識ベースにはオーケストレーション用モデルの指定が必要（デモは <code>GPT-4.5 mini</code>、既定の推論努力、回答合成の有無、両者への steering instructions も任意指定可）。</p>
+      <p>質問は「評価（ratings）」と「興行成績（box office）」を含む複合的なもの。</p>
+      <ul>
+        <li>ratings は <strong>Fabric のデータエージェント</strong>が parquet を SQL で問い合わせて取得。</li>
+        <li>box office は自前データになく、<strong>Web グラウンディング</strong>（MCP サーバー）で上位作品を取得。</li>
+        <li>プランナーが走り、まずデータエージェント、次に Web 用 MCP サーバーへ。一部コンテンツを破棄し、合成ステップで回答を構築して推論を終了。</li>
+        <li>各結果には<strong>参照（references）</strong>が付き、どの知識ソース由来か、元ファイルへのリンク等を提示。通常 UX には出さないが、エージェントへの供給やデバッグに有用。</li>
+      </ul>
+      <blockquote>ランキング・関連性・検索を改善する全技術と科学は、<strong>たった1つの API（retrieve 呼び出しまたは MCP サーバー呼び出し）の裏</strong>に隠蔽され、残りはすべて内部で起こる。</blockquote>
+    </section>
+
+    <section id="s10">
+      <h2>10. 層を上下する柔軟性 と スケール・速度</h2>
+      <p>システムは「層をきれいに積層し、どの層をいつ使うか選べる」設計。非自明だった工夫は、<strong>1つの層を選んでもそこに固定されない</strong>こと。統合層から始めても、知識ベースでも、コア検索エンジン（Azure AI Search 上）に直行してもよく、後から上下に移動・方針変更できる。</p>
+      <p>Azure ポータルで内部を覗くと、demo3 サービス内に作成した知識ベース、その知識ソース（リモート2つ、インデックス化2つ）、データを取り込む<strong>indexer（データパイプライン）</strong>、インデックスのスキーマまで確認できる。例として、ベクトル検索の圧縮は既定で<strong>8ビット量子化</strong>だが、量子化ポリシーやリランキングポリシーを細部まで制御できる。実際のチャンク（チャンキング結果のスニペット）やベクトルも閲覧可能。これによりレイテンシのトレードオフ（完全エージェンティック検索＝数秒で高品質 / ファイル的に大量検索＝超高速）を選べる。</p>
+
+      <h3>速度デモ — 英語版 Wikipedia 全体（約2,200万チャンク）</h3>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">約2,200万</div><div class="label">英語版 Wikipedia 全体のチャンク数（単一インデックス）</div></div>
+        <div class="stat-card"><div class="num">毎キーストローク</div><div class="label">入力のたびに検索しても追いつかない速度</div></div>
+        <div class="stat-card"><div class="num">1秒以内</div><div class="label">10〜20件×複数ラウンドの並列検索も合計1秒以内で完了</div></div>
+      </div>
+      <p>全英語版 Wikipedia をチャンク化した約2,200万チャンクのインデックスでも、1キーストロークごとに検索が走り、タイプ速度が検索に追いつけないほど高速。エージェントに10検索や複数ラウンド（各10〜20検索）を投げても、並列で1秒以内に完了する。これは<strong>検索の考え方そのものを変える</strong>——検索ループを Foundry IQ に任せても、エージェントにエントリポイントを渡して好きなだけ叩かせてもよく、数千万〜数億ドキュメント規模でも問題ない。</p>
+    </section>
+
+    <section id="s11">
+      <h2>11. まとめ</h2>
+      <p>本セッションで示したものは<strong>すべて今日から利用可能</strong>。Foundry、Azure ポータル、または SDK から始められる。Pablo は関連する Build セッション群を案内し、情報が有用であったことを願うと締めくくった。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>Serverless Foundry IQ</h4><p>10〜20秒で作成、ゼロスケール、本番対応。エージェントの動的作成に最適。</p></div>
+        <div class="card"><h4>豊富な知識ソース</h4><p>ファイル / オブジェクトストア / Work・Fabric・Web IQ / MCP を1つの知識ベースに束ねる。</p></div>
+        <div class="card"><h4>第2世代の検索</h4><p>全指標改善＋トークン効率。すべては単一 API の裏に隠蔽。</p></div>
+        <div class="card"><h4>最下層のセキュリティ</h4><p>ACL/Entra/Purview を伝播し、クエリ時にユーザー権限で強制。</p></div>
+      </div>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=FRptM_WiBRg" target="_blank" rel="noopener">https://www.youtube.com/watch?v=FRptM_WiBRg</a> ／ 取得手段: yt-dlp（手動英語字幕） ／ 生成日: 2026年6月17日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid 図ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
