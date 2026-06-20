@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Loop Engineering（ループエンジニアリング）まとめ — 5つの記事から読み解くAIコーディングの新メタ</title>
+<meta name="description" content="Addy Osmani、Cobus Greyling、MindStudio、LangChain（Sydney Runkle）、Matt Van Horn の5記事をもとに、AIコーディングエージェントの新潮流『Loop Engineering（ループエンジニアリング）』を日本語で総合要約。プロンプトからループ設計へ、5つの構成要素、4階層のループ、実行基盤の選び方、コスト・comprehension debt まで。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    aside.sidebar details > summary { cursor: pointer; padding: 4px 0; }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre code { display: block; padding: 12px 14px; overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.76); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+  footer.page ul { font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">5記事の総合まとめ / AIコーディングエージェント</div>
+      <h1>Loop Engineering（ループエンジニアリング）— AIコーディングの新しいメタ</h1>
+      <p class="lead">「エージェントにプロンプトを打つ人」をやめ、「エージェントにプロンプトを打つループ（システム）を設計する」へ。Addy Osmani、Cobus Greyling、MindStudio、LangChain（Sydney Runkle）、Matt Van Horn の5記事を横断し、Loop Engineering の定義・構成要素・実行基盤・落とし穴を1本に統合。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>主な著者</dt><dd>Addy Osmani / Cobus Greyling / Sydney Runkle (LangChain) / MindStudio Team / Matt Van Horn</dd></div>
+      <div><dt>公開時期</dt><dd>2026年6月（7日〜16日ごろ）</dd></div>
+      <div><dt>媒体</dt><dd>個人ブログ / Substack / 企業ブログ / X（Article）</dd></div>
+      <div><dt>テーマ</dt><dd>AIコーディングエージェントのループ設計</dd></div>
+      <div><dt>取得手段</dt><dd>fetch_webpage（各記事本文）</dd></div>
+      <div><dt>キーパーソン</dt><dd>Peter Steinberger / Boris Cherny (Anthropic) ほか</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Loop Engineering</span>
+          <span class="badge">Agentic AI</span>
+          <span class="badge">ReAct</span>
+          <span class="badge">Harness</span>
+          <span class="badge">Hill Climbing</span>
+          <span class="badge">Comprehension Debt</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li><strong>Loop Engineering とは「自分自身（プロンプトを打つ人）を置き換える」こと。</strong>エージェントに1ターンずつ指示する代わりに、仕事を見つけ・割り当て・検証し・記録し・次を決める「ループ（小さな制御システム）」を一度だけ設計し、ループにエージェントを突かせる。Peter Steinberger・Boris Cherny（Anthropic）らが提唱し、2026年6月の AI コーディング界で最も語られた概念。</li>
+        <li><strong>ループは「reason → act → observe → repeat」（ReAct）が核。</strong>明確なゴール（停止条件）、ツール群、コンテキスト管理、終了ロジック、エラー処理が必要。実務では Automation（心拍）・Worktree（並列分離）・Skill（知識）・Connector/MCP（連携）・Sub-agent（作る人と検証する人の分離）＋外部メモリの6要素で構成される（Addy Osmani）。LangChain は Agent → 検証 → イベント駆動 → Hill Climbing の4階層で整理。</li>
+        <li><strong>ループは万能ではない。検証・理解・判断は依然あなたの責任。</strong>無人で動くループは無人でミスもする。コスト（トークン）は急増し、comprehension debt（理解の負債）と cognitive surrender（思考の放棄）のリスクが高まる。「press go する人」ではなく「エンジニアであり続ける人」としてループを設計せよ。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. Loop Engineering とは何か — プロンプトからループへ</h2>
+      <p>Addy Osmani は端的にこう定義する。</p>
+      <blockquote>「Loop engineering とは、<strong>エージェントにプロンプトを打つ人としての自分自身を置き換える</strong>こと。代わりに、それを行うシステムを設計する。ここでのループは<strong>再帰的なゴール（recursive goal）</strong>——目的を定義すれば AI が完了まで反復する——と考えられる。」</blockquote>
+      <p>この転換のきっかけとなった発言が、AI コーディング界で繰り返し引用された。</p>
+      <ul>
+        <li><strong>Peter Steinberger</strong>:「もうコーディングエージェントにプロンプトを打つべきではない。<strong>エージェントにプロンプトを打つループを設計すべきだ。</strong>」</li>
+        <li><strong>Boris Cherny</strong>（Anthropic / Claude Code 責任者）:「私はもう Claude にプロンプトを打たない。Claude にプロンプトを打ち、何をすべきか考えるループを走らせている。<strong>私の仕事はループを書くことだ。</strong>」</li>
+      </ul>
+      <p>Matt Van Horn の記事「WTF Is a Loop? Peter Steinberger vs. Boris Cherny」は、この現象をこう皮肉る。「今週の AI コーディングで最も繰り返された一文はわずか6語だが、それを口にする人のほとんどが定義できない」。つまり「ループを設計せよ」という言葉だけが先行し、その実体が曖昧なまま広まった——本まとめはその実体を5記事から再構成する。</p>
+
+      <div class="callout">
+        <p><strong>従来との違い。</strong>過去2年は「良いプロンプトを書き、十分なコンテキストを与える」→「返答を読む」→「次を打つ」の繰り返しで、<strong>エージェントは道具、あなたはそれを常に手で握っていた</strong>。Loop Engineering ではその握る手をシステムに置き換える。Osmani の言う <a href="https://addyosmani.com/blog/agent-harness-engineering/" target="_blank" rel="noopener">harness engineering</a>（1体のエージェントが動く環境を作る）の<strong>一つ上の階</strong>に位置し、ハーネスがタイマーで動き、小さなヘルパーを生成し、自分自身に餌を与える状態を指す。</p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. ループの核 — reason → act → observe → repeat（ReAct）</h2>
+      <p>MindStudio の記事は、ループの本質を最もシンプルに説明する。<strong>ループとは、モデルが行動し、環境からフィードバックを受け、それを使って次の一手を決める、終了条件が満たされるまで繰り返す循環</strong>である。これは「A→B→C」と直線的に進む<strong>チェーン（chain）とは根本的に異なる</strong>。ループは動的で、B が失敗したら修正して再試行し、その後で初めて先に進む。</p>
+
+      <h3>ReAct パターン — ループ工学の源流</h3>
+      <p>現代のエージェントループの多くは、Princeton と Google の研究で提唱された <strong>ReAct（Reason + Act）</strong>パターンに遡る。推論ステップと行動ステップを交互に織り込む考え方で、コード生成では次のようになる。</p>
+      <div class="mermaid">
+flowchart LR
+  A["① ゴールを理解"] --> B["② コードを書く"]
+  B --> C["③ 実行して出力/エラーを観察"]
+  C --> D["④ 何が悪かったか推論"]
+  D --> E["⑤ 修正して再実行"]
+  E --> F{"テスト通過 / 完了?"}
+  F -->|No| C
+  F -->|Yes| G["完了"]
+      </div>
+      <p>LangChain も同じ核を「<strong>エージェントとは、タスク完了までループの中でツールを呼ぶモデルにすぎない</strong>」と表現する。なぜコーディングで特に重要か——コーディングは本質的に反復的で、熟練エンジニアでも一発で完璧には書かず、実行し、エラーを見て、直し、また実行する。この循環を飛ばして一度きり生成する AI は、実行時エラーを捉えられず、環境固有の問題に適応できず、生成物が実際に動くか検証できない。<strong>ループはこのフィードバックギャップを閉じる</strong>。</p>
+      <p>LangChain（Sydney Runkle）が引く Swyx の言葉では、これは <strong>「loopcraft（ループを積み重ねる技芸）」</strong>とも呼ばれる。</p>
+    </section>
+
+    <section id="s3">
+      <h2>3. よく設計されたループの解剖（MindStudio）</h2>
+      <p>すべてのループが等価ではない。設計が悪いとトークンを浪費し、永久に走り、進捗を幻覚する。良いループは効率的で、正しく終了し、信頼できる出力を生む。MindStudio は5つの構成要素を挙げる。</p>
+      <table>
+        <thead><tr><th>要素</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>① 明確なゴール / タスク定義</td><td>「完了」がどう見えるかをループが知る必要がある。評価可能なほど具体的で、テスト可能なサブタスクに分解され、過剰に手を広げない範囲に。「アプリを良くする」は無限ループを生み、「全ユニットテストを通す」は本当の終了条件になる。</td></tr>
+          <tr><td>② エージェントが使えるツール群</td><td>コード実行（stdout/stderr）、ファイルシステム、ターミナル、検索・ドキュメント参照、テストランナー。ツールの質がループの有効性を直接決める。<strong>自分のコードを実行できなければ、ループはただの当て推量</strong>。</td></tr>
+          <tr><td>③ コンテキスト管理</td><td>反復ごとにコンテキスト（書いたコード・遭遇したエラー・下した判断）が増える。過去反復の要約、試行と結果の構造化ログ、不要コンテキストの剪定で、トークン上限と「試したことを忘れる」を防ぐ。</td></tr>
+          <tr><td>④ 終了ロジック</td><td>成功条件（テスト通過・期待一致・ユーザー承認）、失敗条件（最大反復到達・進捗なき反復エラー・ツール呼び出し失敗）、エスカレーション経路（人間や別エージェントへ引き継ぎ）。<strong>停止条件は後付けでなく一級の設計要件</strong>。</td></tr>
+          <tr><td>⑤ エラー処理と回復</td><td>回復可能なエラー（構文ミス・import 漏れ）と硬いブロッカー（認証情報欠如）を区別し、エラー種別に応じて戦略を変え、同じ失敗の無限反復を避ける。同じエラー後に同じ行動を繰り返すのは学習ではなく「空回り」。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s4">
+      <h2>4. ループの構成要素（Addy Osmani）— 5つの部品＋メモリ</h2>
+      <p>Osmani は、ループに必要なのは「5つの部品＋記憶する場所1つ」だと言う。驚くべきは、これがもはやツール固有の話ではなく、<strong>製品（Codex アプリ／Claude Code）に同じ形で出荷されている</strong>こと。「どちらのツールか」を議論するのをやめ、どちらに座っていても機能するループを設計できる。</p>
+      <table>
+        <thead><tr><th>部品</th><th>役割</th><th>Codex アプリ</th><th>Claude Code</th></tr></thead>
+        <tbody>
+          <tr><td>Automation（自動化）</td><td>スケジュールで発見・トリアージ</td><td>Automations タブ（project/prompt/cadence/environment）、結果は Triage inbox、<code>/goal</code></td><td>scheduled tasks・cron、<code>/loop</code>・<code>/goal</code>、hooks、GitHub Actions</td></tr>
+          <tr><td>Worktree（作業ツリー）</td><td>並列エージェントの衝突回避</td><td>スレッドごとに組み込み worktree</td><td><code>git worktree</code>、<code>--worktree</code>、subagent に <code>isolation: worktree</code></td></tr>
+          <tr><td>Skill（スキル）</td><td>プロジェクト知識を明文化</td><td>Agent Skills（<code>SKILL.md</code>）、<code>$name</code>か暗黙呼び出し</td><td>Agent Skills（<code>SKILL.md</code>）</td></tr>
+          <tr><td>Plugin / Connector</td><td>既存ツールへ接続</td><td>Connectors（MCP）＋配布用 plugins</td><td>MCP servers＋plugins</td></tr>
+          <tr><td>Sub-agent（サブエージェント）</td><td>発案する者と検証する者を分離</td><td><code>.codex/agents/</code> に TOML 定義</td><td><code>.claude/agents/</code> の task subagents、agent teams</td></tr>
+          <tr><td>State / Memory（6番目）</td><td>完了済みと次を記録</td><td>Markdown または Connector 経由 Linear</td><td>Markdown（<code>AGENTS.md</code>・progress files）または MCP 経由 Linear</td></tr>
+        </tbody>
+      </table>
+
+      <h3>各部品の要点</h3>
+      <ul>
+        <li><strong>Automation はループの「心拍」。</strong>これがあって初めて「一度きりの実行」が「実際のループ」になる。OpenAI は社内で日次の issue トリアージ、CI 失敗の要約、コミットブリーフィング、先週仕込まれたバグ探しなどに使う。in-session の primitive として、<code>/loop</code> は一定間隔で再実行、<code>/goal</code> は<strong>自分で書いた条件が真になるまで継続</strong>し、毎ターン後に<strong>別の小さなモデルが完了を判定</strong>する（コードを書いたエージェントが自分で採点しない）。</li>
+        <li><strong>Worktree は並列が混沌に変わるのを防ぐ。</strong>2体が同じファイルを書くのは、2人のエンジニアが相談なしに同じ行をコミットするのと同じ頭痛。git worktree は別ブランチの独立作業ディレクトリで履歴を共有し、片方の編集がもう片方に物理的に触れられない。ただし「機械的衝突」は消えても<strong>あなたのレビュー帯域が天井</strong>になる（orchestration tax）。</li>
+        <li><strong>Skill は毎セッション説明し直す手間をなくす。</strong>エージェントは毎回コールドスタートし、意図の穴を自信満々の推測で埋める（intent debt）。スキルは規約・ビルド手順・「あの事故以来こうはしない」を外部に書き出したもの。スキルなしではループは毎サイクル、プロジェクトをゼロから再導出する。</li>
+        <li><strong>Connector はループを実環境に触れさせる。</strong>ファイルシステムしか見えないループは小さい。MCP ベースの connector で issue トラッカー、DB、staging API、Slack に到達でき、「修正はこうです」と言うだけのエージェントが、<strong>自分で PR を開き Linear チケットを紐づけ CI green でチャンネルに通知する</strong>ループに変わる。</li>
+        <li><strong>Sub-agent は「作る者」と「検証する者」を分ける。</strong>コードを書いたモデルは自分の宿題を甘く採点しすぎる。別の指示（時に別モデル）の第2エージェントが、第1が言いくるめた問題を捕まえる。定番は「探索する／実装する／仕様に対し検証する」の分担。Claude Code の <code>/goal</code> は内部的にこれをやっており、作る者と検証する者の分離を<strong>停止条件そのものに適用</strong>している。サブエージェントはトークンを多く消費するので、第2の意見に金を払う価値がある所で使う。</li>
+      </ul>
+    </section>
+
+    <section id="s5">
+      <h2>5. 1つのループの実例（Addy Osmani）</h2>
+      <p>部品を組み合わせると、1つのスレッドが小さな管制盤に変わる。Osmani が繰り返し使う形。</p>
+      <div class="mermaid">
+flowchart TB
+  A["毎朝 Automation がリポジトリで起動"] --> B["triage スキルが昨日のCI失敗・<br/>open issue・最近のコミットを読む"]
+  B --> C["発見を Markdown / Linear に書き出す"]
+  C --> D{"対応する価値あり?"}
+  D -->|Yes| E["独立 worktree を開く"]
+  E --> F["sub-agent① が修正を起草"]
+  F --> G["sub-agent② が<br/>スキルと既存テストに対しレビュー"]
+  G --> H["Connector が PR を開き<br/>チケットを更新"]
+  D -->|処理不能| I["triage inbox に届き<br/>人間が対応"]
+  H --> J["State ファイルに<br/>試行・通過・未解決を記録"]
+  J -.->|翌朝 続きから| A
+      </div>
+      <p>「あなたがそこでやったことを見てほしい。<strong>一度だけ設計した。これらのステップを1つもプロンプトしていない。</strong>これが Steinberger の主張を現実にしたもので、部品が同じだから Codex でも Claude Code でも同じループになる」。なお6番目の<strong>メモリ（State）</strong>は「単純すぎて重要に思えない」が、長時間動くエージェントが依存する同じトリックである——モデルは実行間ですべてを忘れるので、<strong>記憶はコンテキストではなくディスクに置く</strong>。「エージェントは忘れるが、リポジトリは忘れない」。</p>
+    </section>
+
+    <section id="s6">
+      <h2>6. LangChain の4階層モデル（Sydney Runkle）</h2>
+      <p>LangChain は、ループを「積み重ねるスタック」として4階層で整理する。エージェントの価値は良いモデル単体ではなく、<strong>タスク群に適合するよう注意深く設計されたハーネス</strong>から生まれる、という立場。社内のドキュメント改善エージェントを例に各層を説明する。</p>
+      <table>
+        <thead><tr><th>階層</th><th>仕組み</th><th>目的</th><th>LangChain の道具</th></tr></thead>
+        <tbody>
+          <tr><td>1. Agent loop</td><td>モデルがタスク完了までツールを繰り返し呼ぶ</td><td>作業の自動化</td><td><code>create_agent</code>、任意の対応モデル</td></tr>
+          <tr><td>2. Verification loop（検証）</td><td>出力をルーブリックで採点し、不足なら feedback を付けて再試行</td><td>品質・正しさの担保</td><td><code>RubricMiddleware</code>、<code>after_agent</code> hook</td></tr>
+          <tr><td>3. Event driven loop（イベント駆動）</td><td>イベント（新文書・スケジュール・webhook）が発火しエージェントが走る</td><td>スケールした自動作業</td><td>LangSmith Deployment（cron/webhook）、Fleet channels</td></tr>
+          <tr><td>4. Hill climbing loop（坂登り）</td><td>本番トレースを分析エージェントが解析し、ハーネス構成を改善</td><td>ハーネス自体の改善</td><td>LangSmith Engine</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>検証ループ</strong>は grader を加える。決定的（リンク解決・CI 通過・diff が要求範囲か）でも、エージェント的（LLM-as-a-judge）でもよい。トレードオフはレイテンシとコスト増だが「速度より品質が重要な大半の本番では割に合う」。</li>
+        <li><strong>イベント駆動ループ</strong>でエージェントは手動起動する対象ではなく、より大きなシステムの中で<strong>継続的に走るコンポーネント</strong>になる（例: openclaw の「heartbeat」で常時オンの能動アシスタントに）。</li>
+        <li><strong>Hill climbing ループ</strong>は最重要。最初の3層が「作業」を自動化するのに対し、これは<strong>「改善」を自動化</strong>する。各実行が残すトレース（モデルの行動、呼んだツール、grader の feedback）を分析エージェントが解析し、<strong>戻り矢印が先頭に戻るだけでなく、内側に手を伸ばしてエージェントループ自体を更新</strong>する。プロンプト/ツール調整が最も簡単だが、open-weight モデルなら<strong>トレースや eval 結果を訓練信号とする RL ファインチューニング</strong>にも繋げられる。</li>
+      </ul>
+      <blockquote>Steipete、Boris、Andrej（Karpathy）らは皆同じ結論に至った——<strong>エージェントの潜在力は、その周りに作るループにある。</strong>価値が複利で増えるのは、エージェントを自社のエコシステムに埋め込み、自分の基準に応じて継続的に改善する loop 3 と 4 である。</blockquote>
+    </section>
+
+    <section id="s7">
+      <h2>7. ループはどこで動くか（Cobus Greyling のプレイブック）</h2>
+      <p>Cobus Greyling は「会話を Grok Build と Claude Code が支配しているが、<strong>ループは製品ロゴではなく小さな制御システム</strong>。primitive は移植可能で、どのランタイムを選ぶかは『ループがどれだけ長く走るか・誰に奉仕するか・何に触れてよいか』で決まる」と整理する。ループは「プロンプトではなく、記憶・検証・境界を持つ反復プロセス」であり、<strong>住む場所（home）</strong>——次の実行をスケジュールし、状態を永続化し、並列作業を隔離し、実ツールに到達する場所——が要る。</p>
+
+      <h3>4つの手（プレイブックの Tier 分け）</h3>
+      <table>
+        <thead><tr><th>Tier</th><th>適する対象</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>Tier A: ターミナル・ハーネス・ループ</td><td>個人 / 小チーム</td><td>Grok・Claude Code が優れた「ハーネス＋ループ」面。<code>/loop</code>・skill・sub-agent・worktree・MCP connector が一カ所に揃う。リポジトリにスコープされ、人間が近くにいる開発者ループに最速。</td></tr>
+          <tr><td>Tier B: プラットフォーム・ランタイム・ループ</td><td>本番 / マルチテナント</td><td>製品やチームに奉仕し、再起動を生き延び、監査証跡が要り、自分が書いていないコードを走らせる場合。深夜3時に誰もターミナルを開いていない時に走り、プロセスクラッシュを耐え、人間承認のため3日間一時停止する——これがランタイム領域。LangChain が構築してきた所。</td></tr>
+          <tr><td>Tier C: エディタ / 軽量な代替</td><td>エディタ固定 / 軽量用途</td><td>すでにエディタに固定されているか、フルのエージェントプラットフォームを採用せず cron と webhook が欲しい場合。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>「すべてのエージェントにコンピュータを」— LangChain の本番解</h3>
+      <p>Greyling は LangChain の「<strong>Give your agent its own computer（エージェントに自分のコンピュータを与えよ）</strong>」というフレーミングを評価する。洞察は単純——<strong>推論だけではループは閉じない</strong>。提案しかできないエージェントはループを走らせておらず、コードを実行し、結果を観察し、直し、再実行できるエージェントこそループを走らせている。本番での違いは「コンピュータがどこにあるか」。</p>
+      <ul>
+        <li><strong>LangSmith Sandboxes</strong>：エージェントごとにハードウェア隔離された microVM（ファイルシステム・シェル・パッケージ・ネットワーク・永続状態）。ノート PC 上の共有コンテナではない。</li>
+        <li><strong>Durable execution</strong>：チェックポイント化されたグラフ状態で、20分の実行がクラッシュやデプロイを生き延びる。</li>
+        <li><strong>Agent Server 上の Cron</strong>：対話セッションと同じトレース・認証でスケジュール実行。</li>
+        <li><strong>Human-in-the-loop interrupt</strong>：ループが一時停止してリソースを解放し、数日後に正確なチェックポイントから再開。</li>
+      </ul>
+      <p>cron の区別も盗む価値がある——<strong>Stateful cron</strong>（毎回同じ <code>thread_id</code>、昨日を覚える：夜間リサーチ、履歴付き監視）と <strong>Stateless cron</strong>（毎回新スレッド：バッチトリアージ、単発スイープ）。これは「<code>STATE.md</code> に追記する」vs「リポジトリを読んで終了する」に直接対応する。</p>
+    </section>
+
+    <section id="s8">
+      <h2>8. コストと安全のデフォルト</h2>
+      <p>Loop Engineering の最大の実務リスクは<strong>コストの急増</strong>。複数記事が口を揃えて警告する。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>トリアージは安く</h4><p>シグナルへの1モデルパスで済ませ、cron の毎ティックで実装者＋検証者を回さない（Greyling）。</p></div>
+        <div class="card"><h4>サブエージェントは条件付きで</h4><p>state が「対応すべき」と言う時だけ生成。5分ループで毎回フル maker/checker は朝食前にプランを焼き切る。</p></div>
+        <div class="card"><h4>反復に上限を</h4><p>1項目あたり3回試行したら人間にエスカレーション（Greyling）。</p></div>
+        <div class="card"><h4>ツール呼び出し予算</h4><p>反復ごとに上限を設け、進捗なく使い切ったら失敗シグナルとして別戦略へ（MindStudio）。</p></div>
+      </div>
+      <p>Osmani も「token rich か token poor かで使用パターンが大きく変わるので、<strong>トークンコストに絶対に注意</strong>」と釘を刺す。MindStudio は「構造化フィードバック（エラー時に生のダンプでなく、原因コード＋意図＋反復エラーか新規かのフラグを付ける）」「すべてログし、頻繁に要約」「ハッピーパスでなく失敗ケースでループをテスト」を推奨する。</p>
+    </section>
+
+    <section id="s9">
+      <h2>9. ループでもなくならないもの — 検証・理解・判断</h2>
+      <p>Osmani の最重要パート。「ループは仕事を変えるが、あなたを仕事から消しはしない。そして<strong>3つの問題はループが良くなるほど、楽にではなく深刻になる</strong>」。</p>
+      <table>
+        <thead><tr><th>問題</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>検証は依然あなたの責任</td><td>無人で動くループは<strong>無人でミスもする</strong>ループ。maker と verifier を分けるのは「完了」という主張に意味を持たせるためだが、それでも「done」は主張であって証明ではない。<strong>あなたの仕事は、動くと確認したコードを出荷すること</strong>。</td></tr>
+          <tr><td>理解は放置すれば腐る（comprehension debt）</td><td>ループが自分の書いていないコードを速く出荷するほど、「存在するもの」と「自分が理解しているもの」の差が広がる。滑らかなループはこの差を速く広げる——ループが作ったものを読まない限り。</td></tr>
+          <tr><td>快適な姿勢こそ危険（cognitive surrender）</td><td>ループが自走すると、意見を持つのをやめて返ってきたものをそのまま受け取りたくなる。<strong>ループ設計は、判断を伴えば解毒剤、思考を避けるために使えば促進剤</strong>。同じ行動が正反対の結果を生む。</td></tr>
+        </tbody>
+      </table>
+      <blockquote>「同じループを2人が作っても、正反対の結果になりうる。一方は深く理解した仕事を速く進めるために使い、もう一方は仕事を理解しないために使う。<strong>ループはその違いを知らない。あなたは知っている。</strong>だからループ設計はプロンプトエンジニアリングより難しい——簡単ではない。Cherny の主張は仕事が楽になったということではなく、<strong>レバレッジの点が移動した</strong>ということだ。」</blockquote>
+      <p>Greyling も同じ結論を共有する。「速度は『存在するもの』と『理解しているもの』の差を覆い隠す。ループが修正を出荷しても、それがどう動くか知っているとは限らない。トレースは何が起きたかを教えるが、<strong>誰かがそれを読まねばならない</strong>」。そして Satya Nadella の言葉を引く——<strong>「人間の判断とトークン資本が共に複利で増える学習ループを早く作る企業は、模倣困難な優位を築く」</strong>。LangChain も「自動化は人間をループから外すことではない」とし、機微な操作（金融取引・DB 操作）には live な人間レビューが不可欠だと明言する。</p>
+    </section>
+
+    <section id="s10">
+      <h2>10. 結論 — ループを作れ、しかしエンジニアであり続けよ</h2>
+      <p>5記事に共通する結論は明快。Loop Engineering は仕事の進め方の進化のプレビューだが、<strong>万能の置き換えではなくレバレッジ</strong>である。</p>
+      <ul>
+        <li>ループを設定せよ。ただし<strong>エージェントに直接プロンプトを打つことも依然有効</strong>。バランスが肝心（Osmani）。</li>
+        <li>自分でコードをレビューせず、自動ループに完全依存すれば、製品品質は落ち、下降スパイラルに陥る（Osmani）。</li>
+        <li>価値が複利で増えるのは loop 3・4——エコシステムに埋め込み、基準に応じて継続改善するループ（LangChain）。</li>
+        <li>ループは制御システムであり、ランタイムは「長さ・対象・権限」で選ぶ（Greyling）。</li>
+        <li>インフラ（リトライ・レート制限・ツールオーケストレーション）はプラットフォームに任せ、ループのロジックは推論に集中させてよい（MindStudio）。</li>
+      </ul>
+      <blockquote>「ループを作れ。だが<strong>『go を押す人』ではなく『エンジニアであり続けるつもりの人』として作れ。</strong>」——Addy Osmani</blockquote>
+    </section>
+
+    <section id="s11">
+      <h2>11. 出典5記事の一覧</h2>
+      <table>
+        <thead><tr><th>記事</th><th>著者 / 媒体</th><th>位置づけ</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://addyosmani.com/blog/loop-engineering/" target="_blank" rel="noopener">Loop Engineering</a></td><td>Addy Osmani（個人ブログ, 6/7）</td><td>定義・5部品＋メモリ・実例・落とし穴。本まとめの背骨。</td></tr>
+          <tr><td><a href="https://cobusgreyling.substack.com/p/loop-engineering-playbook" target="_blank" rel="noopener">Loop Engineering Playbook</a></td><td>Cobus Greyling（Substack, 6/10）</td><td>ループの「住む場所」と Tier 分け、LangChain ランタイム、コスト/安全デフォルト。</td></tr>
+          <tr><td><a href="https://x.com/mvanhorn/status/2063865685558903149" target="_blank" rel="noopener">WTF Is a Loop? Peter Steinberger vs. Boris Cherny</a></td><td>Matt Van Horn（X Article, 6/8）</td><td>「ループを設計せよ」が定義されないまま広まった現象の指摘（本文はログイン制限のため概要と他記事の引用で補完）。</td></tr>
+          <tr><td><a href="https://www.mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents" target="_blank" rel="noopener">What Is Loop Engineering? The New Meta for AI Coding Agents</a></td><td>MindStudio Team（企業ブログ, 6/9）</td><td>ReAct、ループの解剖（5要素）、4つのループパターン、実務改善。</td></tr>
+          <tr><td><a href="https://www.langchain.com/blog/the-art-of-loop-engineering" target="_blank" rel="noopener">The Art of Loop Engineering</a></td><td>Sydney Runkle（LangChain, 6/16）</td><td>Agent → 検証 → イベント駆動 → Hill Climbing の4階層と LangChain primitive。</td></tr>
+        </tbody>
+      </table>
+      <p style="color: var(--text-dim); font-size: 13px;">※ 各記事は相互に <a href="https://www.latent.space/p/ainews-loopcraft-the-art-of-stacking" target="_blank" rel="noopener">Swyx の "loopcraft"</a> や Anthropic の「long-running agents 向けの効果的なハーネス」などを参照し合っており、Loop Engineering は2026年6月時点で急速に共通言語化しつつある概念である。</p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。X（Matt Van Horn）記事は本文がログイン制限のため、公開概要と他記事中の引用に基づいて補完しています。
+      </p>
+      <p>主な出典:</p>
+      <ul>
+        <li><a href="https://addyosmani.com/blog/loop-engineering/" target="_blank" rel="noopener">addyosmani.com/blog/loop-engineering</a></li>
+        <li><a href="https://cobusgreyling.substack.com/p/loop-engineering-playbook" target="_blank" rel="noopener">cobusgreyling.substack.com/p/loop-engineering-playbook</a></li>
+        <li><a href="https://x.com/mvanhorn/status/2063865685558903149" target="_blank" rel="noopener">x.com/mvanhorn/status/2063865685558903149</a></li>
+        <li><a href="https://www.mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents" target="_blank" rel="noopener">mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents</a></li>
+        <li><a href="https://x.com/sydneyrunkle/status/2066928783534289358" target="_blank" rel="noopener">x.com/sydneyrunkle/status/2066928783534289358</a>（本文: <a href="https://www.langchain.com/blog/the-art-of-loop-engineering" target="_blank" rel="noopener">langchain.com/blog/the-art-of-loop-engineering</a>）</li>
+      </ul>
+      <p>取得手段: fetch_webpage ／ 生成日: 2026年6月20日</p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid 図ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
