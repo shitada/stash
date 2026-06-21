@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Why your AI code doesn't ship: Closing the gap to production（BRK200）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 BRK200 の日本語要約。GitHub の Mario Rodriguez と Evan Boyle が、マクロ委任・マイクロ操舵で変わる開発、エージェントネイティブ・エンジニアリングシステムの6つの柱、GitHub Copilot アプリ／Canvases／Sandboxes／Chronicle／Agent Merge／自動化／マルチモデルレビューをデモ中心に紹介。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 280px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 4px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 28px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 10px 18px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  blockquote .cite { display: block; margin-top: 6px; font-size: 12px; opacity: .8; }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; margin: 14px 0; }
+  pre code { display: block; padding: 14px 16px; border: none; background: none; font-size: 13px; line-height: 1.6; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.76); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 / BRK200 ・ Developer tools &amp; frameworks（Advanced）</div>
+      <h1>Why your AI code doesn't ship: Closing the gap to production</h1>
+      <p class="lead">AI はもうコードを自動補完するだけではない。計画を書き、PR を出し、パイプラインを直し、本番にパッチを当てる。GitHub の Mario Rodriguez と Evan Boyle が「demos not memos（メモではなくデモ）」を掲げ、開発ライフサイクル全域でエージェントが働く姿をデモ中心で見せたセッションの日本語要約。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=5YFPfuOhpwU" target="_blank" rel="noopener">YouTube — Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>Mario Rodriguez（GitHub プロダクト統括）・Evan Boyle（Copilot CLI / SDK / アプリ エンジニアリング統括）</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月3日</dd></div>
+      <div><dt>媒体 / イベント</dt><dd>Microsoft Build 2026（BRK200・難易度300）</dd></div>
+      <div><dt>所要時間</dt><dd>45分11秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（英語字幕・全文精読）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Agentic SDLC</span>
+          <span class="badge">GitHub Copilot アプリ</span>
+          <span class="badge">Canvases</span>
+          <span class="badge">Agent Merge</span>
+          <span class="badge">Chronicle</span>
+          <span class="badge">Sandboxes</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3行サマリ</h2>
+      <ul>
+        <li>1月以降、<strong>エージェントが「実際に働く」段階</strong>に入った。開発者は「マクロ委任＋マイクロ操舵」へ移行し、従来の SDLC は製品開発ライフサイクルと融合して「<strong>人間とエージェントの協働</strong>」へ作り替えられている。</li>
+        <li>GitHub はこの変化に応える<strong>「エージェントネイティブ・エンジニアリングシステム」</strong>を、Surface／Runtime／Automation／Quality／Memory／Enterprise の<strong>6つの柱</strong>として構築中。</li>
+        <li>デモでは新しい <strong>GitHub Copilot アプリ</strong>を軸に、Canvases（エージェント駆動の自作UI）・Cloud Sandboxes・Chronicle（SQLで全セッション横断）・Agent Merge（自律PRマージ）・Automations・マルチモデルのコード／セキュリティレビューを実演。テーマは「より多くやる」ではなく<strong>「より多く完了させる（活動より成果）」</strong>。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. セッション概要と登壇者</h2>
+      <p>本セッションは Microsoft Build 2026 のブレイクアウト BRK200（難易度300・Advanced、Developer tools &amp; frameworks）。GitHub のプロダクトを統括する Mario Rodriguez と、Copilot CLI・Copilot SDK・GitHub Copilot アプリのエンジニアリングを率いる Evan Boyle（本セッションの共同制作者）が登壇した。</p>
+      <p>Mario は冒頭、GitHub の合言葉「<strong>demos not memos（メモではなくデモ）</strong>」を掲げ、時間の大半を実演に充てると宣言。実際、本セッションはスライド説明を最小限にとどめ、ライブデモ（一部は録画）で構成された。</p>
+      <blockquote>
+        「1月以降、何かが起きた。エージェントが労働力（workforce）に加わり、そして本当に機能し始めた。」
+        <span class="cite">— Mario Rodriguez（01:04 付近）</span>
+      </blockquote>
+    </section>
+
+    <section id="s2">
+      <h2>2. 中心テーゼ ― マクロ委任・マイクロ操舵と「SDLC の終わり」</h2>
+      <p>Mario は、エージェントの使い方が質的に変わったと指摘する。以前は「マクロ委任」しても「これが間違っている、あれも間違っている」と常に細かく訂正し続ける必要があった。だが昨年12月から1〜2月にかけて、<strong>マクロに委任し、あとは少し方向を正す（マイクロ操舵）だけ</strong>で済むようになった。</p>
+
+      <table>
+        <thead><tr><th></th><th>以前</th><th>現在（1月以降）</th></tr></thead>
+        <tbody>
+          <tr><td>委任の仕方</td><td>マクロ委任しても常時訂正が必要</td><td><strong>マクロ委任＋マイクロ操舵</strong>（「この issue を直して」と委任できる）</td></tr>
+          <tr><td>開発者の時間</td><td>細かな訂正に追われる</td><td>創造性・判断（judgement）に集中、委任を増やせる</td></tr>
+          <tr><td>コードレビュー</td><td>—</td><td>Copilot からのフィードバックが継続的に改善</td></tr>
+          <tr><td>本番</td><td>—</td><td>適切なガードレール付きで本番デプロイ、本番障害のデバッグまで</td></tr>
+        </tbody>
+      </table>
+
+      <p>その結果、エージェントは従来「SDLC（ソフトウェア開発ライフサイクル）」と呼ばれた領域の全体に入り込む。Mario は「<strong>SDLC はもう概ね死んでいる</strong>」と述べ、それが製品開発ライフサイクルと融合し、本質は「人間とエージェントの協働」になったと整理した。鍵になる問いは「これだけ作業しているのに、<strong>出荷（ship）を妨げているものは何か</strong>」である。</p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">10×〜100×</div><div class="label">マクロ委任が進む世界で見込む速度向上</div></div>
+        <div class="stat-card"><div class="num">6本</div><div class="label">新システムを支える柱の数</div></div>
+        <div class="stat-card"><div class="num">demos</div><div class="label">not memos ― デモ中心の方針</div></div>
+      </div>
+      <blockquote>
+        「SDLC はもう概ね死んでいる。製品開発ライフサイクルと融合しつつあり、もはや我々が知っていたものではない。本質は、人間とエージェントが互いに協働することだ。」
+        <span class="cite">— Mario Rodriguez（02:26 付近）</span>
+      </blockquote>
+    </section>
+
+    <section id="s3">
+      <h2>3. エージェントネイティブ・エンジニアリングシステムの6つの柱</h2>
+      <p>この変化は「システム」を必要とする。GitHub は本来「人間と人間の協働」のために作られたが、それを「人間とエージェントの協働」へ進化させる。そのために必要なプリミティブ（基本要素）を、GitHub は次の6つの柱に整理した。これを総称して <strong>Agent-Native Engineering System（エージェントネイティブ・エンジニアリングシステム）</strong> と呼ぶ。</p>
+
+      <div class="mermaid">
+graph TD
+  subgraph AN[Agent-Native Engineering System]
+    S[1. Surfaces 面<br/>IDE・CLI・Copilotアプリ・スマホ]
+    R[2. Runtime 実行環境<br/>ローカル/クラウドの安全な実行]
+    A[3. Automation 自動化<br/>予測可能性とスケール]
+    Q[4. Quality 品質<br/>意図→出荷物の検証]
+    M[5. Memory 記憶<br/>自己改善する継続的知能]
+    E[6. Enterprise 信頼と規模]
+  end
+  S --> R --> A --> Q --> M --> E
+      </div>
+
+      <table>
+        <thead><tr><th>柱</th><th>役割</th><th>セッションでの言及</th></tr></thead>
+        <tbody>
+          <tr><td>① Surfaces（面）</td><td>開発者が作業する場所</td><td>IDE、コマンドライン、新しい GitHub Copilot アプリ、スマホ</td></tr>
+          <tr><td>② Runtime（実行環境）</td><td>エージェントが安全に実行できる場</td><td>ローカル／クラウドで信頼できる実行。基調講演の MXC に言及</td></tr>
+          <tr><td>③ Automation（自動化）</td><td>システムを予測可能にしスケールさせる</td><td>「3Dプリンタ」の比喩。CI/CD・DevOps・DevSecOps はすべて自動化の運動だった</td></tr>
+          <tr><td>④ Quality（品質）</td><td>意図（CAD図）が出荷物（成果）になったか検証</td><td>検証システムが必要</td></tr>
+          <tr><td>⑤ Memory（記憶）</td><td>自己改善する継続的知能</td><td>後述の Chronicle に対応</td></tr>
+          <tr><td>⑥ Enterprise</td><td>企業レベルの信頼とスケール</td><td>面から企業まで一貫</td></tr>
+        </tbody>
+      </table>
+
+      <p>Mario は自動化を「<strong>3Dプリンタ</strong>」に例える。CAD図（意図）を入れると物体（ソフトウェア）が出てくるが、最後に「欲しかったものか」を検証し、欠陥があれば捨てて作り直す制御が要る。自動化こそがシステム全体を予測可能にし、スケールを可能にする——これは CI/CD や DevSecOps と同じ「自動化の運動」の延長線上にある、というのが主張だ。エージェントネイティブ化には、<strong>新しい API・新しい UX（エージェント体験）・予測可能性を伴う新しい自動化</strong>が必要になる。</p>
+    </section>
+
+    <section id="s4">
+      <h2>4. GitHub Copilot アプリ ― 「より多くやる」でなく「より多く完了させる」</h2>
+      <p>ここから Evan Boyle がデモを担当。まず強調したのは、<strong>Copilot アプリは「単なるセッションマネージャ」ではない</strong>という点だ。多くのツールは大量の並行作業を「始める」のを助けるが、Copilot アプリは作業を「<strong>完了させる（finish）</strong>」ために作られている。面白いのは実装そのものではなく、ユーザーに価値を届けるための<strong>メタ作業</strong>——issue のトリアージ、CI を通してグリーンに保つ、レビュー指摘への対応、マージ、顧客へのデプロイ——だという。</p>
+      <blockquote>
+        「エージェントの約束を『より多くやる』から『より多く<strong>完了させる</strong>』へと転換すべきだ。集中を取り戻すこと。活動（activity）ではなく成果（outcome）に焦点を当てること。」
+        <span class="cite">— Evan Boyle（09:13 付近・要約）</span>
+      </blockquote>
+
+      <h3>受信箱と複数セッションの一括起動</h3>
+      <p>ホーム画面の「受信箱」には、公開リポジトリに寄せられた大量のフィードバックが集まる。Evan は「terminal（ターミナル）」関連の改善 issue を絞り込み、関連する複数 issue を選択して Actions →「new individual sessions」を実行。すると左ナビに<strong>3つのセッションが即座に起動</strong>し、それぞれ隔離されたワークツリー（work tree）が作られ、issue のコンテキストが自動で添付される。関連作業をまとめて起動・レビューできる点が利点だ。</p>
+    </section>
+
+    <section id="s5">
+      <h2>5. Canvases ― エージェントが駆動する自作UI</h2>
+      <p>続いて、Evan とチームが作った <strong>Canvases（キャンバス）</strong>。エージェントがアプリ右側の面を駆動でき、ユーザーとの間で<strong>双方向（bi-directional）</strong>にやり取りする仕組みだ。</p>
+
+      <h3>組み込みキャンバス（ターミナル）</h3>
+      <p>音声指示で「ターミナルキャンバスを開いて hello canvas を表示する Web サーバーを起動し、ブラウザでそのページを開いて」と依頼。エージェントが<strong>ターミナルを開き、コマンドを送り、出力を読み、ブラウザを開く</strong>（Python の Web サーバーを起動）。自動テストも可能。</p>
+
+      <h3>トリアージキャンバス</h3>
+      <p>チームが <code>.github</code> リポジトリにチェックインした<strong>トリアージ用キャンバス</strong>。最近の issue・最も「いいね」の多い issue・共通テーマを表示し、ボタン（analyze sample）でエージェントに「5〜8個のフィードバックバケットを作って」と指示できる。これをチームは毎日のスタンドアップで使い、顧客の要望をレビューしている。キャンバスから直接セッションを起動でき、<strong>サブセッションが入れ子（nesting）</strong>になる。背後ではエージェントが「create session ツール」を呼んでおり、<strong>ユーザーがアプリでできる操作はすべてエージェントも駆動できる</strong>。</p>
+
+      <h3>キャンバスを作る／配布する</h3>
+      <ul>
+        <li><strong>create canvas スキル</strong>：音声で「描けるホワイトボードキャンバス、JPEG 書き出しと gist 公開のボタン付き」を依頼すると、<code>.github</code> フォルダに拡張が動的に生成される。チェックインすれば<strong>チーム全員が同じキャンバスを入手</strong>（リポジトリスコープ）。デモでは実際にワンショットで生成し、gist 公開まで成功させた。</li>
+        <li><strong>拡張エコシステム</strong>：gist や URL から拡張をインストール可能。デモでは「agentic Kanban board（カンバン）」を導入し、タスク起票やテーマ変更のホットリロードを実演。</li>
+        <li><strong>マーケットプレイス</strong>：個人向けの小さな拡張だけでなく、ファースト／サードパーティの公式キャンバス拡張を扱う<strong>マーケットプレイスを立ち上げ予定</strong>。<strong>Miro</strong> と協業し、付箋やデザインアーキテクチャをエージェント駆動で操作するキャンバスを披露した。</li>
+      </ul>
+      <p class="callout"><strong>狙い：</strong>チームや個人のワークフローに合わせた<strong>ハイパーパーソナライズなソフトウェア</strong>を、エージェントと共に作れるようにすること。</p>
+    </section>
+
+    <section id="s6">
+      <h2>6. Copilot --cloud と GitHub Sandboxes</h2>
+      <p>「<strong>エージェント不安（agent anxiety）</strong>」——退勤間際の16:55、プランを仕上げてエージェントを走らせてから帰りたいのに時間切れになる感覚。Evan は「ノートPCを閉じてそのまま帰れる」ようにしたいとして、<strong><code>copilot --cloud</code></strong> を紹介した。</p>
+      <ul>
+        <li><strong>GitHub Sandboxes</strong> 上に構築。数秒で起動する高速マイクロVM。</li>
+        <li>ステートフルかつ<strong>隔離</strong>。PR を安全な環境でテストでき、ローカル環境と分離。<strong>認証情報は厳格にスコープ</strong>される。</li>
+        <li>タスクを<strong>クラウドで一晩走らせ</strong>、翌朝戻って続きを再開できる。ノートPCはインターネット接続不要。</li>
+      </ul>
+      <p>Mario は後半、この Sandbox を「YOLO（一回きり）」を多用するデモの裏で支える<strong>信頼とセキュリティ</strong>の要だと補足。現在ローカル Sandbox（パブリックプレビュー）とクラウド Sandbox の両方があり、Copilot アプリからも委任できるようになる予定だとした。</p>
+    </section>
+
+    <section id="s7">
+      <h2>7. Chronicle ― 作業の継続性と SQL API</h2>
+      <p>Copilot は dotcom、クラウドエージェント、CCR（Copilot Code Review）、Visual Studio、VS Code など多数の面に存在する。どこで何を作業していたか思い出しにくい——この課題に対する答えが <strong>Chronicle</strong> だ。</p>
+      <ul>
+        <li><strong>Chronicle search</strong>：すべてのセッションをユーザー単位・<strong>プライベート</strong>に保持し、面・マシン・Copilot 製品をまたいで継続性を提供。「すべてのセッション、すべてのコード行、すべてのプロンプト」を記憶し、過去の文脈（例：以前直した Rust のバグ）を探してセッションに読み込む。</li>
+        <li><strong>Chronicle stand-up</strong>：直近24時間の作業を集約し、スタンドアップ用にまとめる。重要なのは<strong>エージェントが SQL を扱える</strong>点で、<strong>直接の SQL API</strong> がエージェントに公開されている。全文検索と構造化 SQL クエリを、全セッションを収めた<strong>データレイク</strong>に対して組み合わせて実行する。</li>
+      </ul>
+      <blockquote>
+        「Chronicle はあなたがこれまでにやったことを全部覚えている。すべてのセッション、すべてのコード行、すべてのプロンプトを。」
+        <span class="cite">— Evan Boyle（23:41 付近）</span>
+      </blockquote>
+    </section>
+
+    <section id="s8">
+      <h2>8. Agent Merge ― 自律的な PR マージ</h2>
+      <p>作業を「線の向こう側へ運ぶ（get work over the line）」ための機能が <strong>Agent Merge</strong>。PR に付く「agent merge」ボタンを押すと、エージェントが PR を定期的に点検し、<strong>グリーンでマージ可能になるまで自律的に対応</strong>する。</p>
+
+      <div class="mermaid">
+flowchart TD
+  Start[agent merge ボタンを押す] --> Check{定期チェック}
+  Check --> C1[マージ衝突はないか]
+  Check --> C2[CI はグリーンか]
+  Check --> C3[エージェント/同僚の<br/>レビュー指摘は残っていないか]
+  C1 --> Fix[必要な変更を実施]
+  C2 --> Fix
+  C3 --> Fix
+  Fix --> Check
+  Check -->|すべて解決| Ready[グリーン・マージ可能]
+  Ready --> Notify[このタイミングで初めて<br/>レビュアへ通知＝集中を保護]
+      </div>
+
+      <h3>最初の Agent Merge PR の例</h3>
+      <p>Agent Merge を作った Jeremy は、CLI のヘルスチェックを追加する PR で試した。<strong>CCR（Copilot Code Review）</strong>が概要と5件のコメントを返し、Jeremy の代理エージェントが「このコミットで対応した。理由はこれ、対応しなかった点はこれ」と応答。Jeremy は Agent Merge を設定して<strong>昼食に行き、その間に CCR の指摘がすべて処理</strong>された。準備が整って初めて Mario に PR が送られる——<strong>レビュアの注意と集中を守る</strong>設計だ。</p>
+      <p>さらに Agent Merge は盲従しない。Mario が「ドキュメントのリンクを足すべきでは」と指摘すると「2行下に既にあります」と返し、「1,000行を超えたから大規模リファクタを」と無理を振ると「もっともな懸念だが、この変更の一部としてはやりません」と断ってマージした。</p>
+      <blockquote>
+        「もっともな懸念です。ですが、それはこの変更の一部としては行いません。」
+        <span class="cite">— Agent Merge（28:53 付近、Mario の無茶振りへの返答）</span>
+      </blockquote>
+      <p class="callout"><strong>問い：</strong>あなたは「活動（activity）」に集中しているか、「成果（output）」に集中しているか。Copilot アプリの狙いはすべて<strong>成果</strong>——50個を同時にやるのではなく、本当に重要な5〜10個を高品質にやり切ることにある。</p>
+    </section>
+
+    <section id="s9">
+      <h2>9. Automations ― モーニングブリーフと自動リプロ</h2>
+      <p>「エージェントは時間を節約するはずが、多くのチームでは逆に<strong>ノイズの放水ホース</strong>を生んでいる」。Mario は、エージェントで<strong>集中を守る</strong>使い方として自動化を示した。</p>
+
+      <h3>モーニングブリーフ（ローカル・自分専用）</h3>
+      <p>毎朝6時に<strong>ローカルで実行</strong>される自分専用の自動化。「重要なもの」を指定しておくと、<strong>トップ10 issue（リンク付き）、進行中の PR、未レビューの重要 PR、新規の重大 issue</strong> をまとめてくれる。出力はチームに共有されず、コーヒー片手に集中して一日を始められる。</p>
+
+      <h3>クラウド自動化（issue リプロ）</h3>
+      <p>自動化はクラウドにも作れる。「issue 作成」をトリガに、プライベートな GitHub アプリ用リポジトリで<strong>バグ報告の再現を試み、失敗するテストケースを書き、ラベルを付け、再現手順とテストケースをコメントする</strong>自動化を作成。これにより、チームが見る頃には再現が済んでおり、修正は多くの場合容易になる。オープンソース経験者なら「丁寧な再現付きの報告」のありがたさが分かる、と Mario。</p>
+    </section>
+
+    <section id="s10">
+      <h2>10. Rubber Duck とマルチモデル・セキュリティレビュー</h2>
+
+      <h3>Rubber Duck（ラバーダック）</h3>
+      <p>GitHub は<strong>マルチモーダル・マルチエージェント・マルチサーフェス</strong>になった。これにより、同僚に「これどう思う?」と相談する（ラバーダッキング）感覚を、エージェントとの間でも得られる。Rubber Duck には<strong>アドバイザー</strong>と<strong>批評家（critic）</strong>の2モードがあり、Copilot CLI と GitHub アプリの両方で使える。Mario は主に批評モードを常用し、トークン節約時はアシスタントモードを使うという。</p>
+
+      <h3>マルチモデルのコード／セキュリティレビュー</h3>
+      <p>最後のデモは「品質」。Mario は同僚 Enrique の PR（アプリのクラウド対応、入れ忘れていた機能）をレビュー。Command-K で URL を貼ると Copilot がレビュー用セッションを生成する。ここでの会話は<strong>github.com に送られないプライベートな対話</strong>で、エージェントとコードの共通理解を作る。<code>/review</code>（コードレビュー）と <code>/security review</code>（セキュリティ）を組み合わせ、<strong>複数モデル</strong>で実行できる。</p>
+      <blockquote>
+        「複数のモデルは互いに同意しない。訓練分布が違うからだ。だからこそ複数モデルを使うと、最良の結果が得られる。」
+        <span class="cite">— Evan Boyle（40:51 付近・要約）</span>
+      </blockquote>
+
+      <p>Mario は次のオーケストレーションを1つの指示で実行した。</p>
+      <div class="mermaid">
+sequenceDiagram
+  participant P as 親セッション
+  participant R as セッション1: コードレビュー
+  participant S as セッション2: セキュリティレビュー
+  participant D as Rubber Duck
+  P->>R: マルチモデルでコードレビュー<br/>(Gemini / GPT-5.5 / Sonnet 4.6)
+  P->>S: マルチモデルのサブエージェントで<br/>セキュリティレビュー
+  R-->>P: 結果を親へ返信
+  S-->>P: 結果を親へ返信
+  P->>D: 返ってきた出力を批判的に吟味
+  D-->>P: 最終レコメンド（必要なら PR にコメント）
+      </div>
+      <p>セッション1はコード品質、セッション2は<strong>GitHub Advanced Security</strong> と協働して作ったセキュリティ・サブエージェントによる検査に専念。両者の結果が親セッションに戻ると、<strong>Rubber Duck が最後の批評</strong>を加えてから人間に提示する。全モデルとラバーダックが同意し、セキュリティレビューが問題を検出——この一連で、高品質な検証を高速に回せる。デモ終盤では Gemini を使ったセキュリティ・サブエージェントが3つ並列で稼働する様子が示された。</p>
+
+      <h3>パートナーと信頼</h3>
+      <p>信頼の観点で多くのパートナーと協業している。<strong>Sonar</strong>（コード品質）、<strong>Endor</strong>（セキュリティ）、<strong>Miro</strong>（キャンバス）、<strong>LaunchDarkly</strong>（安全な本番デプロイ）などが挙げられた。</p>
+    </section>
+
+    <section id="s11">
+      <h2>11. まとめ ― アイデアから本番まで</h2>
+      <p>セッションは、冒頭の<strong>エージェントネイティブ・エンジニアリングシステム</strong>に立ち返って締めくくられた。Surface・Runtime・Automation・Quality・Memory・Enterprise の柱を一貫して agent-native に作り直すことで、<strong>アイデア（意図）を、人間とエージェントの協働で本番まで運べる</strong>ようになる——これが「出荷を妨げるものを取り除く」という本セッションの主題への答えだ。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>働き方</h4><p>マクロ委任＋マイクロ操舵。人間は創造性と判断に集中。</p></div>
+        <div class="card"><h4>完了に寄せる</h4><p>「より多くやる」でなく「より多く完了させる」。活動でなく成果。</p></div>
+        <div class="card"><h4>集中を守る</h4><p>自動化・Agent Merge・モーニングブリーフでノイズを抑える。</p></div>
+        <div class="card"><h4>品質と信頼</h4><p>マルチモデル・レビュー、Sandbox、Advanced Security、パートナー連携。</p></div>
+      </div>
+      <p>なお本セッションでは、6つの柱のうち <strong>Memory（記憶）</strong> と <strong>Enterprise</strong> の踏み込んだ実演は時間の都合で割愛され、今後さらに紹介されるとされた。</p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。製品名・数値・モデル名は登壇者の発言に基づきます。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=5YFPfuOhpwU" target="_blank" rel="noopener">https://www.youtube.com/watch?v=5YFPfuOhpwU</a> ／ 取得手段: yt-dlp（英語字幕・全文精読）／ 生成日: 2026年6月22日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid 図ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
