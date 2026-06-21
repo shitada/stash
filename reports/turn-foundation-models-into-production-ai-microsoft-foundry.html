@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="color-scheme" content="light dark" />
 <title>Turn Foundation Models into Production AI on Microsoft Foundry | BRKSP91</title>
-<meta name="description" content="Microsoft Build 2026でのセッション。Fireworks AIを使用してオープンソースモデルをファインチューニングし、Microsoft Foundryで本番環境対応のAIを構築する方法。コスト最適化と差別化戦略の解説。" />
+<meta name="description" content="Microsoft Build 2026 セッション BRKSP91 の日本語要約。Fireworks AI のトレーニング／推論プラットフォーム、Microsoft Foundry 上での提供（GA）、3つの統合モード、Harvey AI の Legal Agent Benchmark と Advisor Agents によるコスト最適化までを省略なく整理。" />
 <style>
   :root {
     --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
     --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
-    --sidebar-w: 260px; --content-max: 880px;
+    --sidebar-w: 280px; --content-max: 880px;
     --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
   }
   @media (prefers-color-scheme: light) {
@@ -30,11 +30,9 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* レイアウト：左サイドバー + メイン */
   .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
-  /* サイドバー目次 */
   aside.sidebar {
     position: sticky; top: 0; align-self: start;
     height: 100vh; overflow-y: auto;
@@ -51,7 +49,7 @@
   aside.sidebar a {
     display: block; padding: 6px 10px;
     border-left: 2px solid transparent;
-    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    color: var(--text-dim); font-size: 13px; line-height: 1.45;
     border-radius: 0 6px 6px 0;
     transition: color .15s, border-color .15s, background .15s;
   }
@@ -74,7 +72,6 @@
   header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
   header.page .lead { color: var(--text-dim); margin: 0; }
 
-  /* メタ情報カード */
   .meta-card {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
@@ -90,32 +87,31 @@
     font-size: 12px; color: var(--text-dim);
   }
 
-  /* TL;DR / コールアウト */
   .tldr, .callout {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
   }
   .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 4px solid var(--accent); }
   .callout strong { color: var(--accent); }
 
-  /* セクション */
-  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section { margin: 48px 0; scroll-margin-top: 24px; }
   section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
-  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+  section h3 { font-size: 17px; margin: 28px 0 8px; color: var(--accent); }
 
   ul, ol { margin: 12px 0; padding-left: 22px; }
   li { margin: 6px 0; }
 
   blockquote {
     border-left: 3px solid var(--accent);
-    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    margin: 16px 0; padding: 10px 18px; color: var(--text-dim);
     background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
   }
+  blockquote .cite { display: block; margin-top: 6px; font-size: 12px; opacity: .8; }
 
   code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
   pre code { display: block; padding: 12px 14px; overflow-x: auto; }
 
-  /* 表 */
   table {
     width: 100%; border-collapse: collapse; margin: 16px 0;
     background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
@@ -124,27 +120,22 @@
   thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
   tbody tr:last-child td { border-bottom: none; }
 
-  /* 数値カード */
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
   .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
   .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
   .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
 
-  /* 章サマリーカード */
   .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
   .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
   .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
   .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
 
-  /* Mermaid */
   .mermaid {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px; margin: 18px 0;
     text-align: center; overflow-x: auto; cursor: zoom-in;
   }
-  .mermaid:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 3px;
-  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .mermaid svg { max-width: 100%; height: auto; }
   .modal {
     position: fixed; inset: 0; display: none;
@@ -183,33 +174,32 @@
 
   <aside class="sidebar" aria-label="目次">
     <p class="toc-title">目次</p>
-    <ol id="toc">
-      <!-- JS で自動生成 -->
-    </ol>
+    <ol id="toc"></ol>
   </aside>
 
   <main>
     <header class="page">
-      <div class="eyebrow">Microsoft Build 2026 / AI・開発者向けセッション</div>
+      <div class="eyebrow">Microsoft Build 2026 / BRKSP91 ・ Developer tools &amp; frameworks</div>
       <h1>Turn Foundation Models into Production AI on Microsoft Foundry</h1>
-      <p class="lead">オープンソースモデルをファインチューニングし、Foundry上で本番環境対応のカスタムAIを構築・提供する戦略</p>
+      <p class="lead">汎用ファウンデーションモデルを超えて、Fireworks AI でオープンウェイトモデルを学習・最適化し、Microsoft Foundry 上で本番運用する実践パターン。Harvey AI の法務エージェント事例を交えて、コスト・レイテンシ・本番投入までの時間をどう縮めるかを解説。</p>
     </header>
 
     <dl class="meta-card" aria-label="出典メタデータ">
-      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=sOvtPvaog3M" target="_blank" rel="noopener">YouTube - Microsoft Developer</a></dd></div>
-      <div><dt>スピーカー</dt><dd>Vivek Chauhan、Jet、Nico (Harvey)</dd></div>
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=sOvtPvaog3M" target="_blank" rel="noopener">YouTube — Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>Vivek Chauhan・Jetashree Ravi（Fireworks AI）／ゲスト: Nico Groupin（Harvey AI）</dd></div>
       <div><dt>公開日</dt><dd>2026年6月4日</dd></div>
-      <div><dt>媒体</dt><dd>Microsoft Developer (YouTube)</dd></div>
+      <div><dt>媒体 / イベント</dt><dd>Microsoft Build 2026（サンフランシスコ）</dd></div>
       <div><dt>所要時間</dt><dd>40分51秒</dd></div>
-      <div><dt>取得手段</dt><dd>yt-dlp（英語自動字幕）</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（英語字幕・全文精読）</dd></div>
       <div style="grid-column: 1 / -1;">
         <dt>タグ</dt>
         <dd class="badges">
-          <span class="badge">AI</span>
-          <span class="badge">Foundation Models</span>
-          <span class="badge">Fine-tuning</span>
           <span class="badge">Fireworks AI</span>
           <span class="badge">Microsoft Foundry</span>
+          <span class="badge">Fine-tuning</span>
+          <span class="badge">Inference 最適化</span>
+          <span class="badge">Open-weight Models</span>
+          <span class="badge">Harvey AI / LAB</span>
         </dd>
       </div>
     </dl>
@@ -217,150 +207,356 @@
     <div class="tldr">
       <h2>3行サマリ</h2>
       <ul>
-        <li>オープンソースモデルとクローズドモデルのコスト・性能ギャップが消滅。ファインチューニングで自社データを組み込み、閉じたAIスタック内での差別化が勝負所。</li>
-        <li>Fireworks AIプラットフォームを使用して、低コストで推論最適化されたカスタムモデルを構築し、Microsoft Foundryで本番運用する方法。</li>
-        <li>継続的改善ループ（フライホイール）を構築し、段階的にAIスタックを精緻化していくことで、競合他社との明確な差別化が実現可能。</li>
+        <li>多くのエンタープライズ用途では<strong>オープンウェイトモデルとフロンティアのクローズドモデルの差が実質的に消滅</strong>。Fireworks のトレーニング／推論プラットフォームで、品質を保ったまま大幅にコストを削減できる。</li>
+        <li>Build 2026 の Satya Nadella 基調講演で <strong>Fireworks が Microsoft Foundry 上で一般提供（GA）</strong> を発表。Serverless／PTU／Bring Your Own Weights の3モードで、ワンエンドポイント・ワンコントラクトで使える。</li>
+        <li>Harvey AI は法務エージェントベンチマーク <strong>LAB</strong> を基盤に、オープンウェイトの worker と クローズドの advisor を組み合わせた <strong>Advisor Agents</strong> で、品質を上げつつ最大 <strong>2.4倍のコスト削減</strong> を実証。</li>
       </ul>
     </div>
 
     <section id="s1">
-      <h2>1. AI 市場における3つの基本原則</h2>
-      <h3>原則1: オープンソース vs クローズドモデルの性能ギャップ消滅</h3>
-      <p>過去2年間で、オープンソースモデルとクローズドモデル（Claude Opus 4.7など）のコスト・性能ギャップは大幅に縮小。多くのエンタープライズユースケースでは、同等の品質を維持しながら大幅なコスト削減が可能になった。</p>
-      <p>例）メール要約タスク：Claude Opus 4.7からオープンソースモデルに切り替えても、品質は同等で費用を削減できる。</p>
-
-      <h3>原則2: 差別化の源泉は自社データ組み込み（ファインチューニング）</h3>
-      <p>全ての企業が同じクローズドモデルを利用している場合、差別化は生まれない。競合との違いを作るには、自社データとドメイン知識をAIに組み込む必要がある。ファインチューニングはこの要件の中核。</p>
-      <blockquote>「自分たちのAIスタックを本当に差別化させたければ、ファインチューニングは非常に重要。」</blockquote>
-
-      <h3>原則3: 業界リーダーの共通戦略 = 継続的改善ループ</h3>
-      <p>Fireworksプラットフォーム上で最も成功している企業は、単なる推論最適化やファインチューニングの1回限りの実施ではなく、継続的にAIスタックを改善する「フライホイール」を構築している。</p>
+      <h2>1. セッション概要と登壇者</h2>
+      <p>本セッションは Microsoft Build 2026（BRKSP91、難易度 200 / Intermediate）のスポンサーセッションで、Fireworks AI の Vivek Chauhan と Jetashree Ravi（通称 Jet）が登壇。後半ではゲストとして Harvey AI の応用研究責任者 Nico Groupin が加わり、実顧客視点での活用を語った。</p>
+      <p>冒頭、Vivek はセッションのゴールを次のように要約した。すなわち「<strong>オープンソースモデルを使って、アプリケーション固有・本番グレード・推論最適化された AI を Fireworks 上で構築し、それを Foundry 上で推論提供する</strong>こと」。そしてそれによって「大量のコストを節約できる」と述べた。</p>
+      <blockquote>
+        「今日は、オープンソースモデルと Fireworks を活用して、アプリケーション固有で本番グレードの、推論最適化された AI をどう作るか。そして、それらのモデルをどう Foundry 上で推論提供するかを話します。」
+        <span class="cite">— Vivek Chauhan（00:00 付近）</span>
+      </blockquote>
     </section>
 
     <section id="s2">
-      <h2>2. Fireworks AI プラットフォームの役割</h2>
-      <p>Firewoksはオープンソースモデルのファインチューニング、推論最適化、デプロイメントを統合的に行う一元化プラットフォーム。開発者はAPIを通じてカスタマイズされたモデルを利用できる。</p>
+      <h2>2. AI 市場における3つの基本原則</h2>
+      <p>Fireworks は、現在の AI ランドスケープに「3つの基本的な真実（three fundamental truths）」があると考えている。これがセッション全体の前提となる。</p>
 
-      <h3>主な機能</h3>
-      <ul>
-        <li><strong>モデルライブラリ:</strong> 複数のオープンソースモデル（Llama、Mistral、Phi等）にアクセス</li>
-        <li><strong>ファインチューニングサービス:</strong> 企業の独自データでモデルをカスタマイズ</li>
-        <li><strong>推論最適化:</strong> キャッシング、バッチ処理、その他最適化手法により、同じモデルでより低レイテンシー・低コストを実現</li>
-        <li><strong>API提供:</strong> 開発者がREST APIで簡単にモデルを統合</li>
-      </ul>
+      <table>
+        <thead><tr><th>#</th><th>原則</th><th>含意</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>オープンウェイトとクローズドの差が消滅</td>
+            <td>大半のエンタープライズ用途で、品質基準を保ったままオープンウェイトモデルに切り替え可能。例: メール要約に Claude Opus 4.7 を使う代わりに、より小さなオープンウェイトモデルで同等品質を達成しコスト削減。</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>真の差別化は自社データの組み込みから</td>
+            <td>競合と同じクローズドモデルを使う限り差別化は生まれない。<strong>ファインチューニング</strong>で自社のデータモード（data mode）を AI に埋め込むことが鍵。</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>リーダー企業は「フライホイール」を回す</td>
+            <td>先進企業は推論最適化やファインチューニング単発にとどまらず、AI スタックを継続的に改善する好循環（flywheel）を見出している。</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <h3>コスト削減の具体例</h3>
-      <p>Fireworksの推論最適化ツールを使うと、従来の推論に比べて10倍から100倍のコスト削減が可能な場合も。これにより、スケール時の費用圧力を大幅に軽減できる。</p>
+      <blockquote>
+        「自分の AI スタックを本当に差別化したいなら、ファインチューニングの活用が極めて重要です。」
+        <span class="cite">— Vivek Chauhan（01:27 付近）</span>
+      </blockquote>
     </section>
 
     <section id="s3">
-      <h2>3. 本番運用: Microsoft Foundry との統合</h2>
-      <p>Fireworksで構築・最適化したカスタムモデルは、Microsoft Foundry経由で本番環境にデプロイ可能。Foundryはマイクロソフトの統合AIプラットフォームで、セキュリティ、スケーラビリティ、監視機能を備える。</p>
+      <h2>3. Fireworks AI の規模と推論エンジン</h2>
+      <p>Fireworks の足元の規模は大きい。1日あたり <strong>30兆トークン以上</strong>を処理しており、これは Anthropic（Claude）や OpenAI といったフロンティアのクローズドラボに次ぐ規模だという。グローバルで <strong>10,000社以上</strong>のエンタープライズ顧客が、オープンウェイトモデルを使った本番アプリケーションを構築している。</p>
 
-      <h3>デプロイメントワークフロー</h3>
-      <ul>
-        <li>1. Fireworksでモデルをファインチューニング・最適化</li>
-        <li>2. Fireworks APIで効果測定・検証</li>
-        <li>3. Microsoft Foundryへのモデル登録・デプロイ</li>
-        <li>4. Foundry環境での本番運用・監視</li>
-      </ul>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">30兆+</div><div class="label">1日あたり処理トークン数</div></div>
+        <div class="stat-card"><div class="num">10,000+</div><div class="label">エンタープライズ顧客数</div></div>
+        <div class="stat-card"><div class="num">~84,000</div><div class="label">1モデルの推論最適化の組み合わせ数</div></div>
+      </div>
 
-      <h3>メリット</h3>
-      <ul>
-        <li>エンタープライズグレードのセキュリティとコンプライアンス</li>
-        <li>スケーラビリティ確保（高トラフィック時の自動スケーリング等）</li>
-        <li>監視・ロギング・アラート機能により、本番環境での健全性を常時確認可能</li>
-        <li>Microsoftエコシステム（Azure等）との連携</li>
-      </ul>
+      <p>具体的な顧客名も挙げられた。<strong>Cursor</strong> は Fireworks の RL ロールアウト機能を使って Composer 2／Composer 2.5 モデルを構築。ほかに Vercel、Jasper、Uber、DoorDash などが、ファインチューニングやトレーニングによる品質向上、速度・スループット・Time to First Token（最初のトークンまでの時間）といったアプリ固有の性能要件のために Fireworks を利用している。</p>
+
+      <h3>なぜ自前の推論エンジンが要るのか</h3>
+      <p>Vivek は「LLM 推論は非常に難しく残酷な組み合わせ最適化問題だ」と表現する。speculative decoding（投機的デコーディング）や量子化モード、利用可能な多様な GPU SKU、並列化戦略などの掛け合わせは、<strong>1つのモデルを提供するだけで 84,000〜85,000 通りの順列</strong>に達する。ほとんどの企業にとって、この複雑性を社内で抱えるのは合理的でない。</p>
+      <p>Fireworks は CUDA カーネル、量子化、speculative decoding、適応的キャッシュ（adaptive caching）といった新しい最適化トリックを継続的に自社スタックへ取り込み、顧客は「Time to First Token を 500 ミリ秒未満に」「エンドツーエンドのレイテンシを 2 秒未満に」といったアプリ固有の要件だけを指定すればよい、とした。これらの推論エンジン機能が、後述のとおり Foundry 上でも利用可能になる。</p>
     </section>
 
     <section id="s4">
-      <h2>4. ファインチューニングと推論最適化の戦略</h2>
+      <h2>4. 顧客の段階に合わせる ― 3つのトレーニングサーフェス</h2>
+      <p>Vivek が「このスライドが一番のお気に入り」と述べたのが、企業に AI スタックを「所有」してもらうという思想だ。企業ごと、さらには同じ企業内のチームごとに AI ジャーニーの段階は異なる。Fireworks は、その段階に応じて3つの異なる抽象度（コントロールの粒度）を提供する。</p>
 
-      <h3>ファインチューニングのメリット</h3>
-      <p>自社データでモデルをカスタマイズすることで：</p>
-      <ul>
-        <li>ドメイン固有のタスクでより高精度な回答を得られる</li>
-        <li>専門用語や業界用語の正確さが向上</li>
-        <li>クローズドモデルに依存しないため、知的財産保護</li>
-        <li>継続的にデータを追加してモデルを進化させられる</li>
-      </ul>
+      <table>
+        <thead><tr><th>サーフェス</th><th>主な対象</th><th>特徴</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Training Agent</td>
+            <td>プロダクトマネージャー / アプリビルダー</td>
+            <td>データとビジネス用途を渡すと、ファインチューニング済みモデルを返す。ML の知識が不要。</td>
+          </tr>
+          <tr>
+            <td>Managed Training</td>
+            <td>ML エンジニア</td>
+            <td>使う学習手法とデータセットが既に決まっている場合に、データを移すだけで学習ジョブを開始。バックエンドのインフラ調整は不要。</td>
+          </tr>
+          <tr>
+            <td>Training API</td>
+            <td>上級 ML チーム / 研究者</td>
+            <td>プラットフォームの生のプリミティブを公開。カスタム損失関数・報酬関数、最先端アルゴリズム、最大コンテキスト、フルパラメータファインチューニング。</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <h3>推論最適化のテクニック</h3>
-      <ul>
-        <li><strong>キャッシング:</strong> 頻繁に使われるプロンプトやコンテキストをキャッシュして再計算を削減</li>
-        <li><strong>バッチ処理:</strong> 複数の推論リクエストを一度に処理</li>
-        <li><strong>量子化:</strong> モデルの精度を落とさずに計算量を削減</li>
-        <li><strong>エッジデプロイ:</strong> 低遅延が必須な用途では、エッジデバイスにモデルをデプロイ</li>
-      </ul>
+      <p>重要なのは、<strong>どのサーフェスを使っても「ワンクリックデプロイ」できる</strong>こと。別の場所で学習し、別の場所で推論し、ダウンロードや再フォーマットを行う、といった手間が要らない。これがイテレーション速度に直結する。「ワンクリックでデプロイし、eval を回し、本番に出す」という流れだ。</p>
 
-      <h3>継続的改善ループ</h3>
-      <p>成功している企業の多くは、単発の最適化ではなく以下のサイクルを回している：</p>
-      <blockquote>計測 → 分析 → 改善 → 再トレーニング → 本番デプロイ → （1に戻る）</blockquote>
-      <p>このループを回すことで、モデルの精度とコスト効率を段階的に向上させ、競合の真似できない差別化を実現する。</p>
+      <div class="mermaid">
+flowchart TD
+  Start[AI ジャーニーの段階で選ぶ] --> A{ML の専門性は?}
+  A -->|低い / PdM・アプリ開発| TA[Training Agent<br/>自然言語で指示]
+  A -->|中 / ML エンジニア| MT[Managed Training<br/>手法とデータを選ぶ]
+  A -->|高い / 研究者| API[Training API<br/>生プリミティブを操作]
+  TA --> Deploy[ワンクリックデプロイ]
+  MT --> Deploy
+  API --> Deploy
+  Deploy --> Eval[eval 実行] --> Prod[本番投入]
+      </div>
     </section>
 
     <section id="s5">
-      <h2>5. 実装時のベストプラクティス</h2>
+      <h2>5. フライホイール ― 継続的な学習ループ</h2>
+      <p>原則3で触れた「フライホイール」は、本セッションの中核概念だ。先進企業は Fireworks 上で次のループを高速に回している。すなわち <strong>学習 → デプロイ → モニタリング → トレース取得 → 再学習</strong>。Fireworks が GPU オーケストレーション、弾力性（elasticity）、不良ノードや CSP の問題といった「複雑な部分」を引き受けるため、利用者は重みの配置・ホットロード・チェックポインティングといった苦労から解放される。</p>
+      <p>Vivek は「社内 DIY だと数週間かかるところを、Fireworks なら 10 回のイテレーションを回せるだろう」と述べた。</p>
 
-      <h3>モデル選定</h3>
-      <ul>
-        <li>自社のユースケースに適したベースモデルを選定（Llama、Mistral、Phi等は各々異なる特性）</li>
-        <li>大規模モデルが常に最適とは限らない。タスクに応じて小型モデル+ファインチューニングが効率的なことも多い</li>
-      </ul>
+      <div class="mermaid">
+flowchart LR
+  Train[学習<br/>SFT / DPO / RL] --> Deploy[ワンクリック<br/>デプロイ]
+  Deploy --> Monitor[本番モニタリング]
+  Monitor --> Trace[トレース取得]
+  Trace --> Retrain[再学習]
+  Retrain --> Train
+      </div>
 
-      <h3>データ管理</h3>
-      <ul>
-        <li>ファインチューニングデータの品質が重要。ノイズやラベルエラーはモデル性能を低下させる</li>
-        <li>定期的にデータセットを審査・更新し、分布のドリフトを検出</li>
-      </ul>
-
-      <h3>評価指標</h3>
-      <ul>
-        <li>単一の指標（精度）だけでなく、レイテンシー、コスト、信頼性などの複合評価</li>
-        <li>A/Bテストで新モデルとベースラインを比較</li>
-      </ul>
-
-      <h3>セキュリティとガバナンス</h3>
-      <ul>
-        <li>ファインチューニングに使用するデータのプライバシー保護</li>
-        <li>モデルバージョン管理と監査ログの確保</li>
-        <li>定期的なセキュリティテストと脆弱性評価</li>
-      </ul>
+      <h3>数値忠実性（Numerical Fidelity）の保証</h3>
+      <p>もう一つ強調されたのが「数値忠実性」だ。大規模モデル、特に浮動小数点精度を使う MoE（Mixture of Experts）モデルを学習すると、数値が大きくドリフトしうる。「学習したもの」と「実際に提供されるもの」が一致しない危険がある。Fireworks はこの一致を保証し、「eval で得た結果が本番プラットフォームのエンドユーザー向け性能と一致する」ことを担保するという。さらに、学習と推論が1つのプラットフォームに統合されているため、<strong>ベンダースプロール（vendor sprawl、複数ベンダーの乱立）が起きない</strong>点もメリットとされた。</p>
     </section>
 
     <section id="s6">
-      <h2>6. 提示された事例・ユースケース</h2>
+      <h2>6. デモ① ― トレーニングエージェント</h2>
+      <p>Vivek は会場に「eval を書いたりデータを再フォーマットするのが好きな人は?」と問いかけ、誰も手を挙げないのを確認したうえで「ではこのエージェントはあなたのためのものです」と切り出した。トレーニングエージェントの発想はシンプルで、<strong>平易な英語で「これが私のデータセット、これがビジネスゴール、ファインチューニングを手伝って」と伝える</strong>だけでよい。</p>
 
-      <h3>Harvey（法務AI）の例</h3>
-      <p>セッション内で言及されたHarveyは、法律文書の理解と生成に特化したAIを提供。Fireworksのプラットフォームを活用して、法務ドメインの知識とベストプラクティスを組み込んだカスタムモデルを実装。これにより、一般的なモデルでは対応できない複雑な法律解釈が可能に。</p>
-
-      <h3>一般的な利用シーン</h3>
+      <h3>エージェントが代行すること</h3>
       <ul>
-        <li>カスタマーサポート：企業の問い合わせパターンでファインチューニング</li>
-        <li>技術ドキュメント生成：社内APIやコード規約を学習させた補助開発ツール</li>
-        <li>業務プロセス自動化：ワークフロー理解したエージェント</li>
+        <li>データの再フォーマット</li>
+        <li>eval（評価）の作成</li>
+        <li>用途に合うモデルの探索・選定</li>
+        <li>ハイパーパラメータ探索（多数のノブを手作業で試す苦痛を肩代わり）</li>
       </ul>
+
+      <h3>進め方（プラン承認フロー）</h3>
+      <ol>
+        <li>エージェントがビジネス用途を受け取り、モデル選定・eval 作成・データ整形を含む<strong>プラン</strong>を提示。<strong>学習イテレーションにかかるコストも事前提示</strong>する。</li>
+        <li>承認すると、データセットの一部（small cut）でハイパーパラメータのグリッドサーチを行い、探索空間を絞り込む。</li>
+        <li>「10 通り試したうち、有望なのはこの2つ。理由と eval 結果はこれ。フルデータセットで本実行してよいか?」と再確認。</li>
+        <li>承認後、フルデータセットで学習を実行し、内部の挙動をステップごとに可視化、最後に総合レポートを提示。</li>
+      </ol>
+
+      <p>この機能はすべて<strong>ヘッドレス（headless）でも利用可能</strong>で、<code>skill file</code> として提供される。GitHub Copilot、Claude、Cursor など自分のコーディングエージェント／ハーネスから直接モデルを学習させたい場合、skill file を置いて API キーを追加するだけでよい。教師ありファインチューニング（SFT）、選好最適化（preference optimization）、分類タスク向けモデル作成などがあらかじめパッケージ化されている。</p>
     </section>
 
     <section id="s7">
-      <h2>7. まとめと推奨事項</h2>
+      <h2>7. デモ② ― マネージドトレーニングと推論デプロイ</h2>
+      <p>ML の詳細を自分で握りたい層向けに、クリック操作のワークフロー（Managed Training プロダクト）も用意されている。教師ありファインチューニング、強化ファインチューニング（RFT）、選好最適化から手法を選べる。</p>
 
-      <h3>主要な取り組み方針</h3>
+      <h3>学習ジョブの構成</h3>
       <ul>
-        <li><strong>1. オープンソースの再評価：</strong> 従来「規模で劣る」と見なされたオープンソースモデルも、今や実用的。コスト考慮時には最初の候補にすべき。</li>
-        <li><strong>2. ファインチューニングへの投資：</strong> 自社データをモデルに組み込むことが差別化の鍵。一度の実装ではなく、継続的改善の仕組みを作る。</li>
-        <li><strong>3. Fireworks + Foundryの活用：</strong> 開発からデプロイまでの全段階をサポートする一貫したプラットフォームを選定し、運用コストを削減。</li>
-        <li><strong>4. 監視と反復：</strong> 本番環境でのモデル性能を常時監視し、データやアルゴリズムの改善を小刻みに実施。</li>
+        <li>モデルを選択（Fireworks はオープンウェイトモデルの推論で「day 0」提供を志向しており、ファインチューニング対応も最速級）。</li>
+        <li>データセットを直接アップロード。<strong>セキュアトレーニング（BYOB）</strong>として自社クラウドからデータをストリーミングすることも可能。</li>
+        <li>エポック数・学習率・バッチサイズなどの生パラメータを公開。スマートなデフォルトも用意。</li>
+        <li>RFT の場合は <strong>grader（採点器）</strong> をアップロード、または GitHub リポジトリで接続し、報酬付与に用いる。top K・top P なども調整可能。</li>
+        <li><strong>Weights &amp; Biases</strong> 連携に対応。API キーを差し込めば詳細なテレメトリで内部挙動をモニタリングできる。</li>
+        <li>学習中はプラットフォーム上で loss / reward 関数をリアルタイム表示。挙動が想定外なら一時停止して報酬関数や eval を見直せる。</li>
       </ul>
 
-      <h3>次のステップ</h3>
-      <ol>
-        <li>自社のコアユースケース1つを特定</li>
-        <li>Fireworks無料トライアルでファインチューニングを試す</li>
-        <li>テスト環境でパフォーマンスを測定</li>
-        <li>成功事例に基づいて、段階的に本番運用に拡大</li>
-      </ol>
+      <h3>コンパウンドトレーニング（積み重ね学習）</h3>
+      <p>SFT したモデルの上に DPO を、その上にさらに強化学習を…という形で、<strong>好きなだけイテレーション／パスを重ねられる</strong>。これがフライホイールでいう「継続的な学習」の具体形だ。</p>
+
+      <h3>推論デプロイとカスタムシェイプ</h3>
+      <p>学習後はファインチューニング済みモデルのオンデマンドデプロイに対応する。注目点は file optimizer による「カスタムシェイプ」で、<strong>同じ GPU 台数でも、スタックの組み方次第で性能が大きく変わる</strong>。同一モデルを「最小シェイプ」でも「フル精度シェイプ」でも、また「速度最適化」「スループット最適化」でも提供できる。トラフィックの増減に合わせたオートスケーリングも備える。</p>
+    </section>
+
+    <section id="s8">
+      <h2>8. 上級者向け ― Training API</h2>
+      <p>Training API は、プラットフォームの「生の力（raw power）」を上級 ML ユーザーへ開放するための製品だ。インフラ部分は Fireworks が裏で引き受けつつ、ノブはすべて公開する。カスタム損失関数を書け、最新アルゴリズム（オンポリシー系など、いわゆる「on policy」「SYSPO」等として話題のもの）を使える。</p>
+      <ul>
+        <li>フルパラメータファインチューニングに対応。</li>
+        <li>公開 GitHub リポジトリの <strong>クックブック（cookbook）</strong> に多数のレシピがあり、ゼロから書かずにレシピのノブを変えるだけで始められる。</li>
+        <li>最大の特長は<strong>自分のハーネス内から直接モデルを学習できる</strong>こと。AI は「より良く仕事をする方法」を、自社の環境・ハーネスの中で、どのツールにアクセスでき、どうオーケストレーションするかを知ったうえで学ぶ必要がある、という思想に基づく。</li>
+        <li>用意された例を使えば、<strong>ラップトップから 1 兆パラメータ規模のモデルを学習</strong>することも可能（インフラはすべて Fireworks 側が処理）。</li>
+      </ul>
+    </section>
+
+    <section id="s9">
+      <h2>9. 大型発表 ― Fireworks が Microsoft Foundry で一般提供（GA）</h2>
+      <p>前日の Satya Nadella 基調講演に絡む発表として、<strong>Fireworks の Microsoft Foundry 上での一般提供（GA）</strong>が紹介された。Vivek が示した推論デプロイ機能はすべて Foundry 上で利用可能になる（ただし学習側は対象外。Fireworks で学習し、ダウンロードして Foundry のカスタムモデルデプロイへ移す形）。</p>
+      <blockquote>
+        「Fireworks のすべての良さと、Foundry のすべての良さを、シンプルな形で ― ワンエンドポイント、ワンコントラクト、ワンジャーニー、ワンプラットフォームで使えるようにする。」
+        <span class="cite">— 発表ビデオより（16:18 付近）</span>
+      </blockquote>
+    </section>
+
+    <section id="s10">
+      <h2>10. なぜ Foundry 上の Fireworks なのか ― 4つの理由</h2>
+      <p>ここから Jet（Jetashree Ravi）が、モデルカタログから本番までの流れと、顧客が Foundry 上の Fireworks を選ぶ理由を説明した。理由は主に4つに整理される。</p>
+
+      <div class="grid-cards">
+        <div class="card"><h4>1. パフォーマンス</h4><p>CUDA カーネルレベルからの最適化で、GPU 上にモデルが載った状態で各ユースケースに合わせて性能を引き出す。</p></div>
+        <div class="card"><h4>2. モデルの優位性</h4><p>多くのモデルを day 0 で提供。Deep Seek V4 や Kimi 2.6 などの最先端 OSS を出た当日にエージェントへ組み込める。</p></div>
+        <div class="card"><h4>3. コントロールと拡張性</h4><p>Fireworks と Azure Foundry カタログの統合により、多くのカスタムモデルを Foundry 上にデプロイできる。</p></div>
+        <div class="card"><h4>4. エコノミクス</h4><p>クローズドソースはスケール時に急激に高価化。同等品質でより安い代替を、Azure クレジットを活かして使える。</p></div>
+      </div>
+    </section>
+
+    <section id="s11">
+      <h2>11. 3つの統合モード</h2>
+      <p>顧客が Fireworks を Foundry に統合する際の主なモードは3つある。本番要件に応じて選ぶ。</p>
+
+      <table>
+        <thead><tr><th>モード</th><th>課金 / 構成</th><th>向いている場面</th><th>提供モデル例</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Serverless（従量課金）</td>
+            <td>デプロイ作成不要。複数ユーザー共有のトークン単位課金。共有インフラのためレート制限あり。</td>
+            <td>まず手早く試したい / 共有で十分な用途</td>
+            <td>GLM 5.1、Kimi 2.6、GPT 120B など</td>
+          </tr>
+          <tr>
+            <td>PTU（Provisioned Throughput Unit）</td>
+            <td>GPU を予約して専用デプロイ。PTU でゲートされる。</td>
+            <td>本番ワークロードが明確で、専有が必要なとき</td>
+            <td>用途に応じた予約デプロイ</td>
+          </tr>
+          <tr>
+            <td>Bring Your Own Weights</td>
+            <td>Fireworks で学習 → 重みをダウンロード → Azure にアップロードしてデプロイ。Azure クレジットを使用。</td>
+            <td>クローズドに対抗して自社学習した独自モデルを使うとき</td>
+            <td>自社の独自・プロプライエタリモデル</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s12">
+      <h2>12. 顧客事例（Foundry × Fireworks）</h2>
+      <p>統合に対する顧客の声として3社が紹介された。</p>
+
+      <table>
+        <thead><tr><th>企業</th><th>求めたもの</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>UiPath</td>
+            <td>より速く・よりコスト効率の良いモデル。さらにオープンソースモデルでクローズドの Sonic 4.6 の品質を超えること。</td>
+            <td>Fireworks × Azure Foundry のモデルで実現可能に。</td>
+          </tr>
+          <tr>
+            <td>Bolt New</td>
+            <td>本番用途でスループットとレイテンシの両面でよくスケールすること。</td>
+            <td>Azure エコシステムと Fireworks モデルで解決策を発見。</td>
+          </tr>
+          <tr>
+            <td>Motive</td>
+            <td>反復タスクを高ボリュームワークロードで実行すること。</td>
+            <td>Fireworks エンジンで最適化したモデルを Azure Foundry にデプロイし、高ボリュームの反復処理を提供。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s13">
+      <h2>13. デモ③ ― Foundry でのデプロイとエージェント統合</h2>
+      <h3>カタログからの Serverless デプロイ</h3>
+      <p>Azure Foundry の discover ページからモデルカタログへ進む。Fireworks で最適化されたモデルは多くが <code>FW</code> プレフィックスを持つ。従量課金で使うなら、モデルを選んで deploy をクリックし、レート制限などのカスタム設定（共有インフラのため必ず何らかのレート制限がある）を調整。デプロイ後はチャット UI で対話でき、API でエージェントやアプリに組み込める。</p>
+
+      <h3>カスタムモデルのアップロードとデプロイ</h3>
+      <p>独自モデルを扱いたい場合は、Azure の build セクション → モデルページの custom model セクション → <strong>add</strong> ボタンから自分のモデルを追加し、ベースアーキテクチャを選ぶ。デフォルト未対応のアーキテクチャなら Azure と Fireworks に連絡すれば有効化を支援するという。提示されるコマンドラインでモデルをアップロードし、custom model を選んで deploy。専有デプロイなのでレート制限はなく、PTU（プロビジョンドスループット）数を自分で決められる。</p>
+
+      <h3>Azure エージェントへの組み込み</h3>
+      <p>build ページの agents から、エージェントに名前を付けて deploy。背後で使うモデルを Foundry 上の Fireworks モデルやカスタムモデルに差し替えられる。Web 検索ツールや自前で定義したツール／関数とも統合でき、エージェントは選んだ Fireworks モデルとともにツールを使いこなす。</p>
+    </section>
+
+    <section id="s14">
+      <h2>14. 事例研究 ― Harvey AI と Legal Agent Benchmark（LAB）</h2>
+      <p>ゲストの Nico Groupin は Harvey AI の応用研究責任者。Harvey は法務・専門サービス向けの生成 AI プラットフォームで、世界中の<strong>数千の法律事務所</strong>が利用する。ミッションは、弁護士の仕事をより効率的・高品質にし、雑務（busy work）を減らすこと。</p>
+
+      <p>3週間前、Harvey は <strong>Legal Agent Benchmark（略称 LAB）</strong>を公開した。エージェントがアプリ層で広がる中で「自分の業界・領域で品質をどう考えるか」という問いに答えるためのベンチマークで、法務タスクにおける Long Horizon（長期ホライズン）エージェントの性能を測る。LAB は4つの構成要素からなる。</p>
+
+      <div class="mermaid">
+flowchart TD
+  subgraph LAB[Legal Agent Benchmark]
+    Env[1. エージェント環境<br/>client matter = 文書・作業・中間成果物の総体]
+    Inst[2. パートナーレベルの指示<br/>詳細手順ではない大枠の依頼]
+    Out[3. 実物の成果物生成<br/>Word / Excel / PowerPoint を5〜10点]
+    Grade[4. 専門家ルーブリック採点<br/>1タスクあたり50+の評価基準]
+  end
+  Env --> Inst --> Out --> Grade
+      </div>
+
+      <p>たとえば指示は「ここにデータルームがある。論点リスト（issues list）を作って、完成した成果物を持って戻ってきて」といった<strong>パートナー（共同経営弁護士）レベルの大枠</strong>で与えられる。エージェントは法務の進め方に関する事前知識と、ハーネスが持つツール・スキルを頼りに、チャット回答ではなく<strong>実物の Word 文書・Excel・PowerPoint</strong>（1タスクで5〜10点に及ぶことも）を生成しなければならない。</p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">24</div><div class="label">カバーする法務実務領域</div></div>
+        <div class="stat-card"><div class="num">1,200+</div><div class="label">総タスク数</div></div>
+        <div class="stat-card"><div class="num">~75,000</div><div class="label">総ルーブリック基準数</div></div>
+      </div>
+
+      <p>採点は専門家のルーブリックで行われ、各タスクには良い成果物を構成する重要ポイントを定めた <strong>50以上のルーブリック基準</strong>がある。Nico は LAB を単なるベンチマークではなく、本番デプロイに重要な研究（オープンウェイトモデルのポストトレーニング、ハーネス最適化、スキル、ツール利用、メモリなど）の「基盤」と位置づける。</p>
+    </section>
+
+    <section id="s15">
+      <h2>15. Advisor Agents ― ハイブリッドで品質とコストを両立</h2>
+      <p>Nico が「最も興奮している」と語り、当日朝に記事も公開したのが <strong>Advisor Agents</strong> の取り組みだ。これは、オープンウェイトモデル（例: GLM 5.1）が駆動する <strong>worker エージェント</strong>が、より重い（多くはクローズドのフロンティア、例: Opus 4.7）<strong>advisor モデル</strong>を必要に応じて呼び出す、というシステムである。推論時のルーティング（inference time routing）によって、品質とコストの<strong>パレートフロンティア</strong>を効果的に攻略できるという。</p>
+
+      <div class="mermaid">
+sequenceDiagram
+  participant U as 依頼（法務タスク）
+  participant W as Worker Agent<br/>(GLM 5.1 / オープンウェイト)
+  participant A as Advisor Model<br/>(Opus 4.7 / クローズド)
+  U->>W: タスク投入
+  W->>W: 大半の作業を低コストで実行
+  W->>A: 難所だけ助言を要求（必要時のみ）
+  A-->>W: 高品質な助言を返す
+  W-->>U: 成果物を生成
+      </div>
+
+      <p>クローズドのフロンティアは性能の最前線を与える一方、コストとレイテンシのトレードオフが大きい。オープンウェイトははるかに安く速く、セキュリティ面の保証も大きいが性能で劣りうる。ハイブリッドシステムは、<strong>より低いコストとレイテンシで品質を維持するどころか、多くの場合で品質を上回った</strong>という。Vivek はこの結果を、あるタスクで<strong>最大 2.4 倍安く、かつ all-task メトリクスで約 30% 良い</strong>と要約した。</p>
+
+      <blockquote>
+        「多くの企業が、あらゆるタスクにフロンティアのクローズドモデルを使っている。これは、バンカーを狙うにもアリを狙うにも空母を持ち出すようなものだ。そんな必要はない。」
+        <span class="cite">— Vivek Chauhan（33:45 付近）</span>
+      </blockquote>
+    </section>
+
+    <section id="s16">
+      <h2>16. Harvey のオープンモデル戦略 ― 4つの考慮事項</h2>
+      <p>「なぜ Harvey にとってオープンモデルが重要か」という問いに対し、Nico はパートナーシップには2側面（マネージド推論経由でのオープンウェイト<strong>消費</strong>と、ポストトレーニングによる<strong>改善</strong>）があるとし、ポストトレーニングを魅力的にする4つの考慮事項を挙げた。</p>
+
+      <h3>① ドメイン専門性（最初に挙げた理由）</h3>
+      <p>多くの人は「まずコストとレイテンシだろう」と思うが、Nico が最初に挙げたのは<strong>ドメイン専門性</strong>だった。評価を通じて見えてきたのは「<strong>jagged intelligence（ギザギザの知能）</strong>」― Andrej Karpathy が命名した、モデルがある事には非常に強い一方で別の事には惨めに失敗し、その理由を解釈しづらい、という観察だ。法務でも同様で、あるモデルは企業 M&amp;A や財務デューデリのような取引業務に強いのに、判例リサーチや文章作成中心の訴訟業務には弱い、といったことが起きる。ポストトレーニングで、こうした凹凸をならし、全実務領域でモデルを底上げできる。</p>
+
+      <h3>② コストとレイテンシ</h3>
+      <p>2番目がコストとレイテンシ。Vivek の言い回しを引いて「必要がないならフェラーリをレーストラックから出す必要はない」と表現。利用は<strong>二峰性（bimodal）</strong>の分布になりつつあり、極めて高ステークスで複雑な仕事にはプレミアムを払ってフロンティアのクローズドを使う一方、オープンウェイトが完全に適する単純な仕事も多い。この2モード間の<strong>ルーティング</strong>がますます重要になる。</p>
+
+      <h3>③ セキュリティとガバナンス</h3>
+      <p>業界全体が重視し始めているのがセキュリティとガバナンス。最高ステークスの仕事では、顧客は<strong>自社 VPC 内でのセキュアなデプロイ</strong>を求める。オープンウェイトはそれを可能にし、さらに<strong>モデルの完全な推論トレース</strong>にアクセスできるため、エージェントの挙動に対する解釈可能性・監査可能性の作業を大きく高められる。これはコンプライアンス上、時とともに重要性を増している。</p>
+
+      <h3>④ エンドツーエンドのイテレーション速度</h3>
+      <p>マネージド推論側は「プラグアンドプレイ」で、イテレーション不要にすぐオープンソースモデルを使い始められる。マネージド学習インフラにより<strong>イテレーションループがよりタイトに・速く・効率的に</strong>なる。Harvey には「<strong>all timelines are compressed（あらゆるタイムラインは圧縮されている）</strong>」という社内の言い回しがあり、これは研究にも当てはまる。ポストトレーニング実験を並列・低タッチで多数走らせられることが、研究チームの速度を押し上げる。</p>
+    </section>
+
+    <section id="s17">
+      <h2>17. まとめ ― Foundry の価値とファウンダーへの助言</h2>
+      <p>Nico は「エンタープライズグレードのインフラ、とりわけ AI インフラといえば、すぐに Microsoft Foundry を思い浮かべる」と述べた。法務はナレッジワークの中でも最高ステークスで、最高グレードのインフラ・セキュリティ・ガバナンス・コンプライアンスを要する。だからこそ Harvey は一貫して Azure 顧客であり続けたという。</p>
+      <p>Fireworks との組み合わせは「両得（best of both worlds）」だ。すでに活用しているエンタープライズグレードのインフラの上に、オープンウェイト向けのマネージド推論、学習インフラ、そしてそれらのシームレスなデプロイを重ねられる。自社インフラチームの足かせにならずに済む、と評価した。</p>
+
+      <blockquote>
+        「Harvey に参加した頃、私たちは Airbnb に5〜6人。革新的な AI 課題どころか、その日 Wi-Fi がつながるかを心配していた。3年前、こうした AI インフラの多くは存在しなかった。今は、すべてを自分たちで解決しなくてよいと分かっていて、どれだけ夜よく眠れるか。」
+        <span class="cite">— Nico Groupin（39:10 付近）</span>
+      </blockquote>
+
+      <h3>ファウンダー／エンタープライズへの助言</h3>
+      <ul>
+        <li>今日 AI ネイティブ企業を立ち上げて初めて AI スタックを作るなら、あるいは大企業として AI スタックを<strong>エージェントネイティブに作り直す</strong>なら、利用可能な「追い風（tailwinds）」に乗るべき。</li>
+        <li>具体的には<strong>マネージドインフラを使う</strong>ことを推奨。「all timelines are compressed」だからこそ、はるかに速く動ける。</li>
+        <li>すでに Azure を使っていて、新規ユースケースや既存ユースケースの再構築を考えているなら、Azure 上の Fireworks モデルを試すとよい。Azure 上のエージェントでも、自作のエージェントでも、複数の統合モードで組み込める。</li>
+      </ul>
     </section>
 
     <footer class="page">
@@ -368,7 +564,7 @@
         本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
       </p>
       <p>
-        出典: <a href="https://www.youtube.com/watch?v=sOvtPvaog3M" target="_blank" rel="noopener">YouTube - Microsoft Developer</a> ／ 取得手段: yt-dlp（英語字幕） ／ 生成日: 2026年6月21日
+        出典: <a href="https://www.youtube.com/watch?v=sOvtPvaog3M" target="_blank" rel="noopener">https://www.youtube.com/watch?v=sOvtPvaog3M</a> ／ 取得手段: yt-dlp（英語字幕・全文精読） ／ 生成日: 2026年6月21日
       </p>
     </footer>
   </main>
