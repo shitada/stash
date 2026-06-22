@@ -101,6 +101,7 @@
     display: flex; align-items: center; gap: 6px;
     font-size: 13.5px; color: var(--text); cursor: pointer; padding: 7px 0;
   }
+  .toggle:has(input:disabled) { opacity: .45; cursor: not-allowed; }
   .btn-reset {
     background: var(--bg); color: var(--text-dim);
     border: 1px solid var(--border); border-radius: 8px;
@@ -575,22 +576,25 @@
     els.container.innerHTML = "";
     els.noResults.hidden = sorted.length !== 0;
 
-    if (s.grouped) {
-      // カテゴリ内を並び替えるだけだとカテゴリの並び順（固定）が見た目を支配し、
-      // 並び替えの変化が分かりにくい。そこでグループの表示順も選択したキーに追従させる。
-      // タイトル順のときはカテゴリ名順、それ以外（日付系）は各カテゴリ先頭（＝最も新しい/古い）
-      // アイテムが sorted 内で現れる位置順にカテゴリを並べる。
-      const usedCats = CATEGORY_ORDER.filter((cat) => sorted.some((r) => r.category === cat));
-      let orderedCats;
-      if (s.sort.startsWith("title")) {
-        orderedCats = usedCats.slice().sort((a, b) => a.localeCompare(b, "ja"));
-      } else {
-        orderedCats = usedCats.slice().sort(
-          (a, b) =>
-            sorted.findIndex((r) => r.category === a) -
-            sorted.findIndex((r) => r.category === b)
-        );
-      }
+    // 日付ソート（新しい順／古い順）が選ばれているときは、カテゴリでまとめると
+    // 「下に表示されるカテゴリの最新項目が下に来てしまう」ため、グループ化せず
+    // 全体を通して日付順に並べる。カテゴリ見出しによるグループ表示は、日付の前後が
+    // 意味を持たないタイトル順のときだけ有効にする。
+    const isTitleSort = s.sort.startsWith("title");
+    const grouped = s.grouped && isTitleSort;
+    // 日付ソート中はカテゴリ分類が適用されないことを UI 上でも明示する。
+    els.group.disabled = !isTitleSort;
+    const groupToggle = els.group.closest(".toggle");
+    if (groupToggle) {
+      groupToggle.title = isTitleSort
+        ? "カテゴリ見出しでグループ化します"
+        : "日付の並び替え中は、カテゴリをまたいで全体を新しい順／古い順に並べます";
+    }
+
+    if (grouped) {
+      const orderedCats = CATEGORY_ORDER
+        .filter((cat) => sorted.some((r) => r.category === cat))
+        .sort((a, b) => a.localeCompare(b, "ja"));
       let first = true;
       orderedCats.forEach((cat) => {
         const items = sorted.filter((r) => r.category === cat);
