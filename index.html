@@ -218,6 +218,18 @@
   // meta 文字列はカードにそのまま表示する原文（情報を欠落させないため保持）。
   const REPORTS = [
     {
+      href: "reports/i-automated-my-job-better-leader-ja.html",
+      title: "私は自分の仕事を自動化した（そしてそれは私をより良いリーダーにした）― 日本語要約",
+      desc: "GitHub のシニアディレクター Ashley Willis のブログ記事を日本語要約。仕事が15か所に散らばり『自分の脳』だけが接続システムになる問題に対し、GitHub Copilot アプリの約40個の『オートメーション（スケジュール実行されるプロンプト）』で不可視労働を肩代わりさせる体験記。Meeting Prep / Daily Triage Digest / Ship Decoder / Launch Radar / Daily Wins Recap / Commitments Tracker / Dependabot PR Triage / Stale Work Finder などを5カテゴリで整理し、称賛や人とのつながりは自動化しない線引き、AuDHD のアクセシビリティ視点、『生成』から『不可視労働の拡張』への捉え直しまでを網羅。",
+      category: "AI 活用・働き方",
+      event: "The GitHub Blog",
+      speakers: ["Ashley Willis"],
+      source: "Web",
+      published: "2026-06-23",
+      generated: "2026-06-30",
+      meta: "出典: github.blog（developer-skills / GitHub）/ 著者: Ashley Willis / 公開: 2026年6月23日 / 取得手段: fetch_webpage / 生成日: 2026年6月30日"
+    },
+    {
       href: "reports/turn-foundation-models-into-production-ai-microsoft-foundry.html",
       title: "Turn Foundation Models into Production AI on Microsoft Foundry（BRKSP91）日本語要約",
       desc: "Microsoft Build 2026 BRKSP91（登壇: Vivek Chauhan・Jetashree Ravi / Fireworks AI、ゲスト: Nico Groupin / Harvey AI）を字幕全文から日本語要約。オープンウェイト vs クローズドの差の消滅、Fireworks の3トレーニングサーフェスと推論エンジン（84,000通りの最適化）、継続学習フライホイール、Fireworks の Foundry 上 GA、Serverless/PTU/BYOW の3統合モード、UiPath・Bolt New・Motive 事例、Harvey の Legal Agent Benchmark（24領域・1,200タスク・75,000ルーブリック）と Advisor Agents による最大2.4倍のコスト削減までを網羅。",
@@ -423,7 +435,7 @@
     }
   ];
 
-  const CATEGORY_ORDER = ["AI × ソフトウェア開発の未来", "AI モデル・研究論文", "カンファレンス・製品発表"];
+  const CATEGORY_ORDER = ["AI × ソフトウェア開発の未来", "AI 活用・働き方", "AI モデル・研究論文", "カンファレンス・製品発表"];
 
   const els = {
     search: document.getElementById("searchInput"),
