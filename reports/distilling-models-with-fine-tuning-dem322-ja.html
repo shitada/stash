@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Smaller, faster, smarter: モデル蒸留 × ファインチューニング（DEM322）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 のデモセッション DEM322『Smaller, faster, smarter: Distilling models with fine‑tuning』（登壇: William Liang / Foundry ファインチューニングチーム）を字幕全文から日本語要約。エージェント trace を教師データにして小型モデルを蒸留・SFT し、安く・速く・賢く動かす手法、Foundry 上の実装手順、4つの実ケースまでを網羅。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 260px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    aside.sidebar details > summary { cursor: pointer; padding: 4px 0; }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  pre code { display: block; padding: 12px 14px; overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.76); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 · DEM322 / William Liang</div>
+      <h1>Smaller, faster, smarter: モデル蒸留 × ファインチューニング</h1>
+      <p class="lead">エージェントの「trace（実行トレース）」を教師データにして小型モデルを蒸留・教師ありファインチューニングし、フロンティアモデルの賢さを 1/10 以下のコストで再現する ― Microsoft Foundry のデモセッション日本語要約。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=EkZmVdfjPL0" target="_blank" rel="noopener">YouTube ― Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>William Liang（Foundry ファインチューニングチーム）</dd></div>
+      <div><dt>イベント</dt><dd>Microsoft Build 2026 / セッション DEM322</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月4日</dd></div>
+      <div><dt>所要時間</dt><dd>25分08秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語字幕（全文精読）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">モデル蒸留 (Distillation)</span>
+          <span class="badge">教師ありファインチューニング (SFT)</span>
+          <span class="badge">Microsoft Foundry</span>
+          <span class="badge">エージェント trace</span>
+          <span class="badge">コスト最適化</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3行サマリ</h2>
+      <ul>
+        <li>AI の目標は「最速のエージェント」から「1億回実行しても採算が合うほど<strong>安い知能</strong>」へ移った。エージェントは大量のトークンを消費するため、コスト削減が最重要課題になっている。</li>
+        <li>解決策は<strong>モデル蒸留</strong>。高性能な教師モデル（GPT-5.5）が実タスクを解いた<strong>エージェント trace</strong> を教師データに、小型で安い生徒モデル（GPT-4.1 nano）を教師ありファインチューニング（SFT）し、教師の挙動を模倣させる。</li>
+        <li>Foundry は trace を自動収集し、数クリックで SFT データセット化＆学習ジョブ投入まで完結。デモの4ケースで、微調整版は<strong>誤った返金の抑止・正しいツール実行経路・一貫した対応・スコープ管理</strong>を実現した。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. なぜ今「安さ」が主役になったのか</h2>
+      <p>登壇者の William 氏は、この半年で AI 開発のゴールが大きく変わったと切り出します。<strong>6か月前の目標は「最速のエージェントを作ること」</strong>でした。しかし今の問いは「自分のエージェントが動くかどうか」ではなく、<strong>「そのエージェントを1億回実行しても採算が合うか」</strong>に変わっています。</p>
+      <blockquote>AI がフロンティアラボから企業のワークフローへ移るにつれ、知能が劇的に安くなる必要がある ― 知能を「贅沢品」ではなく「ユーティリティ（水道・電気のような実用インフラ）」にするために。</blockquote>
+      <p>その背景にあるのが、<strong>エージェントは本質的に「トークン消費マシン」</strong>だという事実です。ツール、コンテキスト、メモリをすべて与えるほど、エージェントは通常のチャットよりはるかに多くのトークンを消費します。多くの企業がすでに本番でエージェントを動かしている今、このコストが重くのしかかります。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">6か月</div><div class="label">「最速」→「低コスト」へ目標が転換した期間</div></div>
+        <div class="stat-card"><div class="num">1億回</div><div class="label">実行しても採算が合うかが新しい問い</div></div>
+        <div class="stat-card"><div class="num">贅沢品→実用インフラ</div><div class="label">知能に求められる位置づけの変化</div></div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. モデル蒸留とは ― 教師と生徒の「徒弟制」</h2>
+      <p>モデル蒸留（Model Distillation）を、William 氏は<strong>2つの AI モデル間の「徒弟制（apprenticeship）」</strong>にたとえます。</p>
+      <ol>
+        <li>大きく高性能なモデルを<strong>教師（Teacher）</strong>として用意し、実タスクを解かせる。</li>
+        <li>教師が実環境でどう振る舞ったか、その<strong>実例（データ）を大量に収集</strong>する。</li>
+        <li>そのデータを使って、より小さく安いモデル＝<strong>生徒（Student）</strong>をファインチューニングし、挙動を模倣させる。</li>
+        <li>学習後、生徒は<strong>わずかなコストで同じタスクを処理</strong>できるようになる。</li>
+      </ol>
+      <p>これが「フロンティアモデルを、自社業務に合わせて調整しつつコストを大幅に下げる<strong>企業の秘密兵器</strong>」になる、というのが核心のメッセージです。</p>
+      <div class="mermaid">
+flowchart LR
+  T["教師モデル（Teacher）<br/>GPT-5.5<br/>高性能・高価"] -->|実タスクを解く| TR["エージェント trace<br/>会話・ツール呼び出し・判断"]
+  TR -->|データ整形| SFT["教師あり<br/>ファインチューニング"]
+  SFT --> S["生徒モデル（Student）<br/>GPT-4.1 nano<br/>小型・安価・高速"]
+  S -->|わずかなコストで<br/>教師の挙動を模倣| OUT["安く・速く・賢い<br/>本番エージェント"]
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);">※ モデル名（GPT-5.5 / GPT-4.1 nano）はセッション音声（自動字幕）に基づく表記です。</p>
+    </section>
+
+    <section id="s3">
+      <h2>3. なぜ「エージェント trace」から学ぶのか</h2>
+      <p>蒸留の教師データとして William 氏が強く推すのが<strong>エージェント trace（実行トレース）</strong>です。trace は「エージェント構築における独自の領域になりつつある」一方で、まだ十分に活用されていないと指摘します。その利点は次の通りです。</p>
+      <table>
+        <thead><tr><th>特長</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>本物の会話</td><td>ユーザーが実際に投げてくる「台本外（off-script）」の質問を捉える。開発者が想像した質問ではなく、現実のやり取りが記録される。</td></tr>
+          <tr><td>ツール利用が含まれる</td><td>「何を言うか」だけでなく、<strong>どのツールを・どの順で・どんな引数で呼ぶか</strong>まで学べる。これがエージェントを「おしゃべりなチャットボット」以上の実用品にする。</td></tr>
+          <tr><td>正しい「経路」で解く</td><td>正解に至る<strong>trajectory（軌跡・手順）</strong>まで教えられる。正しいツールの順序・正しい引数値を学習させられる。</td></tr>
+          <tr><td>収集が容易・無料</td><td>Foundry 上でエージェントを組んでいれば、trace 収集ツールは標準提供済み。<strong>追加コストなし</strong>で集まる。</td></tr>
+          <tr><td>自動で増え、信頼できる</td><td>バックグラウンドで蓄積が進み、使うほど賢くなる。合成データと違い、<strong>実世界の本物の信号</strong>が得られる。</td></tr>
+        </tbody>
+      </table>
+      <p>「正しい経路」の重要性を、William 氏は学校のテストにたとえます。</p>
+      <blockquote>正解を出しても満点はもらえないことがある ― 答えは合っていても「方法」が間違っているからだ。私たちが AI モデルに教えたいのは、正しい軌跡で、正しいツールの順序で、正しい引数を埋めて問題を解くことだ。</blockquote>
+    </section>
+
+    <section id="s4">
+      <h2>4. 蒸留で得られる4つのメリット</h2>
+      <p>trace を使った蒸留から得られる「勝ち（wins）」は4つあると整理されました。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>① コストの劇的削減</h4><p>非常に小さいモデルを動かすため、コストが大幅に下がる。時にはデバイス上に載せられるほど小型にできる。</p></div>
+        <div class="card"><h4>② 応答が高速化</h4><p>小型モデルゆえにレスポンスが速くなる。</p></div>
+        <div class="card"><h4>③ 教師品質に肉薄（時に凌駕）</h4><p>実世界の trace で微調整すると、狭いタスク上では教師の品質に極めて近づき、性能の向上幅は大きい。特定タスクでは教師を上回ることさえある。</p></div>
+        <div class="card"><h4>④ 一貫した挙動</h4><p>教師ありファインチューニング（SFT）を行うことで、より一貫性のある振る舞いが得られる。</p></div>
+      </div>
+    </section>
+
+    <section id="s5">
+      <h2>5. デモの全体像 ― 何を、どう見せるか</h2>
+      <p>ここからは実演。デモの狙いは「本番デプロイ済みエージェントを何度も使い、バックグラウンドで trace が溜まる」状況を、時間内に収まるよう<strong>シミュレーションで再現</strong>することです。流れは次の通りです。</p>
+      <div class="mermaid">
+flowchart TD
+  A["① 難易度の高い 100 タスクを用意<br/>（小型モデル単体では解けない）"] --> B["② 教師モデルで会話をシミュレート"]
+  B --> C["③ trace を生成・収集"]
+  C --> D["④ trace をクリーニング"]
+  D --> E["⑤ 生徒モデルを SFT で学習"]
+  E --> F["⑥ 評価（pass@K）で<br/>教師・生徒・微調整版を比較"]
+      </div>
+      <h3>登場する2つのモデル</h3>
+      <table>
+        <thead><tr><th>役割</th><th>モデル</th><th>特徴</th></tr></thead>
+        <tbody>
+          <tr><td>生徒（Student）</td><td>GPT-4.1 nano</td><td>非常に安く・速く・使いやすい小型モデル。ただし難タスクは単体では解けない。</td></tr>
+          <tr><td>教師（Teacher）</td><td>GPT-5.5</td><td>高性能だが高価で「予算を圧迫する」。多数のツール・コンテキスト・ポリシーを抱え、1問の回答にも時間がかかる。</td></tr>
+        </tbody>
+      </table>
+      <h3>タスク設計</h3>
+      <p>100 個のタスクは、ベースモデルには非常に難しくなるよう作られています。各タスクには<strong>カテゴリと期待される解決策（正解）がタグ付け</strong>されています。例として挙げられたのは「配送遅延の対応」シナリオ ― 顧客 Noah はプラチナ会員でスマートウォッチを購入、返金を希望し、遅延クレジットも付くはずだと主張。50日前に配送されており、ポリシーを確認して返金かクレジットかを判断する、といった具合です。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">100</div><div class="label">評価タスク数</div></div>
+        <div class="stat-card"><div class="num">80 / 20</div><div class="label">学習用 / ホールドアウト（未学習検証）</div></div>
+        <div class="stat-card"><div class="num">3回</div><div class="label">各タスクの試行回数（pass@K）</div></div>
+        <div class="stat-card"><div class="num">4</div><div class="label">評価の採点軸</div></div>
+      </div>
+      <p>ライブ実演では、多数のツール・コンテキスト・ポリシーを抱えた GPT-5.5 エージェントが、データベースを走査し、結果を統合し、再度ツールを呼び…と、<strong>1つの質問に答えるだけで長い時間がかかる</strong>様子が示されました。「コーディングエージェントに指示して『考え中…』のまま朝を迎える」あの体験と同じ、と会場の共感を誘います。</p>
+    </section>
+
+    <section id="s6">
+      <h2>6. 評価の設計 ― 4つの採点軸と pass@K</h2>
+      <p>「改善する前に、まず性能を測れ」。Build 全体でも繰り返されるメッセージ通り、William 氏は評価（Evaluation）を最重要と位置づけます。各会話（マルチターン全体）を、次の<strong>4つの軸</strong>で採点します。</p>
+      <table>
+        <thead><tr><th>採点軸</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>Decision correctness（判断の正しさ）</td><td>エージェントが正しいツールを呼んでいるか。</td></tr>
+          <tr><td>Tool trajectory（ツール経路）</td><td>ツール呼び出しの順序が正しいか。</td></tr>
+          <tr><td>Financial accuracy（金額の正確さ）</td><td>返金額などの計算が正確か。</td></tr>
+          <tr><td>Communication（伝え方）</td><td>承認／拒否の際に、決められたキーワードで正しくユーザーに伝えているか。</td></tr>
+        </tbody>
+      </table>
+      <p>この採点は自由に設計してよい、と何度も強調されます。そのうえで導入されるのが <strong>pass@K</strong> という指標です。</p>
+      <blockquote>pass@K とは、K 回試したときに何回成功するか（＝許容できる閾値を何回超えるか）を見るもの。教師・生徒・微調整済み生徒のそれぞれで同じタスクを3回ずつ実行し、最後にサマリー統計を取って<strong>一貫性</strong>を確認する。</blockquote>
+    </section>
+
+    <section id="s7">
+      <h2>7. 結果 ― 生徒が教師に迫る</h2>
+      <p>評価結果では、まず<strong>生徒（GPT-4.1 nano）と教師（GPT-5.5）の間に非常に大きな性能差</strong>が現れます。サイズの大きく異なる2モデルは、能力面でもはっきり差が出るということです。</p>
+      <p>ところが<strong>微調整（ファインチューニング）後</strong>は様相が一変します。生徒の性能が大きく引き上げられ、<strong>時には教師に匹敵</strong>するレベルに達しました。重要なのは、学習に使っていない<strong>ホールドアウト（holdout）でも改善が確認された</strong>点です。これは、生徒が単にデータを丸暗記したのではなく、<strong>教師の推論能力を模倣できている</strong>ことを示します。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">大幅リフト</div><div class="label">微調整で生徒性能が向上</div></div>
+        <div class="stat-card"><div class="num">教師に匹敵</div><div class="label">狭いタスクでは教師水準に到達することも</div></div>
+        <div class="stat-card"><div class="num">半分超</div><div class="label">教師との差（headroom）の過半を回復</div></div>
+        <div class="stat-card"><div class="num">ホールドアウトでも改善</div><div class="label">暗記ではなく推論の模倣を確認</div></div>
+      </div>
+    </section>
+
+    <section id="s8">
+      <h2>8. Foundry での実装手順 ― trace から SFT ジョブまで</h2>
+      <p>「では実際に Foundry でどうやるのか？」という会場の疑問に応え、プラットフォーム実演に移ります。まず、Foundry 上で構築・運用しているエージェントに、先ほどの顧客 Noah の発話をそのまま投げます。GPT-5.5 エージェントは全ツールを使って熟考し、データとコンテキストを走査して応答を返します ― そしてこの一連の記録が <strong>trace</strong> です。</p>
+      <div class="callout">
+        <strong>trace（トレース）とは：</strong> 1つのリクエスト内で起きたすべての記録。各会話ターン、すべてのツール呼び出し、すべての読み取りステップ、すべてのデータフローが含まれ、Foundry 上で可視化される。Foundry はこれを<strong>自動収集</strong>するため、しばらく運用すれば「顧客との本物の会話」が trace として蓄積されていく。
+      </div>
+      <p>蓄積した trace を、小型モデルの微調整データへ変換する手順は次の通りです。</p>
+      <div class="mermaid">
+flowchart LR
+  A["Foundry 上で<br/>エージェントを運用"] -->|自動収集| B["trace が蓄積<br/>（この例で約1,000件）"]
+  B -->|trace タブの<br/>「Create dataset」| C["SFT データセット化<br/>（例: 名前『Hi build』）"]
+  C -->|Fine-tuning タブ →<br/>Supervised fine-tuning| D["GPT-4.1 nano 向け<br/>SFTジョブを投入"]
+  D --> E["ジョブがキューに投入<br/>→ 微調整済みモデル"]
+      </div>
+      <p>ポイントは、<strong>エージェントの trace をそのまま教師ありファインチューニングのデータセットに流し込み、Foundry 内で学習ジョブを開始できる</strong>こと。時間範囲を指定すると該当 trace（デモでは約1,000件）が自動収集され、データセットに名前を付け、Fine-tuning タブから SFT を選んで学習データソースに指定、ジョブを送信するだけです。</p>
+    </section>
+
+    <section id="s9">
+      <h2>9. 実世界のケーススタディ ― ベース vs 微調整版</h2>
+      <p>「ベンチマークは良さそうだが、実際の業務価値に何が変わるのか？」。William 氏は、ベースモデル（GPT-4.1 nano）と、その trace で微調整したモデルを比較し、<strong>4つの具体ケース</strong>で違いを見せます。</p>
+      <table>
+        <thead><tr><th>シナリオ</th><th>ベースモデル（GPT-4.1 nano）</th><th>微調整版（GPT-5.5 の trace で学習）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>① 返品手数料の計算</strong><br/>Diego / メカニカルキーボード</td>
+            <td>「気に入らない＝欠陥だ」という主張に丸め込まれ、手数料なしで返金してしまう。</td>
+            <td>標準会員は15%の返品手数料が必要と正しく判断。「気に入らない」は欠陥ではないと理解し、手数料を適用。<strong>誤った返金の抑止</strong>につながる。</td>
+          </tr>
+          <tr>
+            <td><strong>② 未発送注文のキャンセル</strong><br/>Liam / 経路（trajectory）</td>
+            <td>注文詳細→配送状況を取得した後、<strong>ポリシー確認を飛ばして</strong>いきなり解決を実行。結果は正しくても経路が誤っており、業務ロジック上のリスク。</td>
+            <td>教師の手順を段階的に模倣。配送状況を確認→<strong>返金ポリシーを照合</strong>（引数に「気変わり」を指定）→金額を計算→解決を実行、と正しい順序を再現。</td>
+          </tr>
+          <tr>
+            <td><strong>③ 最終セール品の欠陥主張</strong><br/>水筒（保冷不良の訴え）</td>
+            <td>「広告と違う＝欠陥」と言われ、ストアクレジットを発行してしまう。</td>
+            <td>「広告と違うという主張は理解したが欠陥とは思わない。<strong>欠陥を示せない限り返金しない</strong>」と一貫して対応。挙動の一貫性が向上。</td>
+          </tr>
+          <tr>
+            <td><strong>④ スコープ外の依頼</strong><br/>注文後サポート宛に新規注文</td>
+            <td>「できる限りやる」と、呼ぶべきでない<strong>在庫確認ツールを誤って呼ぶ</strong>。</td>
+            <td>依頼の意図を認識し、業務ポリシー通り<strong>別ルートへ振り分け</strong>。何もすべきでない場面で正しく抑制。</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>特にケース②は「正しい結果に至っても、良い方法で至っていない」問題の好例です。ベースモデルは未発送だからと解決に飛びつきますが、微調整版は<strong>業務上正しいと定められた経路</strong>を踏みます。下図はその違いです。</p>
+      <div class="mermaid">
+flowchart TB
+  subgraph BASE["ベースモデル：経路を飛ばす（リスクあり）"]
+    direction LR
+    B1["注文詳細を取得"] --> B2["配送状況を確認"] --> B3["いきなり<br/>解決を実行"]
+  end
+  subgraph FT["微調整版：正しい経路を踏む"]
+    direction LR
+    F1["注文詳細を取得"] --> F2["配送状況を確認"] --> F3["返金ポリシーを照合"] --> F4["金額を計算"] --> F5["解決を実行"]
+  end
+      </div>
+      <p>これらを大量の注文にスケールさせれば、企業は<strong>誤った返金（false refund）を大幅に削減</strong>でき、エージェントが「正しいことを正しい順序で」行うことへの<strong>信頼</strong>も高まる、というのが William 氏の主張です。</p>
+    </section>
+
+    <section id="s10">
+      <h2>10. まとめ ― 知能を自社に「埋め込む」</h2>
+      <p>クロージングで William 氏は、本セッションの根底にある思想を改めて示します。</p>
+      <blockquote>フロンティアモデルを「贅沢品」として扱うのではなく、知能を<strong>企業・組織に埋め込む</strong>方法を見つけるべきだ。そのために使うのは、あなたがすでに所有しているもの ― エージェントの trace、本番の履歴、それらの軌跡（trajectory）だ。</blockquote>
+      <p>すなわち、自社の trace を活用して<strong>エージェント／モデル／trace を小型モデルへ蒸留</strong>し、組織のために<strong>より速く・安く・賢く</strong>動かすことでコストと性能を最適化する ― これが「知能をユーティリティにする」ための具体的な道筋だ、と締めくくられました。</p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。モデル名や固有名詞はセッション音声（自動字幕）に基づく表記であり、正式名称と異なる場合があります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=EkZmVdfjPL0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=EkZmVdfjPL0</a> ／ 登壇: William Liang（Microsoft Foundry）／ Microsoft Build 2026 DEM322 ／ 取得手段: yt-dlp 英語字幕（全文精読）／ 生成日: 2026年7月3日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid 図ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
