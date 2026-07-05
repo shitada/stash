@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Agent Framework アプリを可観測性と評価で理解・修正する（DEM361）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 のデモ DEM361『Understand and fix Agent Framework apps with observability and evals』（登壇: James Bennett）を字幕全文と画面キャプチャから日本語要約。エージェントのブラックボックス問題、OpenTelemetry + Open Inference + Phoenix による可観測性、LLM-as-a-judge の evals、継続的テストと自己改善ループまでを網羅。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 260px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  /* 画面キャプチャ figure */
+  figure.shot { margin: 22px 0; }
+  figure.shot img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    color: var(--accent); font-weight: 700; font-size: 12px; white-space: nowrap;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.82); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 · DEM361 / James Bennett</div>
+      <h1>Agent Framework アプリを可観測性と評価で理解・修正する</h1>
+      <p class="lead">エージェントの「ブラックボックス」を、OpenTelemetry + Open Inference + Phoenix の可観測性で覗き、LLM-as-a-judge の評価（evals）でテストし、コーディングエージェントによる自己改善ループへつなぐ ― Microsoft Foundry / Microsoft Agent Framework のライブデモ日本語要約（画面キャプチャ付き）。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=wFB7wmWvL6U" target="_blank" rel="noopener">YouTube ― Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>James (Jim) Bennett（Microsoft MVP / Foundry・開発ツール）</dd></div>
+      <div><dt>イベント</dt><dd>Microsoft Build 2026 / セッション DEM361（Demo・300 Advanced）</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月4日</dd></div>
+      <div><dt>所要時間</dt><dd>18分26秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Microsoft Agent Framework</span>
+          <span class="badge">Observability / OpenTelemetry</span>
+          <span class="badge">Open Inference</span>
+          <span class="badge">Phoenix (Arize)</span>
+          <span class="badge">Evals / LLM-as-a-judge</span>
+          <span class="badge">自己改善ループ</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3行サマリ</h2>
+      <ul>
+        <li>エージェント（＝LLM＋指示＋ツール）は、内部で LLM がどのツールをどの順で呼ぶかを勝手に決める<strong>ブラックボックス</strong>。開発者には出力しか見えず、正しく動いているか分からない。</li>
+        <li><strong>可観測性</strong>：OpenTelemetry の AI 拡張 <strong>Open Inference</strong> で trace を採取し、無償OSSの <strong>Phoenix</strong> でツール呼び出し・トークン数まで丸ごと可視化。<strong>評価</strong>：別の LLM を審査員（LLM-as-a-judge）にして「ツールの証拠だけで妥当か」を supported/unsupported で採点＝<strong>evals（AI版のテスト）</strong>。</li>
+        <li>入力＋テスト＋結果が揃えば<strong>継続的テスト</strong>が組める。デモではモデルを GPT-4.1→GPT-5 系に替えるだけで正答率が<strong>50%→90%</strong>に。さらにコーディングエージェント（Copilot CLI / Claude）に「直して」と任せる<strong>自己改善ソフトウェアループ</strong>へ。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. エージェントは「ブラックボックス」</h2>
+      <p>登壇者の Jim Bennett 氏（Microsoft MVP）は、会場に問いかけます。「AI を聞いたことがある人？」「実際にエージェントを作っている人？」「自分のエージェントが<strong>内部で何をしているか</strong>分かる人？」「そもそも<strong>ちゃんと動いているか</strong>分かる人？」― 手はまばら。これが今日のテーマです。</p>
+      <p>「クールな子たちはエージェントは <em>lit</em>（＝LLM・instructions・tools）だと言う」。まさにそれがエージェントの正体で、デモの調達（procurement）評価エージェントは<strong>わずか約11行のコード</strong>で定義されています。LLM（Microsoft Foundry 上の OpenAI モデル）、指示（購入申請を読み、ポリシー・ベンダー・予算を集めて承認/却下する評価器）、そして check_policy・vendor・budget などのツール群。あとは Agent Framework が面倒を見てくれます。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/01-agent-code-11-lines.jpg" alt="VS Code に表示された agent.py。OpenAIChatCompletionClient と、instructions=SYSTEM_PROMPT・name=ProcurementEvaluator・tools=all_tools を渡す Agent 定義。" loading="lazy" />
+        <figcaption>エージェントの実体は約11行。LLM・指示・ツールを渡して <code>Agent(...)</code> を作るだけ（<code>agent.py</code> の <code>ProcurementEvaluator</code>）。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=65s" target="_blank" rel="noopener">01:05</a></figcaption>
+      </figure>
+
+      <p>やり取りは <code>agent.run(入力)</code> の<strong>1行だけ</strong>。出力が返ってきて、あとは「うまくいくことを祈る」。しかし内部では、LLM が<strong>どのツールを・呼ぶべきか・どの順で呼ぶか</strong>を決め、Agent Framework がツール結果を LLM に戻してまた実行…という処理が回っています。開発者に見えるのは<strong>最終出力だけ</strong>です。</p>
+
+      <div class="mermaid">
+flowchart LR
+  IN["購入申請（入力）"] --> BOX["エージェント<br/>= LLM + 指示 + ツール"]
+  BOX --> OUT["承認 / 却下（見える出力）"]
+  BOX -. 内部は不可視 .-> H["LLM がツールの選択・順序・引数を決定<br/>→ ツール実行 → 結果を LLM に戻す → 反復"]
+      </div>
+
+      <p>デモでは「エンジニアチームの IDE 更新に $3,200 を使いたい」という購入申請を投入。エージェントは「承認」と返します。<strong>合っているかもしれないし、間違っているかもしれない。分からない</strong>― 完全なブラックボックスです。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/02-purchase-request-approved.jpg" alt="調達アプリの画面。PR-021『TechFlow IDE licenses (10 seats)』$3.2k を、エージェントが high confidence で approve と評価。" loading="lazy" />
+        <figcaption>$3,200 の IDE 購入申請（PR-021 / Alex Rivera・Engineering）をエージェントが「approve（high confidence）」。理由は示されるが、その判断が妥当かは外からは検証できない。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=195s" target="_blank" rel="noopener">03:15</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s2">
+      <h2>2. 可観測性 ― OpenTelemetry + Open Inference + Phoenix</h2>
+      <p>ブラックボックスを覗く鍵が<strong>可観測性（observability）</strong>です。Web アプリに <strong>OpenTelemetry</strong> を組み込めば、リクエスト時間や 200/400/500 が見える。同じ「オープン標準」の発想を AI アプリにも適用できます。</p>
+      <p>それが <strong>Open Inference</strong>。OpenTelemetry を AI のセマンティック規約に対応させるオープン標準の拡張です。OpenTelemetry 側も GenAI 標準を策定中ですが「委員会仕事」で時間がかかる。一方 Open Inference は数年前から使われ、Microsoft の新しい <strong>Assert フレームワーク／agent control 仕様</strong>（Sarah Bird 氏のセッション）でも採用されています。導入は「トレースしたい」と数行足して Open Inference 経由でバックエンドに送るだけです。</p>
+
+      <p>受け皿として使うのが <strong>Phoenix</strong> ― Open Inference を作った <strong>Arize</strong> による無償・オープンソースのテレメトリバックエンドです。エージェントの動きが丸ごとツリーで見えます。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/03-phoenix-trace-tree.jpg" alt="Phoenix のトレース画面。process.run の下に chat gpt-4.1-nano、execute_tool check_policy / lookup_vendor / check_budget / submit_assessment が並び、右側に出力JSON（PR-001, compliant, approve）。" loading="lazy" />
+        <figcaption>Phoenix のトレースツリー。<code>process.run</code> を頂点に、LLM 呼び出し（gpt-4.1-nano）と <code>check_policy / lookup_vendor / check_budget / submit_assessment</code> のツール実行が時系列で可視化される。右は出力JSON。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=355s" target="_blank" rel="noopener">05:55</a></figcaption>
+      </figure>
+
+      <p>各スパンを開けば、システムプロンプト・ユーザープロンプト・ツール呼び出し要求・戻り値など、<strong>非常に粒度の細かい属性</strong>まで辿れます。トークン数（入出力）、モデル名、プロバイダ、そして <code>microsoft.agent_framework</code> といった情報も。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/04-span-attributes-tokens.jpg" alt="Phoenix の Attributes タブ。token_count total 1300 / prompt 1229 / completion 71、model_name gpt-4.1-nano、provider openai、system microsoft.agent_framework などの属性JSON。" loading="lazy" />
+        <figcaption>スパンの Attributes。<code>token_count</code>（total 1300 / prompt 1229 / completion 71）、<code>model_name</code>、<code>provider: openai</code>、<code>system: microsoft.agent_framework</code> まで記録される。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=393s" target="_blank" rel="noopener">06:33</a></figcaption>
+      </figure>
+
+      <table>
+        <thead><tr><th>階層 / 項目</th><th>Phoenix trace が見せるもの</th></tr></thead>
+        <tbody>
+          <tr><td><code>process.run</code></td><td>エージェント実行のトップスパン（総コスト・レイテンシ・ステータス）</td></tr>
+          <tr><td>LLM 呼び出し</td><td>system/user プロンプト、ツール呼び出し要求、出力、finish_reason</td></tr>
+          <tr><td>ツール実行</td><td><code>check_policy</code> / <code>lookup_vendor</code> / <code>check_budget</code> / <code>submit_assessment</code></td></tr>
+          <tr><td>属性 (Attributes)</td><td>token_count（入出力）、model_name、provider、<code>microsoft.agent_framework</code> ほか</td></tr>
+        </tbody>
+      </table>
+
+      <p>これは<strong>スケール</strong>します。開発中は1〜2件、本番では数千〜数百万件の実行を観測可能。しかも標準の OpenTelemetry なので、<strong>PII や顧客データを除去する span プロセッサ</strong>を差し込むなど、通常のテレメトリ運用のテクニックがそのまま使えます。これで最初の問い「エージェントが何をしているか」に答えられます。</p>
+    </section>
+
+    <section id="s3">
+      <h2>3. 評価（Evals）― LLM を審査員にする</h2>
+      <p>次の問いは「<strong>それは正しく動いているのか？</strong>」。決定論的なコードの単体テストは「この入力ならこの出力」と書けますが、LLM は<strong>非決定論的</strong>で同じ入力でも出力が揺れます。ではどう判定するか。いちばん簡単なのは人間に見てもらうこと ― ですが、<strong>人間は評価が得意ではありません</strong>。</p>
+      <blockquote>人間は飽きるし、ミスもバイアスもある。仮釈放審査が昼食直前だと通りにくく、昼食後なら通りやすい、という研究すらある。AI も間違えるが<strong>飽きない</strong>し、<strong>スケール</strong>してテストを回せる。</blockquote>
+
+      <p>典型例：もし <code>check_policy</code> ツールが<strong>空のポリシー</strong>を返したら？ 親切なエージェントは「ポリシーが無い＝問題なし。承認！ 100万ドルのソフトも全部OK」とやりかねません。どう検知するか。可観測性で得た<strong>全データを別の AI に投げて「これは妥当か？」と問う</strong> ― これが <strong>evals</strong> です。</p>
+      <blockquote>evals は「テスト」を指すAI界のかっこつけ用語。本当は testing と呼べばいいのに、我々はクールで違っていたいから evals と呼ぶ。要は<strong>AI のためのテスト</strong>だ。</blockquote>
+
+      <p>審査プロンプトを書きます。「あなたは自動調達評価器を監査している。各行は購入申請で…推奨が<strong>ツールの証拠だけで支持されるか</strong>を判定せよ」。採点ルーブリック（approve / reject / flag-for-review）を定め、購入申請・ツールの証拠・エージェントの推奨と理由を差し込み、最後に「推奨はツールで支持されるか＝supported / unsupported を1語で返せ」とします。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/05-eval-prompt-rubric.jpg" alt="VS Code の policy_compliance_prompt.md。supported の条件として approve/reject/flag-for-review のルーブリックと、purchase_request・tool_evidence・agent_recommendation の差し込み欄が並ぶ。" loading="lazy" />
+        <figcaption>eval プロンプト（<code>policy_compliance_prompt.md</code>）。approve / reject / flag-for-review をどう判定するかのルーブリックと、申請・証拠・推奨の差し込み欄。証拠が推奨に明確に矛盾すれば <code>unsupported</code>。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=658s" target="_blank" rel="noopener">10:58</a></figcaption>
+      </figure>
+
+      <table>
+        <thead><tr><th>判定</th><th>「supported（妥当）」とされる条件</th></tr></thead>
+        <tbody>
+          <tr><td>approve</td><td>承認/優先ベンダー・予算充分・明確なポリシー障害なし</td></tr>
+          <tr><td>reject</td><td>ベンダー問題（停止/非承認リスト）・予算不足・明示的なポリシー違反</td></tr>
+          <tr><td>flag-for-review</td><td>証拠が曖昧、または閾値付近（金額が承認段階の境目、条件付きベンダー等）</td></tr>
+        </tbody>
+      </table>
+
+      <p>これで<strong>テストが完成</strong>。非決定論的な AI 出力の上に eval を載せることで、<strong>supported / unsupported という決定論的な出力</strong>が得られます。Phoenix からテレメトリを落とし、ツール出力を抜き出してプロンプトに詰め、AI に投げて採点。返るのは<strong>スコア（動けば1、ダメなら0）</strong>です。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/06-phoenix-eval-supported.jpg" alt="Phoenix の Annotations。score=1、説明『予算充分・優先ベンダー・$5,000 の自動承認閾値未満・矛盾するポリシー障害なし』、source API。" loading="lazy" />
+        <figcaption>LLM-as-a-judge の採点結果。<code>score = 1（supported）</code>。「予算は充分、ベンダーは優先、購入額は $5,000 の自動承認閾値未満、矛盾するポリシー障害なし」と根拠を明示。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=725s" target="_blank" rel="noopener">12:05</a></figcaption>
+      </figure>
+
+      <p>ところが全体のスコアを見ると「pass, pass, pass, pass, pass, fail, fail, fail, fail, fail」。<strong>半分しか正しく動いていません</strong>。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/07-pass-fail-scores.jpg" alt="Phoenix の procurement-agent-evals プロジェクトのトレース一覧。policy_compliance が 0.00（赤）と 1.00（緑）に約半々で分かれている。" loading="lazy" />
+        <figcaption><code>procurement-agent-evals</code> のトレース一覧。<code>policy_compliance</code> が <strong>0.00（赤＝不合格）と 1.00（緑＝合格）で約半々</strong>＝ベースの GPT-4.1 nano は約50%しか妥当に動いていない。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=743s" target="_blank" rel="noopener">12:23</a></figcaption>
+      </figure>
+
+      <p>失敗行を開くと、審査員が何を問題視したかが分かります。ある $45,000 のコンサル案件は、ポリシー上<strong>VP の承認が必要</strong>。エージェントは「却下（reject）」しましたが、本来は<strong>「レビュー行き（flag-for-review）」にすべき</strong>でした。judge はこれを unsupported（score 0）として、どこで何を間違えたかを正確に示します。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/08-unsupported-vp-review.jpg" alt="Phoenix の Annotations。score=0、説明『$45,000 の案件は VP 承認が必要。却下は証拠だけでは支持されず、flag-for-review か承認保留が妥当』。" loading="lazy" />
+        <figcaption>失敗例：<code>score = 0（unsupported）</code>。「$45,000 の案件は VP 承認が必要で、却下は証拠だけでは支持されない。flag-for-review か保留の方が妥当」と judge が指摘。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=770s" target="_blank" rel="noopener">12:50</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s4">
+      <h2>4. 継続的テストと自己改善ループ</h2>
+      <p>「何をしているか」が見え、<strong>入力・テスト・結果</strong>が揃えば、<strong>自動テスト</strong>が組めます。入力を<strong>データセット</strong>に固め、エージェントに通し、評価器で採点し、修正しては同じパイプラインに流す ― <strong>TDD</strong>そのもの。テストを先に用意し、緑になるまでコードを回すのと同じ発想で、数字が良くなるまでエージェントを調整します。</p>
+
+      <p>典型例が<strong>モデル選択</strong>。アプリが不十分なら別モデルを試す、良くても安いモデルへ更新したい、プロバイダが新モデルを出した ― そのたびに「まだ動くか」を確かめたい。デモでは<strong>アプリは一切変えず、GPT-4.1 を GPT-5 系（字幕では GPT-5.4）に替えただけ</strong>で、正答率が跳ね上がりました。</p>
+
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/09-model-compare-90pct.jpg" alt="Phoenix の procurement-agent-gpt-5 プロジェクト。トレース一覧の policy_compliance が大半 1.00（緑）＝約90%。" loading="lazy" />
+        <figcaption>同じアプリを GPT-5 系で実行した <code>procurement-agent-gpt-5</code>。<code>policy_compliance</code> が<strong>ほぼ 1.00（緑）＝約90%</strong>に改善。コードは変えず、モデルを替えただけ。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=875s" target="_blank" rel="noopener">14:35</a></figcaption>
+      </figure>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">約11行</div><div class="label">エージェントのコア定義</div></div>
+        <div class="stat-card"><div class="num">&lt;$0.01</div><div class="label">1実行のコスト（Phoenix 計測）</div></div>
+        <div class="stat-card"><div class="num">50% → 90%</div><div class="label">モデル変更だけで正答率が向上</div></div>
+        <div class="stat-card"><div class="num">≈90%</div><div class="label">現実的な到達目標（100%は無い）</div></div>
+      </div>
+
+      <p>さらに一歩。<strong>コーディングエージェント</strong>（GitHub Copilot CLI や Claude）は<strong>スキル</strong>を持ち、このデータにアクセスできます。「ここに私のコード（GitHubリポジトリ）、エージェントに流す入力、実行する評価がある。<strong>アプリを直して</strong>」と頼めば、コーディングエージェントは<strong>サンドボックスでアプリを起動し、入力を流し、評価を実行し、結果を見て、プロンプト・モデル・ツール記述を調整して再実行</strong>…を繰り返し、より良い解へ収束します。</p>
+
+      <div class="mermaid">
+flowchart LR
+  A["本番エージェント実行"] --> B["Open Inference で<br/>trace 収集（Phoenix）"]
+  B --> C["LLM-as-a-judge で<br/>評価・採点（0/1）"]
+  C --> D["入力＋期待を<br/>データセット化"]
+  D --> E["コーディングエージェント<br/>（Copilot CLI / Claude）が修正<br/>プロンプト・モデル・ツール記述"]
+  E --> A
+      </div>
+
+      <p>今回は「モデル変更だけで50→90%」という<strong>作為的な例</strong>ですが、通常はプロンプトやツール記述の反復、モデルの試行を4〜6サイクル回して約90%の実効率に近づけます。</p>
+      <blockquote>裏技的な結論：エージェントは<strong>決して100%にはならない</strong>。人間も100%ではない。だが<strong>90%</strong>を目指して働きかけることはできる。</blockquote>
+    </section>
+
+    <section id="s5">
+      <h2>5. まとめ</h2>
+      <figure class="shot">
+        <img src="../images/agent-framework-observability-evals-dem361/10-summary.jpg" alt="まとめスライド。Agent（内部が分からない）／Observability（業界標準の可観測性で可視化）／Evals（コードやLLMで各実行をテストし、自己改善ループを駆動）の3本柱。" loading="lazy" />
+        <figcaption>まとめスライド ― <strong>Agent</strong>（何をしているか分からない）／<strong>Observability</strong>（業界標準で可視化）／<strong>Evals</strong>（コードやLLMで各実行をテストし、自己改善ループを駆動）。<a class="ts" href="https://www.youtube.com/watch?v=wFB7wmWvL6U&t=1016s" target="_blank" rel="noopener">16:56</a></figcaption>
+      </figure>
+
+      <ul>
+        <li><strong>エージェントはブラックボックス</strong> ― 何をしているか分からない。</li>
+        <li><strong>可観測性を足す</strong> ― 業界標準の <strong>Open Inference</strong> で内部を可視化する。</li>
+        <li><strong>evals を作る</strong> ― <strong>LLM-as-a-judge</strong> でエージェントの実行をテストする。</li>
+        <li><strong>自己改善ループを駆動</strong> ― Foundry にモデルをデプロイし、Microsoft Agent Framework でアプリを作り、Copilot CLI に「直して」と頼めば直してくれる。</li>
+      </ul>
+
+      <p>ツールの <strong>Phoenix</strong> は無償・オープンソース（<code>arize.com/phoenix</code>）でローカル実行可能。デモの全コードは公開 GitHub リポジトリにあり、再現できます（登壇者いわく「Azure クレジットが3時間前に尽きた」ため一部はローカル実演）。</p>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。掲載した画面キャプチャは、内容理解を目的として出典動画から該当箇所を引用したものです（各図に出典タイムスタンプを明記）。モデル名等の固有名詞はセッション音声（自動字幕）に基づく表記であり、正式名称と異なる場合があります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=wFB7wmWvL6U" target="_blank" rel="noopener">https://www.youtube.com/watch?v=wFB7wmWvL6U</a> ／ 登壇: James Bennett（Microsoft MVP）／ Microsoft Build 2026 DEM361 ／ 取得手段: yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出 ／ 生成日: 2026年7月5日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const p = 20;
+      svg.setAttribute('viewBox', [bbox.x - p, bbox.y - p, bbox.width + p * 2, bbox.height + p * 2].join(' '));
+    } catch (e) { console.warn(e); }
+  }
+
+  function startPanZoom(svg) {
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.4, maxZoom: 12
+    });
+    panZoomInstance.resize(); panZoomInstance.fit(); panZoomInstance.center();
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const cloned = sourceSvg.cloneNode(true);
+    cloned.removeAttribute('style');
+    cloned.setAttribute('width', '100%');
+    cloned.setAttribute('height', '100%');
+    body.appendChild(cloned);
+    tightenViewBox(cloned);
+    modal.classList.add('is-open');
+    startPanZoom(cloned);
+  }
+
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const W = img.naturalWidth || 1280, H = img.naturalHeight || 720;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(SVGNS, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0'); image.setAttribute('y', '0');
+    image.setAttribute('width', W); image.setAttribute('height', H);
+    svg.appendChild(image);
+    body.appendChild(svg);
+    modal.classList.add('is-open');
+    startPanZoom(svg);
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    if (panZoomInstance) { panZoomInstance.destroy(); panZoomInstance = null; }
+    modal.classList.remove('is-open');
+    body.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') { panZoomInstance.resetZoom(); panZoomInstance.fit(); panZoomInstance.center(); }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagramFromElement(diagram); }
+    });
+  });
+
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openImageFromElement(img); }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('diagramModal').addEventListener('click', (e) => {
+    if (e.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
