@@ -128,6 +128,23 @@
   .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
   .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
 
+  /* 画面キャプチャ figure */
+  figure.shot { margin: 22px 0; }
+  figure.shot img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    color: var(--accent); font-weight: 700; font-size: 12px; white-space: nowrap;
+  }
+
   .mermaid {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px; margin: 18px 0;
@@ -188,7 +205,7 @@
       <div><dt>公開日</dt><dd>2026年6月19日</dd></div>
       <div><dt>チャンネル / 媒体</dt><dd>GitHub（Rubber Duck Thursdays ライブ配信）</dd></div>
       <div><dt>所要時間</dt><dd>58分59秒</dd></div>
-      <div><dt>取得手段</dt><dd>yt-dlp（英語自動字幕・全文精読）</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp（英語自動字幕・全文精読）＋ 動画フレーム抽出（画面キャプチャ）</dd></div>
       <div style="grid-column: 1 / -1;">
         <dt>キーワード</dt>
         <dd class="badges">
@@ -275,6 +292,11 @@ flowchart TB
       <h2>4. アプリ全体ツアー（ホーム画面・モード・プロジェクト）</h2>
       <p>Pierce はまずホーム画面から紹介する。ホーム画面は「あらゆるプロンプトを起動するホームベース」。</p>
 
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/01-home-modes.jpg" alt="GitHub Copilot アプリのホーム画面。中央の入力欄と、モード（Interactive）・モデル（MAI-Code-1-Flash）・推論エフォート、プロジェクト/実行場所/ブランチのセレクタ。" loading="lazy" />
+        <figcaption>ホーム画面（「あらゆるプロンプトのホームベース」）。入力欄の下にモード（Interactive）・モデル（MAI-Code-1-Flash）・推論エフォート（Medium）と、プロジェクト（vscode）／実行場所（New worktree）／ブランチ（main）のセレクタが並ぶ。左は Home / My work / Automations とセッション一覧。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=580s" target="_blank" rel="noopener">09:40</a></figcaption>
+      </figure>
+
       <h3>3つのモード</h3>
       <table>
         <thead><tr><th>モード</th><th>使いどころ</th></tr></thead>
@@ -308,6 +330,11 @@ flowchart TB
           <tr><td><strong>Cloud</strong></td><td>エージェントループをローカルではなく<strong>クラウドのサンドボックス</strong>で実行</td><td>ローカルを占有したくない／どこからでも継続したい／エンタープライズの安全性を重視するとき（詳細は §9）</td></tr>
         </tbody>
       </table>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/02-worktree-local-cloud.jpg" alt="セッションの実行場所を選ぶ Where to run this session ドロップダウン。New worktree / Local repository / Cloud の3選択肢。" loading="lazy" />
+        <figcaption>実行場所を選ぶ「Where to run this session」ドロップダウン — <strong>New worktree</strong>（別コピーを作成）／<strong>Local repository</strong>（手元のリポジトリで実行）／<strong>Cloud</strong>（クラウドサンドボックスで実行）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=620s" target="_blank" rel="noopener">10:20</a></figcaption>
+      </figure>
     </section>
 
     <section id="s5">
@@ -319,6 +346,11 @@ flowchart TB
         <li>自分にアサインされた Issue が見える。独自ビュー（例: 自分のアサイン一覧）を作成でき、プリセットのフィルタもある。</li>
         <li>ここで初期トリアージを行い、Issue をクリックして<strong>その場でセッションを起動</strong>（例: VS Code リポジトリに対して新規セッション）。</li>
       </ul>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/03-my-work.jpg" alt="My work ビュー。Pierce / GitHub app / Active / Review requests / Done / All のタブで自分に関係する Issue を一覧。" loading="lazy" />
+        <figcaption>「My work」ビュー。Pierce／GitHub app／Active／Review requests／Done／All のタブで自分に関係する Issue を一覧・トリアージし、その場でセッションを起動できる（GitHub コンテキストに根ざした起点）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=680s" target="_blank" rel="noopener">11:20</a></figcaption>
+      </figure>
 
       <h3>Automations ― 繰り返しの雑務を自動化</h3>
       <p>「Automations」は、日々の反復的なトイル（toil）を自動化する仕組み。すべては<strong>プロンプト</strong>であり、MCP・スキル・プロジェクトコンテキストにアクセスでき、ローカルでもクラウドでも実行できる。Pierce の例:</p>
@@ -334,8 +366,18 @@ flowchart TB
       </table>
       <p>Cassidy の上司 Ashley Willis は「常時40個ほどの Automations」を走らせているといい、使い方は人によって大きく異なる。</p>
 
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/04-automations-list.jpg" alt="Automations 画面。Enterprise growth・Churn analysis・Triage・Today・Message triage・Business Report・Onboarding・Enterprise Feedback などのジョブがカードで並ぶ。" loading="lazy" />
+        <figcaption>「Automations」画面。Triage・Today・Message triage・Business Report・Enterprise Feedback などの定期（Daily/Weekly）・手動（Manual）ジョブがカードで並び、下部に Recent runs。すべてプロンプトで MCP・スキルにアクセスできる。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=775s" target="_blank" rel="noopener">12:55</a></figcaption>
+      </figure>
+
       <h3>Quick Chats ― コーディング以外の活用</h3>
       <p>特定のプロジェクトにスコープされない用途は「Quick Chats」で。Pierce はアプリを<strong>コーディング以外にも「何でも」</strong>使う。例として、GitHub Copilot アプリのリポジトリと github.com 上のドキュメント／マーケティングページをもとに、社内セールスチーム向けの <strong>PowerPoint プレゼンを実際に生成</strong>していた。</p>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/05-powerpoint-quick-chat.jpg" alt="Quick Chats セッションで、PowerPoint 生成ライブラリを導入して 15 枚の .pptx を生成している様子。" loading="lazy" />
+        <figcaption>Quick Chats でコード以外の用途も。GitHub のドキュメント等をもとに、社内セールス向けの <strong>15 枚の PowerPoint（.pptx）を実際に生成</strong>しているセッション（GPT-5.5 / High）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=865s" target="_blank" rel="noopener">14:25</a></figcaption>
+      </figure>
     </section>
 
     <section id="s6">
@@ -349,6 +391,11 @@ flowchart TB
         <li>駆動元セッションに「plan がレビュー可能になったら報告して」と頼めば、<strong>他セッションの進捗を監視・報告</strong>してくれる（入れ子のツリー表示）。</li>
         <li>ノイズが不要なら折りたたんでおけばよく、セッション完了時には通知音が鳴る。会議中でも音で気づける。</li>
       </ul>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/06-chief-of-staff-sessions.jpg" alt="「上位5件の Issue を plan モード・GPT-5.5・high reasoning で5セッション起動して」という指示で、子セッションが入れ子で並列生成される様子。" loading="lazy" />
+        <figcaption>Chief of Staff モデル。「上位5件の Issue を plan モード・GPT-5.5・high reasoning で5セッション起動して」という指示で、子セッション（Session reliability / CLI parity / UI regressions / Stability / Model access plan）が<strong>入れ子で並列生成</strong>される。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=980s" target="_blank" rel="noopener">16:20</a></figcaption>
+      </figure>
 
       <div class="mermaid">
 sequenceDiagram
@@ -376,6 +423,11 @@ sequenceDiagram
         <li><strong>VS Code 連携:</strong> ワンクリックで同じセッションを VS Code で開ける。しかも<strong>チャットの継続性</strong>があり、アプリでのやり取りが VS Code 側にも流れてくる。CLI・アプリ・VS Code が相互に連携する。</li>
       </ul>
 
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/07-pick-and-polish.jpg" alt="右パネルで実行中の coloring book アプリ（localhost:3001）を開き、Pick & Polish ボタンで画面上の要素に直接フィードバックする様子。" loading="lazy" />
+        <figcaption>アウトカム重視レビュー。右パネルで実行中のアプリ（coloring book、localhost:3001）を開き、上部の <strong>「Pick & Polish」</strong>で画面上の要素に直接フィードバックできる（diff よりまず成果を見る）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=1130s" target="_blank" rel="noopener">18:50</a></figcaption>
+      </figure>
+
       <h3>PR レビューのボトルネックと Agent Merge</h3>
       <p>AI は「作業を大量に始めること」を促すが、<strong>終わらせること</strong>（＝ PR レビュー）はもともとチームのボトルネック。しかも Pierce のようなエンジニアではない PM までコードベースに貢献するようになり、PR はかつてないほど増える。</p>
       <p>アプリは GitHub コンテキストに深く根ざしているため、PR を開いて GitHub Actions の状況やパフォーマンス上の指摘を確認し、<strong>各コメントを個別に Copilot に修正させる</strong>ことができる。CI 失敗があれば「直す?」ボタンが出る。しかし「CI が落ちた」「レビューコメントに対応して」と<strong>人間がボタンを押し続けるのは新たなお守り作業</strong>になってしまう。</p>
@@ -385,6 +437,11 @@ sequenceDiagram
         <li>CI 失敗も「flaky なので再実行すればよい」のか「本当の不具合」なのかを見て対処する。</li>
         <li>マージされるまでプルし続ける（このリポジトリでは最終的な承認だけは人間が行う設定）。</li>
       </ul>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/08-agent-merge.jpg" alt="右上の Agent merge ボタンを有効化した PR #7235。右パネルに Summary と Validation、下部に Agent merge check-in。" loading="lazy" />
+        <figcaption><strong>Agent Merge</strong>。右上の「Agent merge」ボタンを有効化した PR（#7235）。レビューコメント・CI 失敗・ブロッキングを継続監視し、先回りで対処してマージまで運ぶ（審査は Autopilot）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=1385s" target="_blank" rel="noopener">23:05</a></figcaption>
+      </figure>
 
       <div class="mermaid">
 flowchart LR
@@ -411,6 +468,11 @@ flowchart LR
         <li>Trello ボードのような Canvas も作れ、カードを列から列へドラッグすると、実際にアプリ側の作業が前進する。</li>
         <li>フルスクリーンにして「1日中その中で暮らす」使い方も可能。組み込みで markdown・browser があり、さらに数種が近日追加予定。</li>
       </ul>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/09-canvas-triage-board.jpg" alt="エージェントが生成した GitHub App triage board canvas。Recent issues 40 / Top thumbs up 40 / Top issues 10 などを集計し、Refresh issues ボタンもある。" loading="lazy" />
+        <figcaption><strong>Canvases</strong>。「GitHub App triage board」canvas を生成した例。Recent issues 40／Top thumbs up 40／Top issues 10 などを集計し、UI から Refresh やセッション起動ができる（═ UI がアプリを駆動）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=1540s" target="_blank" rel="noopener">25:40</a></figcaption>
+      </figure>
       <blockquote>「Canvas は、チャットの先にある『エージェントネイティブな UI』がどんなものかを探る良い試み。チャットを頭の中で管理し続けることから解放してくれる」（Pierce）</blockquote>
     </section>
 
@@ -424,6 +486,11 @@ flowchart LR
         <li>別途走らせていた「ダークモード追加」のクラウドセッションを github.com 側で継続し、「新しいブランチを作ってコミットし PR を送って」と指示するデモも（配信中は一部フレーキーな挙動あり）。</li>
       </ul>
 
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/10-cloud-qr-open-on-remote.jpg" alt="クラウドセッション接続時に表示される Open on remote リンクと QR コードのポップアップ。" loading="lazy" />
+        <figcaption>クラウドセッション接続時に出る <strong>「Open on remote」リンクと QR コード</strong>。QR を GitHub スマホアプリでスキャンすればスマホから、Open on remote なら github.com からセッションを継続できる（ノート PC を閉じてもクラウドで継続）。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=2030s" target="_blank" rel="noopener">33:50</a></figcaption>
+      </figure>
+
       <div class="mermaid">
 flowchart LR
   A["ローカルでクラウド<br/>セッションを開始"] --> B["エージェントループは<br/>クラウドのサンドボックスで実行"]
@@ -436,6 +503,12 @@ flowchart LR
 
       <h3>Automations でトリガー実行 ＋ 今後の予定</h3>
       <p>Enrique は Automation のデモも実施。リポジトリに Issue を作成すると、「issue created で常に issue を直す」Automation がそれを検知して着手。これらのクラウド Automation は github.com 側（agents → automations）からも確認できる。生成される PR は<strong>ドラフトモード</strong>で作られ、レビュー・完了・マージへ進める。</p>
+
+      <figure class="shot">
+        <img src="../images/github-copilot-app-rubber-duck-takeover/11-automations-github-com.jpg" alt="github.com の Agents 画面で実行中のクラウド Automation「Fix issues all the time」。Issue 作成をトリガーにリポジトリを clone し MCP サーバを起動している。" loading="lazy" />
+        <figcaption>github.com 側（Agents）で実行中のクラウド Automation「<strong>Fix issues all the time</strong>」。Issue 作成をトリガーに、リポジトリを clone し MCP サーバ（runtime-tools／github-mcp-server／playwright）を起動して自動で修正に着手する。<a class="ts" href="https://www.youtube.com/watch?v=JXw9QXlV50s&t=2320s" target="_blank" rel="noopener">38:40</a></figcaption>
+      </figure>
+
       <p>今後の拡張として2点が予告された。</p>
       <ul>
         <li><strong>より多くのトリガー種別</strong>のサポート。</li>
@@ -524,10 +597,10 @@ flowchart TB
 
     <footer class="page">
       <p class="disclaimer">
-        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。掲載した画面キャプチャは、内容理解を目的として出典動画から該当箇所を引用したものです（各図に出典タイムスタンプを明記）。
       </p>
       <p>
-        出典: <a href="https://www.youtube.com/watch?v=JXw9QXlV50s" target="_blank" rel="noopener">https://www.youtube.com/watch?v=JXw9QXlV50s</a> ／ 取得手段: yt-dlp（英語字幕・全文精読） ／ 生成日: 2026年7月1日
+        出典: <a href="https://www.youtube.com/watch?v=JXw9QXlV50s" target="_blank" rel="noopener">https://www.youtube.com/watch?v=JXw9QXlV50s</a> ／ 取得手段: yt-dlp（英語字幕・全文精読）＋ 動画フレーム抽出 ／ 生成日: 2026年7月1日（画面キャプチャ追加: 2026年7月5日）
       </p>
     </footer>
   </main>
@@ -624,6 +697,38 @@ flowchart TB
     panZoomInstance.center();
   }
 
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    const W = img.naturalWidth || 1280, H = img.naturalHeight || 720;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(SVGNS, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0'); image.setAttribute('y', '0');
+    image.setAttribute('width', W); image.setAttribute('height', H);
+    svg.appendChild(image);
+    modalBody.appendChild(svg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 12
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
   function closeModal() {
     const modal = document.getElementById('diagramModal');
     const modalBody = document.getElementById('modalBody');
@@ -659,6 +764,20 @@ flowchart TB
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openImageFromElement(img);
       }
     });
   });
