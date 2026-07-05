@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Hugging Face のオープンモデルを Microsoft Foundry で本番化する（DEM320）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 のデモ DEM320『Hugging Face open‑source models to production on Microsoft Foundry』（登壇: Vaidyaraman Sambasivam・Osi Otugo / Microsoft、Jean Boudier / Hugging Face）を字幕全文と画面キャプチャから日本語要約。Foundry Managed Compute、オープンモデルを選ぶ5つの理由、day-zero 提供パイプライン、ランタイム最適化、Qwen3-32B のデプロイからエージェント/Web検索/マルチターンまでのライブデモを網羅。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 260px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  /* 画面キャプチャ figure */
+  figure.shot { margin: 22px 0; }
+  figure.shot img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    color: var(--accent); font-weight: 700; font-size: 12px; white-space: nowrap;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.82); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 · DEM320 / Microsoft × Hugging Face</div>
+      <h1>Hugging Face のオープンモデルを Microsoft Foundry で本番化する</h1>
+      <p class="lead">GPU インフラを気にせず、オープンソースモデルを「発見 → デプロイ → エージェント/コードへ統合」まで一気通貫で ― 新発表の <strong>Foundry Managed Compute</strong> と Hugging Face 連携を、Qwen3-32B のライブデモとともに紹介したセッションの日本語要約（画面キャプチャ付き）。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=5lB9Bk4KEF8" target="_blank" rel="noopener">YouTube ― Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>Vaidyaraman Sambasivam（Microsoft Foundry）／ Jean Boudier（Hugging Face）／ Osi Otugo（Microsoft Foundry・デモ）</dd></div>
+      <div><dt>イベント</dt><dd>Microsoft Build 2026 / セッション DEM320（Demo・200 Intermediate）</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月4日</dd></div>
+      <div><dt>所要時間</dt><dd>25分40秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出（画面キャプチャ）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Foundry Managed Compute</span>
+          <span class="badge">Hugging Face</span>
+          <span class="badge">オープンモデル</span>
+          <span class="badge">Qwen3-32B</span>
+          <span class="badge">エージェント / Web検索</span>
+          <span class="badge">vLLM / SGLang</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3行サマリ</h2>
+      <ul>
+        <li>新発表の <strong>Foundry Managed Compute</strong> は、オープンソース／カスタムモデル向けの managed PaaS。<strong>GPU を選ぶだけ</strong>で、GPU トポロジ・ランタイム（vLLM/SGLang 等）・保守は Foundry が面倒を見る。エンドポイント・SDK・認証・課金はプロプライエタリモデルと共通。</li>
+        <li>Hugging Face との連携で <strong>11,000超のオープンモデル（うち1万超が HF 由来）</strong>を day-zero で提供。ライセンス審査・リモートコード除去・weights の Foundry 格納・デプロイ検証まで通し、<strong>エンタープライズ対応</strong>に仕上げてから届ける。</li>
+        <li>ライブデモでは <strong>Qwen3-32B</strong> を数クリックでデプロイ（テンプレートで 2×H100・131,072 トークン等を選択）し、Playground・VS Code・<strong>エージェント＋Web検索（当日の NBA ファイナルをライブ回答）</strong>・マルチターン RAG まで実演。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. 概要とアジェンダ</h2>
+      <p>登壇は Microsoft Foundry チームの Vaidya、Hugging Face の Jean（Jeff）、そしてデモ担当の Osi（OC）。テーマは「オープンソースモデルを Foundry で本番化する」こと。20分の枠で<strong>3つの側面</strong>を扱う。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>① プラットフォーム</h4><p>消費（デプロイ）を楽にする改善＝Foundry Managed Compute（Vaidya）。</p></div>
+        <div class="card"><h4>② パートナーシップ</h4><p>最新のオープンモデルをどうエコシステムに取り込むか（Jean / Hugging Face）。</p></div>
+        <div class="card"><h4>③ デモ</h4><p>実際のコード／ポータルでのデプロイと利用（Osi）。</p></div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. Foundry Managed Compute（プラットフォーム）</h2>
+      <p>Foundry は<strong>エージェントのホスティングプラットフォーム</strong>で、プロプライエタリなフロンティアモデルとオープンモデルの双方にアクセスできる。Hugging Face 由来を含め<strong>11,000超のモデル</strong>が並ぶ。プロプライエタリモデルの消費形態は複数あるが、今回の主役は<strong>オープンソース／カスタムモデル向け</strong>の新構成 <strong>Foundry Managed Compute</strong> だ。</p>
+      <table>
+        <thead><tr><th>消費形態</th><th>対象</th><th>特徴</th></tr></thead>
+        <tbody>
+          <tr><td>PayGo（トークン課金）</td><td>プロプライエタリ</td><td>手軽な従量課金。PoC 向け</td></tr>
+          <tr><td>PTU（Provisioned Throughput）</td><td>プロプライエタリ</td><td>制御・低レイテンシの本番環境向け</td></tr>
+          <tr><td><strong>Foundry Managed Compute</strong></td><td><strong>オープンソース・カスタム</strong></td><td><strong>GPU を選ぶだけ</strong>の managed PaaS。インフラを気にせず「箱から出してすぐ動く」</td></tr>
+        </tbody>
+      </table>
+      <p>Managed Compute は Foundry リソースの一部で、<strong>エンドポイント・SDK・認証・課金は共通</strong>。モデルデプロイ時に本来は GPU トポロジやランタイム（vLLM・SGLang 等）を選び、保守・パッチ当てが必要だが、それらは<strong>すべて Foundry が面倒を見る</strong>。ユーザーはモデルのパラメータを選んで「Deploy」するだけ。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">11,000+</div><div class="label">Foundry のモデル数（うち1万超が HF 由来）</div></div>
+        <div class="stat-card"><div class="num">GPU を選ぶだけ</div><div class="label">トポロジ・ランタイム・保守は Foundry 側</div></div>
+        <div class="stat-card"><div class="num">同一 SDK</div><div class="label">エンドポイント・認証・課金も共通</div></div>
+      </div>
+    </section>
+
+    <section id="s3">
+      <h2>3. なぜオープンモデルか ― 5つの理由</h2>
+      <p>Jean は「なぜ Azure ユーザーがオープンモデルを使うべきか」を5点で整理する。</p>
+      <div class="grid-cards">
+        <div class="card"><h4>① 性能はフロンティアと同等</h4><p>1年以上前から、オープンのフロンティアはクローズドと同等。artificial analysis の上位20モデルの半分がオープン。</p></div>
+        <div class="card"><h4>② カスタマイズできる</h4><p>fine-tune・post-train・distill でユースケースに最適化。Phi-2 には約1,500の派生モデルがある。</p></div>
+        <div class="card"><h4>③ 体験を自分で制御</h4><p>weights を自前ホストしないと体験を制御できない。自社 Azure/Foundry か、HF 推論エンドポイントで Azure にデプロイ。</p></div>
+        <div class="card"><h4>④ 低コスト化</h4><p>コミュニティが安価化に注力。特定タスクの小型SOTA（IBM Docling Granite は2.5億パラメータ）も。</p></div>
+        <div class="card"><h4>⑤ バージョン管理</h4><p>ホストするから版を固定できる。API 裏のクローズドモデルが一夜で変わる問題を回避。HF は完全版管理。</p></div>
+      </div>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/01-why-open-models-phi2.jpg" alt="スライド『Open models can be customized』。microsoft/phi-2 の Model tree に Adapters 988・Finetunes 410・Merges 6・Quantizations 58 と表示。" loading="lazy" />
+        <figcaption>理由②の例。<code>microsoft/phi-2</code> の Model tree ― <strong>Adapters 988 / Finetunes 410 / Merges 6 / Quantizations 58</strong>（計約1,500の派生）。企業はベースモデルを自社データ・用途に合わせて改良して使う。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=275s" target="_blank" rel="noopener">04:35</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s4">
+      <h2>4. Hugging Face エコシステムの規模</h2>
+      <p>オープンモデルの供給源である Hugging Face の規模はコミュニティ主導で拡大している。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">1,600万</div><div class="label">AI ビルダー（アカウント登録）</div></div>
+        <div class="stat-card"><div class="num">40万+</div><div class="label">組織（Microsoft はエンタープライズ登録）</div></div>
+        <div class="stat-card"><div class="num">300万+</div><div class="label">公開モデル（あらゆるタスク）</div></div>
+        <div class="stat-card"><div class="num">100万+</div><div class="label">公開データセット</div></div>
+      </div>
+      <p>加えて Transformers ライブラリを中心に、推論・ポストトレーニング・強化学習までのオープンソース・エコシステムが揃う。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/02-hf-ecosystem-scale.jpg" alt="スライド『15 Million AI Builders』。Hugging Face のホーム（The AI community building the future）とモデル一覧・タスク/ライブラリ/推論プロバイダのフィルタ、Models 2,555,000。" loading="lazy" />
+        <figcaption>「1,500万（実際は1,600万）の AI ビルダー」。Hugging Face には<strong>250万超のモデル</strong>、タスク別フィルタ、Transformers/vLLM/llama.cpp などのライブラリ、多数の推論プロバイダが集まる。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=430s" target="_blank" rel="noopener">07:10</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s5">
+      <h2>5. day-zero 提供と「エンタープライズ対応」パイプライン</h2>
+      <p>「HF の300万モデル」と「Foundry の11,000モデル」の差は何か ― Foundry に載る前に、Microsoft と HF の共同で<strong>丸ごとの選別・検証パイプライン</strong>を通しているからだ。人気/トレンドモデルを<strong>毎日監視</strong>し、公開<strong>当日（day-zero）</strong>に Foundry で使えるようにする。</p>
+      <table>
+        <thead><tr><th>工程</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>毎日の監視・キュレーション</td><td>タスク別・プロバイダ別（Nvidia 等）のトレンド/人気モデルを追跡し、同日 Foundry へ</td></tr>
+          <tr><td>ライセンス審査</td><td><strong>商用利用可能</strong>なモデルのみを提供</td></tr>
+          <tr><td>セキュリティスキャン</td><td>ランタイムが実行しうる<strong>リモートコードを除外</strong></td></tr>
+          <tr><td>weights の格納</td><td>Managed Compute では weights を Foundry にアップロードし、<strong>サプライチェーンの堅牢性</strong>を確保</td></tr>
+          <tr><td>デプロイ検証</td><td>使用ランタイム・構成パラメータ・コンテキストウィンドウまで実体験を検証</td></tr>
+          <tr><td>外部通信なし</td><td>デプロイ済みモデルは<strong>自分の安全なテナント外へネットワーク呼び出しをしない</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="mermaid">
+flowchart LR
+  A["HF に新モデルが公開"] --> B["毎日トレンド/人気を監視"]
+  B --> C["キュレーション"]
+  C --> D["ライセンス審査<br/>（商用可のみ）"]
+  D --> E["セキュリティスキャン<br/>（リモートコード除外）"]
+  E --> F["weights を Foundry に格納<br/>（サプライチェーン保護）"]
+  F --> G["デプロイ検証<br/>ランタイム/構成/コンテキスト"]
+  G --> H["同日 Foundry で利用可能<br/>（外部通信なし）"]
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2>6. ランタイム最適化</h2>
+      <p>スケールした利用にはランタイム最適化が要る。モデル・タスクごとに最適なランタイムを Foundry 側が用意し、<strong>ワンクリック</strong>で最良のスループット/レイテンシ構成を選べるようにしている。</p>
+      <table>
+        <thead><tr><th>ランタイム</th><th>主な用途</th></tr></thead>
+        <tbody>
+          <tr><td>vLLM</td><td>LLM（高スループット/低レイテンシ）</td></tr>
+          <tr><td>SGLang</td><td>LLM（プロバイダが最適化するケース）</td></tr>
+          <tr><td>Text Embeddings Inference</td><td>埋め込みモデル（RAG パイプライン用）</td></tr>
+          <tr><td>llama.cpp（C++）</td><td>量子化モデルを CPU で効率実行</td></tr>
+          <tr><td>NIM / TensorRT-LLM</td><td>NVIDIA モデル</td></tr>
+          <tr><td>HF Serve（新SDK）</td><td>音声・ビジョンなどマルチモーダルタスクの最適デプロイ</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s7">
+      <h2>7. デモ① ― モデル探索からデプロイまで</h2>
+      <p>ここから Osi のライブデモ（会場 Wi-Fi の「デモ効果」に見舞われつつ）。まず Microsoft Foundry の <strong>Discover</strong> でモデルカタログ／コレクションを見る。左サイドの Models からプロバイダで絞り込み、<strong>Hugging Face コレクション</strong>や<strong>ML タスク</strong>（埋め込み・ビジョン・音声など）でフィルタできる。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/03-foundry-discover-catalog.jpg" alt="Microsoft Foundry の Discover 画面。Featured models（claude-opus / gpt-5.5 / Kimi / qwen 等）、プロバイダ別探索、モデルコレクション（Direct from Azure / Foundry Labs / Foundry Local）。" loading="lazy" />
+        <figcaption>Microsoft Foundry の <strong>Discover</strong>。Featured models と、Azure OpenAI / Anthropic / Microsoft / Meta 等のプロバイダ別探索、モデルコレクション（Direct from Azure / Foundry Labs / Foundry Local）が並ぶ。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=845s" target="_blank" rel="noopener">14:05</a></figcaption>
+      </figure>
+
+      <p>モデルカタログのデプロイオプションで <strong>Managed Compute</strong> を選ぶ（モデルは HF Hub からではなく <strong>Azure 上でホスト</strong>されている）。デモでは <code>Qwen3-32B</code>（320億パラメータ）を検索して選択し、デプロイ画面へ。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/04-deployment-templates.jpg" alt="Qwen3-32B のデプロイ画面。Managed compute を選択し、Deployment template の4種（128k/40k × 2×H100/2×A100）がドロップダウンに表示。" loading="lazy" />
+        <figcaption><code>Qwen3-32B</code> のデプロイ画面。Token plan で <strong>Managed compute</strong> を選び、<strong>Deployment template の4種</strong>（<code>128k-2xa100</code> / <code>128k-2xh100</code> / <code>40k-a100</code> / <code>40k-h100</code>）から選択。すべて事前構成済みで、他に設定は不要。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=930s" target="_blank" rel="noopener">15:30</a></figcaption>
+      </figure>
+
+      <p>テンプレートは Blackwell 世代の <code>NVFP4</code> 等も活用し、agentic 向けに<strong>長いコンテキスト</strong>を優先するか<strong>レイテンシ</strong>を優先するかを簡単に選べる。2×H100 では最大 <strong>131,072 トークン</strong>。アクセラレータは H100 をクリックするだけで、低レベルのインフラ詳細を意識しなくてよい（単一 H100 なら約41,000トークン）。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/05-gpu-accelerator-context.jpg" alt="選択したテンプレート『vLLM on 2 x NVIDIA H100 80 GB at 128K context length』。Max sequence length 131,072 tokens がハイライト。" loading="lazy" />
+        <figcaption>選択テンプレート「<strong>vLLM on 2×NVIDIA H100 80GB at 128K context length</strong>」。最大シーケンス長 <strong>131,072 トークン</strong>、agentic 向けの用途、Thinking modes、トレードオフまで提示される。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=965s" target="_blank" rel="noopener">16:05</a></figcaption>
+      </figure>
+
+      <div class="callout">
+        <strong>Managed Compute の魔法：</strong> 昨日 Foundry で発表された新機能。コンソールで「正しいアクセラレータの quota はあるか?」と探し回る必要がなく、A100・H100（AMD Instinct も近日）を<strong>ドロップダウンで選ぶだけ</strong>。
+      </div>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/06-managed-compute-deployments.jpg" alt="Build → Models の Managed compute deployments タブ。qwen3-32b が H100_80GB / A100_80GB で Succeeded 状態のテーブル。" loading="lazy" />
+        <figcaption>Build → Models の「<strong>Managed compute deployments</strong>」タブ。デプロイ済み <code>qwen3-32b</code> が <strong>H100_80GB / A100_80GB で Succeeded</strong>。GPU 種別・作成者・作成日時が一覧される。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=1033s" target="_blank" rel="noopener">17:13</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s8">
+      <h2>8. デモ② ― Playground と VS Code 連携</h2>
+      <p>デプロイ済みモデルは <strong>Playground</strong> でそのまま試せる（Foundry からオープンモデルをデプロイして即対話できるのは初）。「Hello」と送れば数秒で応答が返る。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/07-playground-hello.jpg" alt="デプロイ済み qwen3-32b の Playground。Instructions と Chat 欄に Hello を送信、応答生成中。" loading="lazy" />
+        <figcaption>デプロイ済み <code>qwen3-32b</code> の <strong>Playground</strong>。指示（You are an AI assistant…）を設定し、Chat で「Hello」を送信。Tools/Knowledge/Memory も同画面から扱える。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=1067s" target="_blank" rel="noopener">17:47</a></figcaption>
+      </figure>
+
+      <p>もっとも開発者は Playground に留まらない。<strong>Call model</strong> のコードをコピーして VS Code へ。エンドポイント・デプロイ名を指定した OpenAI 互換の呼び出しで、「What is the capital of Nigeria?」→ 答えは <strong>Abuja</strong>。同じ UI 内でモデルの検索・GPU 選択・デプロイ・コード統合まで完結する「ワンストップショップ」だ。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/08-vscode-capital-nigeria.jpg" alt="VS Code の Jupyter ノートブック。OpenAI 互換 SDK で endpoint と deployment_name=qwen--qwen3-32b を指定し、What is the capital of Nigeria? を送るコード。" loading="lazy" />
+        <figcaption>VS Code から同じエンドポイントを <strong>OpenAI 互換 SDK</strong> で呼び出し。<code>deployment_name = "qwen--qwen3-32b"</code> に「What is the capital of Nigeria?」を送る（答えは Abuja）。Playground と同じモデルをそのままコードから利用。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=1125s" target="_blank" rel="noopener">18:45</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s9">
+      <h2>9. デモ③ ― エージェント統合と Web 検索</h2>
+      <p>オープンモデルを<strong>エージェントに統合できるのも初</strong>。デプロイ済み Qwen3-32B をエージェントに追加し（リソース名は「build 2026」）、新規エージェント（"thing-1"）を作成。「1週間前なら Foundry → Azure ML → quota 取得 → ランタイム/パラメータの当て推量…と多くのハードルを越える必要があったが、今はすべて揃っている」（Jean）。</p>
+      <p>エージェントは各種ツールと統合でき、代表が <strong>Web search</strong>。当日は NBA ファイナルの日 ― <strong>学習データにない</strong>「今日の試合」を聞くと、ライブ Web 検索で正しく答えた。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/09-agent-web-search-nba.jpg" alt="Foundry の thing-1 エージェント（Web search ツール有効）が、2026年6月3日の NBA ファイナル Game 1、Knicks vs Spurs、20:30 ET をライブ Web 検索で回答。" loading="lazy" />
+        <figcaption>Web search ツールを有効化した <code>thing-1</code> エージェントが、<strong>当日（6月3日）の NBA ファイナル Game 1・New York Knicks vs San Antonio Spurs・20:30 ET</strong> を回答。学習データにない最新情報をライブ Web 検索で取得している。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=1290s" target="_blank" rel="noopener">21:30</a></figcaption>
+      </figure>
+
+      <div class="callout">
+        Foundry で構築するもう一つの利点は、<strong>RBAC・アイデンティティ・権限などのエンタープライズ・セキュリティが最初から組み込まれている</strong>こと。オープンモデルで作るすべての体験に、Microsoft が Foundry に組み込んだセキュリティがそのまま適用される。
+      </div>
+    </section>
+
+    <section id="s10">
+      <h2>10. デモ④ ― エージェンティック RAG とマルチターン</h2>
+      <p>最後に、同じエンドポイント・同じエージェントのまま<strong>エージェンティック RAG／マルチターン</strong>を実演。Turn1 で「好きな国は Nigeria」と伝え、Turn2 では <code>previous_response_id</code> を渡して「さっき言った好きな国は?」と尋ねると、<strong>文脈を保持して「Nigeria」</strong>と回答。「Nigeria で訪れるべき都市は?」にも旅行アドバイスを返す。</p>
+
+      <figure class="shot">
+        <img src="../images/huggingface-open-models-foundry-dem320/10-agentic-rag-favorite-country.jpg" alt="VS Code のノートブック。Turn1 で My favorite country is Nigeria、Turn2 で previous_response_id を渡し What did I just tell you my favorite country is? に Nigeria と回答するマルチターンのコードと出力。" loading="lazy" />
+        <figcaption>マルチターンのコードと出力。<code>turn2</code> は <code>previous_response_id=turn1.id</code> を渡し、「さっき言った好きな国は?」に対して「あなたの好きな国は <strong>Nigeria</strong> だと言いましたね」と<strong>文脈を保持</strong>して回答。オープンモデルでもマルチターンが成立している。<a class="ts" href="https://www.youtube.com/watch?v=5lB9Bk4KEF8&t=1457s" target="_blank" rel="noopener">24:17</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="s11">
+      <h2>11. まとめとホームワーク</h2>
+      <p>昨日発表された <strong>Managed Compute</strong> により、Foundry は<strong>オープンモデルで作る最も簡単な方法</strong>になった。Hugging Face のオープンモデルを取り込み、<strong>セキュリティ・性能・GPU</strong> を「多くのハードルを越えることなく」使える。デモで見た「発見 → デプロイ → コード/エージェント統合」の一気通貫がその証だ。</p>
+
+      <div class="mermaid">
+flowchart LR
+  A["Discover でモデル探索<br/>（HF コレクション/タスク別）"] --> B["Managed Compute テンプレ選択<br/>（GPU/コンテキスト）"]
+  B --> C["ワンクリック Deploy"]
+  C --> D["Playground / Call model<br/>（VS Code 連携）"]
+  D --> E["Agent に追加＋Web検索等ツール"]
+  E --> F["本番推論<br/>（RBAC・監視・自動スケール）"]
+      </div>
+
+      <h3>ホームワーク（登壇者より）</h3>
+      <ol>
+        <li>まず <strong>AI Foundry</strong> で作り始める。</li>
+        <li><strong>Managed Compute のプレビュー</strong>にサインアップする。</li>
+        <li>Microsoft の<strong>フィードバックポータル</strong>から、Foundry に載せてほしい Hugging Face モデルを提案する。</li>
+      </ol>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。掲載した画面キャプチャは、内容理解を目的として出典動画から該当箇所を引用したものです（各図に出典タイムスタンプを明記）。モデル名等の固有名詞はセッション音声（自動字幕）に基づく表記であり、正式名称と異なる場合があります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=5lB9Bk4KEF8" target="_blank" rel="noopener">https://www.youtube.com/watch?v=5lB9Bk4KEF8</a> ／ 登壇: Vaidyaraman Sambasivam・Osi Otugo（Microsoft）／ Jean Boudier（Hugging Face）／ Microsoft Build 2026 DEM320 ／ 取得手段: yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出 ／ 生成日: 2026年7月5日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const p = 20;
+      svg.setAttribute('viewBox', [bbox.x - p, bbox.y - p, bbox.width + p * 2, bbox.height + p * 2].join(' '));
+    } catch (e) { console.warn(e); }
+  }
+
+  function startPanZoom(svg) {
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.4, maxZoom: 12
+    });
+    panZoomInstance.resize(); panZoomInstance.fit(); panZoomInstance.center();
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const cloned = sourceSvg.cloneNode(true);
+    cloned.removeAttribute('style');
+    cloned.setAttribute('width', '100%');
+    cloned.setAttribute('height', '100%');
+    body.appendChild(cloned);
+    tightenViewBox(cloned);
+    modal.classList.add('is-open');
+    startPanZoom(cloned);
+  }
+
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const W = img.naturalWidth || 1280, H = img.naturalHeight || 720;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(SVGNS, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0'); image.setAttribute('y', '0');
+    image.setAttribute('width', W); image.setAttribute('height', H);
+    svg.appendChild(image);
+    body.appendChild(svg);
+    modal.classList.add('is-open');
+    startPanZoom(svg);
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    if (panZoomInstance) { panZoomInstance.destroy(); panZoomInstance = null; }
+    modal.classList.remove('is-open');
+    body.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') { panZoomInstance.resetZoom(); panZoomInstance.fit(); panZoomInstance.center(); }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagramFromElement(diagram); }
+    });
+  });
+
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openImageFromElement(img); }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('diagramModal').addEventListener('click', (e) => {
+    if (e.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
