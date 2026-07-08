@@ -1,9 +1,20 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="color-scheme" content="light dark" />
+<meta name="color-scheme" content="dark light" />
+<script>
+  // 保存済みの配色テーマ（黒＝dark / 淡い白＝light）を描画前に適用し、ちらつきを防ぐ。
+  (function () {
+    try {
+      var t = localStorage.getItem("stash-theme");
+      if (t === "light" || t === "dark") {
+        document.documentElement.setAttribute("data-theme", t);
+      }
+    } catch (e) {}
+  })();
+</script>
 <title>stash ― 未整理のコンテンツ置き場</title>
 <meta name="description" content="未整理のメモ・画像・レポートを一時的に置いておく個人スタッシュ。" />
 <style>
@@ -11,13 +22,14 @@
     --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
     --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
     --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
   }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
-      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
-      --shadow: 0 6px 24px rgba(15,23,42,.08);
-    }
+  /* 淡い白（完全な白ではなく、目に優しい温かみのあるオフホワイト） */
+  html[data-theme="light"] {
+    --bg: #f4f1ea; --bg-elev: #fbf9f4; --border: #e3ded2;
+    --text: #26282d; --text-dim: #5f6570; --accent: #c2570c; --link: #1f6feb;
+    --shadow: 0 6px 24px rgba(60,54,40,.10);
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   html, body { background: var(--bg); color: var(--text); }
@@ -28,7 +40,7 @@
   }
   a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .page { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 40px 20px 80px; }
   .hero {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%);
     color: #f8fafc; border-radius: var(--radius); padding: 36px 28px;
@@ -47,23 +59,58 @@
   }
   .hero h1 { font-size: clamp(28px, 5vw, 40px); margin: 0 0 8px; }
   .hero p { margin: 0; color: #cbd5e1; max-width: 60ch; }
+
+  /* 配色テーマ切替スイッチ（右上）。ヒーローは常に暗いので明るめの配色で固定。 */
+  .theme-switch {
+    position: absolute; top: 16px; right: 16px; z-index: 3;
+    display: inline-flex; gap: 3px; padding: 3px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px; backdrop-filter: blur(4px);
+  }
+  .theme-switch button {
+    appearance: none; -webkit-appearance: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; line-height: 1; white-space: nowrap;
+    color: #e2e8f0; background: transparent; padding: 6px 14px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .theme-switch button:hover { color: #fff; }
+  .theme-switch button.is-active { background: #f8fafc; color: #0f172a; font-weight: 600; }
+  .theme-switch button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
   section { margin-top: 32px; }
   h2 {
     font-size: 18px; color: var(--text-dim); letter-spacing: .06em;
     text-transform: uppercase; margin: 0 0 14px;
   }
-  .card-list { display: grid; gap: 12px; }
+  .card-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+  @media (max-width: 1000px) { .card-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px)  { .card-list { grid-template-columns: 1fr; } }
   .card {
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
     transition: transform .12s ease, border-color .12s ease;
+    display: flex;
   }
   .card:hover { transform: translateY(-2px); border-color: var(--accent); }
-  .card a { color: var(--text); display: block; }
+  .card a { color: var(--text); display: flex; flex-direction: column; flex: 1 1 auto; }
   .card a:hover { text-decoration: none; }
-  .card h3 { margin: 0 0 6px; font-size: 16.5px; color: var(--accent); }
-  .card p { margin: 0; color: var(--text-dim); font-size: 14px; }
-  .card .meta { margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+  .card h3 {
+    margin: 0 0 6px; font-size: 16.5px; color: var(--accent);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+    line-clamp: 3; overflow: hidden;
+  }
+  .card p {
+    margin: 0; color: var(--text-dim); font-size: 14px;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6;
+    line-clamp: 6; overflow: hidden;
+  }
+  .card .meta { margin-top: auto; padding-top: 10px; font-size: 12px; color: var(--text-dim); }
   .empty {
     border: 1px dashed var(--border); border-radius: var(--radius);
     padding: 18px; color: var(--text-dim); font-size: 14px;
@@ -134,6 +181,10 @@
 <body>
 <main class="page">
   <header class="hero">
+    <div class="theme-switch" role="group" aria-label="配色テーマを選択">
+      <button type="button" data-theme-value="dark" aria-pressed="true">黒</button>
+      <button type="button" data-theme-value="light" aria-pressed="false">白</button>
+    </div>
     <span class="tag">PERSONAL STASH</span>
     <h1>stash</h1>
     <p>
@@ -587,6 +638,8 @@
     article.className = "card";
     const a = document.createElement("a");
     a.href = r.href;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
     const h3 = document.createElement("h3");
     h3.textContent = r.title;
     const p = document.createElement("p");
@@ -692,6 +745,31 @@
   });
 
   render();
+
+  // --- 配色テーマ（黒＝dark / 淡い白＝light）。localStorage で永続化し、
+  //     絞り込み・並び替えなど他の操作で再描画しても選択した色を維持する。---
+  (function initTheme() {
+    const KEY = "stash-theme";
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll(".theme-switch button"));
+    function apply(theme) {
+      const t = theme === "light" ? "light" : "dark";
+      root.setAttribute("data-theme", t);
+      buttons.forEach((b) => {
+        const on = b.dataset.themeValue === t;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+    }
+    let saved = "dark";
+    try {
+      const s = localStorage.getItem(KEY);
+      if (s === "light" || s === "dark") saved = s;
+    } catch (e) {}
+    apply(saved);
+    buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeValue)));
+  })();
 </script>
 </body>
 </html>
