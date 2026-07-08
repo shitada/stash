@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>オープンソース推論モデルの後訓練（SFT/RFT）と Foundry デプロイ（DEM321）日本語要約</title>
+<meta name="description" content="Microsoft Build 2026 のデモ DEM321『Post-Training and Deploying Open Source Reasoning Models in Foundry』（登壇: Chris Lauren・Vijay Aski / Microsoft）を字幕全文と画面キャプチャから日本語要約。各キャプチャの内容調査と、SFT/RFT/DPO/GRPO/Ray/評価などの周辺情報・関連リソースも収録。" />
+<style>
+  :root {
+    --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+    --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+    --sidebar-w: 260px; --content-max: 880px;
+    --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc; --bg-elev: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --text-dim: #475569; --accent: #ea580c; --link: #2563eb;
+      --shadow: 0 6px 24px rgba(15,23,42,.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; gap: 0; min-height: 100vh; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  aside.sidebar {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  aside.sidebar .toc-title {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 10px;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid transparent;
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.45;
+    border-radius: 0 6px 6px 0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.06); text-decoration: none; }
+  aside.sidebar a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(127,127,127,.08); font-weight: 600;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    aside.sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  main { max-width: var(--content-max); margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  header.page .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.35; }
+  header.page .lead { color: var(--text-dim); margin: 0; }
+
+  .meta-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin: 20px 0 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px; font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 6px; color: var(--text); }
+  .meta-card .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  .tldr, .callout {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 22px; margin: 24px 0;
+  }
+  .tldr h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+  .callout.info { border-left-color: var(--link); }
+  .callout.info strong { color: var(--link); }
+
+  section { margin: 40px 0; scroll-margin-top: 24px; }
+  section h2 { font-size: 22px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  section h3 { font-size: 17px; margin: 24px 0 8px; color: var(--accent); }
+
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 16px 0; padding: 6px 16px; color: var(--text-dim);
+    background: var(--bg-elev); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  code { background: var(--bg-elev); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: var(--radius); overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 14.5px; }
+  thead th { background: rgba(127,127,127,.06); color: var(--text-dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+  .stat-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .label { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0; }
+  .grid-cards .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .grid-cards .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  .grid-cards .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  /* 画面キャプチャ figure */
+  figure.shot { margin: 22px 0; }
+  figure.shot img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-elev); cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    color: var(--accent); font-weight: 700; font-size: 12px; white-space: nowrap;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 18px 0;
+    text-align: center; overflow-x: auto; cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .modal {
+    position: fixed; inset: 0; display: none;
+    background: rgba(9, 20, 38, 0.82); z-index: 50; padding: 22px;
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-elev);
+    color: var(--text); border-radius: 999px; padding: 8px 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: grid; place-items: center; min-height: 0;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+  }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <ol id="toc"></ol>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Microsoft Build 2026 · DEM321 / Chris Lauren・Vijay Aski</div>
+      <h1>オープンソース推論モデルの後訓練（SFT/RFT）と Foundry デプロイ</h1>
+      <p class="lead">「フロンティアモデル＋プロンプト」から一歩進み、強化学習で小型オープンモデルを自社ドメインに後訓練して 1/10 のコストで信頼できるエージェントを動かす ― Microsoft Foundry のデモを日本語要約。<strong>各画面キャプチャの内容調査</strong>と、SFT/RFT/DPO/GRPO/Ray などの<strong>周辺情報・関連リソース</strong>も収録。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=UFhvE3cF0TA" target="_blank" rel="noopener">YouTube ― Microsoft Developer</a></dd></div>
+      <div><dt>登壇者</dt><dd>Chris Lauren／ Vijay Aski（Microsoft Foundry）</dd></div>
+      <div><dt>イベント</dt><dd>Microsoft Build 2026 / セッション DEM321（Demo・200 Intermediate）</dd></div>
+      <div><dt>公開日</dt><dd>2026年6月3日</dd></div>
+      <div><dt>所要時間</dt><dd>11分29秒</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出（画面キャプチャ・内容調査）</dd></div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">後訓練 (Post-training)</span>
+          <span class="badge">SFT / RFT</span>
+          <span class="badge">GRPO / Ray</span>
+          <span class="badge">Qwen3-14B</span>
+          <span class="badge">評価 (eval)</span>
+          <span class="badge">Foundry 可観測性</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3行サマリ</h2>
+      <ul>
+        <li>エージェントは1タスクで単一チャットの<strong>約25倍</strong>のトークンを消費する「トークン消費マシン」。フロンティアモデルをそのまま使うとスケール時にコストが跳ねる。解は、<strong>小型オープンモデルを自社ドメインに後訓練</strong>して 1/10 のコストで同等品質を出すこと。</li>
+        <li>鍵は<strong>eval ファースト</strong>（エージェント時代の TDD）。「良い」の定義・ポリシー・ツール呼び出し順を先に eval として固め、モデルを差し替えながら本番出荷可否を判定する。Foundry は<strong>全セッションのトレースを自動記録</strong>し、それを<strong>RL 用データセットに変換</strong>してループを閉じる。</li>
+        <li>後訓練の主技法は <strong>SFT（模倣）</strong>と <strong>RFT（検証可能な報酬で経路最適化）</strong>。Foundry では <strong>Ray クラスタ</strong>・GRPO・カスタムコードを管理でき、<strong>ロールアウトブラウザ</strong>でツール呼び出しごとの報酬（0〜1）を観察できる。※本デモは機材トラブルで一部がスライド説明に。</li>
+      </ul>
+    </div>
+
+    <section id="s1">
+      <h2>1. エージェントがフロンティアの経済性を壊す</h2>
+      <p>登壇の Chris Lauren は、機材トラブル（ノート PC の接続）で遅れたことを詫びつつ本題へ。エージェントは私たちの代わりに「考え、行動する」ため、チャットとは桁違いのトークンを消費する。能力が高い一方、<strong>本番でスケールするほどコストが増大</strong>する。冒頭スライドがこの構図を数字で示す。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/01-agents-next-wave-stats.jpg" alt="スライド『Agents are the next wave ...and they break the economics of frontier models』。33%・51%・~25x+ の3つの統計。" loading="lazy" />
+        <figcaption>冒頭スライド。<strong>33%</strong>（2028年までにエンタープライズアプリがエージェンティックAIを組込む／Gartner 2024）・<strong>51%</strong>（すでに本番でAIエージェントを持つチーム／LangChain State of AI Agents 2024）・<strong>~25x+</strong>（1エージェントタスクが単一チャットターンに対し消費するトークン＝ツール呼び出し＋リフレクションの反復）。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=40s" target="_blank" rel="noopener">00:40</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>右端の「~25x+」がこのセッションの動機だ。エージェントはツールを呼び、その結果を受けて再び考え（reflect）、また呼ぶ、というループを繰り返すため、文脈が反復的に膨らみトークン消費が跳ね上がる。スライド下部の一文「Agents are token consuming machines: fine tuning lets you deploy reliable agents without breaking the bank（エージェントはトークン消費マシン。ファインチューニングは、財布を痛めずに信頼できるエージェントをデプロイする手段）」が主張の核心である。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">33%</div><div class="label">2028年までに agentic AI を組込むアプリ（Gartner）</div></div>
+        <div class="stat-card"><div class="num">51%</div><div class="label">すでに本番で AI エージェントを持つチーム（LangChain）</div></div>
+        <div class="stat-card"><div class="num">~25x+</div><div class="label">1エージェントタスク vs 単一チャットのトークン</div></div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>2. なぜ後訓練か ― 小型モデルを 10x の効率で</h2>
+      <p>誰もが最新フロンティアモデルを掴んでプロンプトエンジニアリングで目的を達成しようとする。それは有効だが、エージェントでは<strong>ツール呼び出しの順序</strong>・<strong>ポリシー遵守</strong>が重要で、ツールを呼ぶ頻度は<strong>全体のレイテンシ</strong>も押し上げる。そこで、業務ドメインと「何が良いか」を学んだ<strong>小型オープンモデル</strong>を後訓練すれば、フロンティアの<strong>ごく一部のコスト</strong>で高い能力を発揮できる。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/02-frontier-tuning-cost.jpg" alt="スライド『Frontier Tuning is 10x more cost efficient than generic frontier models』。左は Weighted Pass Rate の棒グラフ（MAI-2-5B Frontier Tuned 72.2%、GPT 5 71.9%、GPT 5.4 72.1%、GPT 5.5 68.8%）、右は $あたり出力トークンで MAI-2-5B が GPT5.5 比 >10x。" loading="lazy" />
+        <figcaption>「Frontier Tuning は汎用フロンティアより 10x コスト効率が良い」。技術文書作成タスクで、<strong>MAI-2-5B Frontier Tuned が 72.2%</strong> の Weighted Pass Rate を出し（GPT-5/5.4/5.5 と同等）、$あたり出力トークンでは <strong>GPT-5.5 比 &gt;10x</strong> の効率。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=70s" target="_blank" rel="noopener">01:10</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>左の棒グラフ（縦軸＝Weighted Pass Rate）は「品質はほぼ横並び」を示し、右の横棒（横軸＝Output Tokens per $）は「同じ品質を桁違いに安く出せる」ことを示す。つまり<strong>「品質を落とさずコストだけ 10x 下げられる」</strong>のがフロンティア・チューニング（小型モデルの後訓練）の価値提案だ。<code>MAI-2-5B</code> は Microsoft の小型モデル系列で、特定タスク向けに後訓練された例として示されている。</p>
+      <div class="callout info">
+        <strong>周辺情報 ― なぜ小型でも戦えるのか：</strong> 汎用のフロンティアモデルは「あらゆるタスク」に備えるため巨大だが、実際の業務エージェントは<strong>狭いタスク</strong>（例: 返品対応）しか担わない。狭い範囲に絞って後訓練すれば、小型モデルでもフロンティア級の正答率に届き、推論が速く・安くなる。関連する詳細は本スタッシュ内の <a href="post-training-deploying-open-source-reasoning-models-foundry-ja.html">BRK232「Foundry でオープンソース推論モデルをポストトレーニング＆デプロイ」</a>（同テーマの完全版セッション）を参照。
+      </div>
+    </section>
+
+    <section id="s3">
+      <h2>3. eval ファースト ― エージェント時代の TDD</h2>
+      <p>Chris は「発想の転換」を促す。安全・スケーラブル・信頼できる形でエージェントを育てるには、<strong>まず eval（評価）を定義</strong>する。これは<strong>エージェント時代のテスト駆動開発（TDD）</strong>に近い。「何が良いか」「ポリシーは何か」「どのツールをいつ呼ぶべきか」を eval として先に固めれば、どのモデルでも<strong>一貫・反復可能</strong>に測れる。フロンティアでも小型オープンでも、モデルを差し替えたときに<strong>出荷に足る品質か</strong>を判定するのが eval だ。</p>
+      <blockquote>eval はプロセスの最後にやるものではない。<strong>最初に定義</strong>し、モデルとエージェントを反復するのと同時に eval も反復せよ。（Chris Lauren）</blockquote>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/03-eval-product-spec.jpg" alt="スライド『In the improvement loop, the eval is the product spec』。Scenario Eval Contract として Correctness / Policy Compliance / Tool Call Validity / Escalation Accuracy / Safety & Privacy の5列。" loading="lazy" />
+        <figcaption>「改善ループにおいて、eval こそがプロダクト仕様（product spec）」。<strong>Scenario Eval Contract</strong>＝Correctness（正しさ）／Policy Compliance（ポリシー遵守）／Tool Call Validity（ツール呼び出しの妥当性）／Escalation Accuracy（エスカレーションの的確さ）／Safety &amp; Privacy（安全・プライバシー）の5軸で「良い」を定義する。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=130s" target="_blank" rel="noopener">02:10</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>この5軸は、後段の RFT で「何を報酬にするか」に直結する。例えば Tool Call Validity は「正しいツールを正しい順序・引数で呼んだか」を、Policy Compliance は「返金ポリシー等の業務規則に従ったか」を測る。<strong>eval が仕様であり、同時に報酬設計のたたき台</strong>になる、という構造がこのデモ全体を貫く。あわせて Foundry は「あらゆるオープンソースフレームワーク・あらゆるオープンモデル」でエージェントをカスタマイズできるようになった、と発表された。</p>
+    </section>
+
+    <section id="s4">
+      <h2>4. デモ ― base と fine-tuned の決定的な差</h2>
+      <p>Chris は Foundry 上の顧客対応（リテール）エージェントで実演する。フロンティアの <code>GPT-5.2</code> は業務を知らないが賢く、4つの専用ツールを与えれば「どう使うか」を推論してデータソースに接続する。一方、オープンモデルの <strong>Qwen3-14B</strong> は <strong>GPT-5.2 の 1/10 のコスト</strong>で動く小型・高効率モデル。ツールの使い方も「そこそこ良い推測」をする。だが問題は<strong>ユーザー体験</strong>にあった。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/04-agent-base-asks-questions.jpg" alt="Foundry の retail-agent-qwen3-14b-base。返品依頼に対し『注文IDの確認/欠陥か否か/返金・交換・クレジットのどれか』の3つを質問で返す。ログに Running smol agent with model deployment FW-Qwen3-14B。" loading="lazy" />
+        <figcaption><strong>base（未調整）の Qwen3-14B</strong>。返品依頼「ORD-001 のメリノウールセーターを返品したい、サイズが合わない」に対し、<strong>3つの確認質問</strong>（注文IDは正しい?／欠陥か単にサイズ違いか?／返金・交換・クレジットのどれ?）を返す。右ログに <code>Running smol agent with model deployment FW-Qwen3-14B</code>。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=285s" target="_blank" rel="noopener">04:45</a></figcaption>
+      </figure>
+
+      <p>顧客としては「質問攻め」ではなく<strong>解決</strong>が欲しい。そこで、この小型オープンモデルを<strong>強化学習（RFT）</strong>で後訓練し、業務ドメインだけでなく<strong>「どのツールをどの順で使えば顧客・会社の便益を最大化し、コストを最小化できるか」</strong>を学ばせる。結果が次の画面だ。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/05-agent-finetuned-resolves.jpg" alt="retail-agent-qwen3-14b-finetuned-traces。同じ返品依頼に『承知しました、Sofia。ORD-001 の返品を処理しました。$89.99 を返金します』と即解決。ログに Step 6, Duration 0.54 seconds, Input tokens 19,715, Output tokens 300。" loading="lazy" />
+        <figcaption><strong>fine-tuned（トレースで後訓練済み）の Qwen3-14B</strong>。同じ依頼に対し余計な質問をせず、<strong>「承知しました、Sofia。ORD-001 のメリノウールセーターの返品を処理しました。$89.99 を全額返金します」</strong>と即解決。ログに Step 6・所要 0.54 秒・入力 19,715/出力 300 トークン。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=230s" target="_blank" rel="noopener">03:50</a></figcaption>
+      </figure>
+
+      <table>
+        <thead><tr><th>観点</th><th>base（未調整 Qwen3-14B）</th><th>fine-tuned（RFT 後）</th></tr></thead>
+        <tbody>
+          <tr><td>応答</td><td>3つの確認質問を返す（解決を先延ばし）</td><td>その場で返品を処理し全額返金</td></tr>
+          <tr><td>ツールの使い方</td><td>「そこそこ良い推測」</td><td>正しい順序・引数で確実に実行</td></tr>
+          <tr><td>体験</td><td>質問攻めでフリクション</td><td>ワンショットで解決</td></tr>
+          <tr><td>コスト</td><td colspan="2">いずれも GPT-5.2 の約 1/10（小型オープンモデル）</td></tr>
+        </tbody>
+      </table>
+      <div class="callout info">
+        <strong>周辺情報 ― Qwen3-14B とは：</strong> Alibaba が公開したオープンウェイトの大規模言語モデル群「Qwen3」の 140 億パラメータ版。思考（reasoning）モードを持ち、ツール呼び出しやエージェント用途に向く。Hugging Face 等から入手でき、Foundry の Managed Compute でホストできる。ログの <code>FW-Qwen3-14B</code> はこのモデルの Foundry 上デプロイ名。
+      </div>
+    </section>
+
+    <section id="s5">
+      <h2>5. 可観測性 ― トレースを RL データセットに変える</h2>
+      <p>「では RL 用のデータセットはどう手に入れる?」 ― ここで Foundry が最近ローンチした<strong>可観測性（observability）</strong>が効く。<strong>あらゆるセッション・あらゆるユーザーとのやり取りが自動的に記録</strong>され、再現性（どう振る舞ったか）もコストも自動で捕捉される。個々のセッションの<strong>トレース</strong>を掘れば、モデルを何回呼び、どのツール（注文照会・ポリシー検証など）をどの順で呼んだかが見える。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/06-observability-traces.jpg" alt="retail-agent-gpt-5-2-base の Traces タブ。会話ごとに Conversation ID / Trace ID / Response ID / Status Completed / Duration / Tokens In / Tokens Out / Estimated cost / Agent version が並ぶ。右上に Create dataset ボタン。" loading="lazy" />
+        <figcaption><code>retail-agent-gpt-5-2-base</code> の <strong>Traces</strong>。会話ごとに Trace ID・所要時間・入出力トークン・<strong>推定コスト</strong>・エージェント版まで自動記録。右上の <strong>「Create dataset」</strong>で、これらのトレースをそのまま<strong>後続の強化学習用データセット</strong>に変換できる。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=360s" target="_blank" rel="noopener">06:00</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>この一覧は単なるログビューアではなく、<strong>「本番の実挙動を教師データに変える入口」</strong>だ。任意のモデル版で実行された全セッションを選択し、訓練データセットを生成 → RFT を回す。どのトレースが「理想の応答」かを選別して学習させれば、モデルは<strong>あなたのビジネスにとっての正解</strong>を学ぶ。これが「ループを閉じる（close the loop）」という発想である。</p>
+
+      <div class="mermaid">
+flowchart LR
+  A["本番エージェント実行"] --> B["全セッションの trace を<br/>自動記録（コスト込み）"]
+  B --> C["Create dataset<br/>理想の応答を選別"]
+  C --> D["SFT（模倣）"]
+  D --> E["RFT（報酬で経路最適化）"]
+  E --> F["Foundry Managed Compute に<br/>デプロイ"]
+  F --> A
+      </div>
+      <div class="callout info">
+        <strong>周辺情報 ― トレースと OpenTelemetry：</strong> 「trace」は本来 OpenTelemetry など分散トレーシングの用語で、1リクエスト内の処理（ここでは LLM 呼び出しやツール実行）をツリー状に可視化する。Foundry はこの標準的な発想を AI エージェントに適用し、各ステップの入出力・トークン・コストを記録する。詳しい仕組みは <a href="understand-fix-agent-framework-observability-evals-dem361-ja.html">DEM361「Agent Framework アプリを可観測性と評価で理解・修正する」</a>（Open Inference / Phoenix）も参照。
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2>6. 「後訓練（Post-training）」とは ― データ × 挙動 × レシピ</h2>
+      <p>ここから Vijay Aski（VJ）がスライドで解説（デモは時間切れ）。<strong>後訓練（post-training）</strong>は、事前学習（pretraining）後のすべてを指す広い傘だ。使うデータは、自社の独自データ・<strong>エージェントのトレース</strong>・大きいモデルからの<strong>蒸留</strong>・合成生成など。データ準備には<strong>訓練時間の最大 80%</strong> を費やし、その後 <strong>SFT / RFT</strong> 等の技法でモデルの挙動を変える。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/07-posttraining-slide.jpg" alt="スライド『Pick the data. Pick the behaviors. Your mix.』。左に集めるデータ6種（Distillation/Agent trajectories/Synthetic/Human preferences/Verifiable rewards/Domain corpora）、右に得たい挙動6種、中央に ~80% OF TRAINING TIME preparing data と Post-training is the new pretraining。" loading="lazy" />
+        <figcaption>「Pick the data. Pick the behaviors. Your mix.」＝<strong>①データはあなた次第・②挙動はダイヤル・③配合はあなた次第</strong>。中央に「訓練時間の <strong>約80%</strong> はデータ準備」「<strong>Post-training is the new pretraining</strong>（Nathan Lambert / RLHF Book, Manning 2026）」。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=470s" target="_blank" rel="noopener">07:50</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き（左＝集めるデータ6種）：</strong>このスライドは後訓練の「材料」と「狙う挙動」を一枚で俯瞰する優れた地図だ。左列は6つのデータ源と、それぞれに対応する代表技法を示す。</p>
+      <table>
+        <thead><tr><th>データ源</th><th>代表技法</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td>Distillation（蒸留）</td><td>SeqKD / MiniLM</td><td>より強いモデルから知識を蒸留</td></tr>
+          <tr><td>Agent trajectories（エージェント軌跡）</td><td>Trajectory SFT / Rejection</td><td>うまくいった実行だけを採掘</td></tr>
+          <tr><td>Synthetic data（合成データ）</td><td>GPT-judge / Self-instruct</td><td>強いモデルで生成</td></tr>
+          <tr><td>Human preferences（人間の選好）</td><td>DPO / RLHF</td><td>人によるペア評価の例</td></tr>
+          <tr><td>Verifiable rewards（検証可能な報酬）</td><td>RFT / GRPO</td><td>答えが検証できるときに報酬</td></tr>
+          <tr><td>Domain corpora（ドメイン文書）</td><td>Continued PT / Domain SFT</td><td>自社の書籍・ログ・マニュアル</td></tr>
+        </tbody>
+      </table>
+      <p><strong>（右＝狙う挙動6種）：</strong>右列は「ダイヤル」として調整したい挙動と対応技法。Instruction following（指示追従）・Safety alignment（安全整合／RLHF・Constitutional AI）・Domain knowledge（ドメイン知識）・Reliable multi-step（多段の信頼性／Trajectory RL・ReAct SFT）・<strong>Verifiable outcomes（検証可能な結果／RFT・Process rewards）</strong>・Grading &amp; scoring（採点／Reward model・LLM-as-judge）。§3 の Scenario Eval Contract がここでの「挙動＝報酬」の設計に対応する。</p>
+    </section>
+
+    <section id="s7">
+      <h2>7. SFT と RFT の違い</h2>
+      <p>VJ は2技法を端的に定義する。パイプラインは<strong>「トレースで蒸留 → SFT → RFT」</strong>。目的はトークン効率・性能・ツール呼び出しの正確性を上げ、エージェントを実効的にして投資対効果（ROI）を得ることだ。</p>
+      <table>
+        <thead><tr><th>技法</th><th>ひとことで</th><th>仕組み</th><th>向くケース</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SFT</strong>（教師ありFT）</td><td>模倣させる</td><td>入力→出力のペアで、与えた通りの応答を再現するよう学習</td><td>ほとんどの用途の出発点（ドメイン特化・様式・指示追従）</td></tr>
+          <tr><td><strong>RFT</strong>（強化FT）</td><td>報酬で最適化</td><td>「検証可能な手順」を定義。全ステップを踏んでタスク達成できたら報酬（<strong>0〜1</strong>、1に近いほど良い）</td><td>正解が検証可能な領域（数学・化学や、ツール手順が明確な業務）</td></tr>
+          <tr><td>DPO（参考）</td><td>選好を学ぶ</td><td>「好ましい/好ましくない」の比較から学習（別の報酬モデル不要）</td><td>安全性・スタイル・有用性など主観的品質の整合</td></tr>
+        </tbody>
+      </table>
+      <blockquote>SFT は「与えたものをどう真似るか」を教える。RFT は「検証可能なステップを全部踏んでタスクを終えたら、それを報酬する」。より<strong>検証可能（verifiable）</strong>だ。（Vijay Aski）</blockquote>
+      <div class="callout info">
+        <strong>周辺情報 ― Microsoft 公式の位置づけ：</strong> Microsoft Learn は後訓練技法として <strong>SFT・DPO・RFT</strong> の3種を挙げ、「まず SFT から」を推奨。RFT は「数学・化学・物理のように明確な正誤があり、当てずっぽうが効かず、専門家の評価が一致する客観的領域」に理想的で、実装にはより高い ML 専門性が要る、としている（出典: <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/fine-tuning-overview" target="_blank" rel="noopener">Fine-tuning overview</a>）。データは検証用に 50〜100 例、本番用に 500 例以上が目安。
+      </div>
+    </section>
+
+    <section id="s8">
+      <h2>8. 学習の実行 ― Ray クラスタと RFT ロールアウト</h2>
+      <p>VJ は事前に投入しておいた学習ジョブを見せる。SFT ジョブと RFT ジョブが並ぶ。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/08-sft-rft-jobs.jpg" alt="Foundry の Train 画面。Retail-RFT-Qwen14B-n4（Hyperion100）と Retail-SFT-14B（Atlas100）のジョブが In progress / Complete で並ぶ。所要時間や作成者 Vijay Aski。" loading="lazy" />
+        <figcaption>Foundry の <strong>Train</strong>。<code>Retail-RFT-Qwen14B-n4</code>（compute target: <strong>Hyperion100</strong>）と <code>Retail-SFT-14B</code>（<strong>Atlas100</strong>）の SFT/RFT ジョブが進行中・完了で並ぶ。RFT は約1時間25分、SFT は約2時間11分など、所要時間も一覧される。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=550s" target="_blank" rel="noopener">09:10</a></figcaption>
+      </figure>
+
+      <p>ジョブを投入すると、<strong>Ray</strong> のダッシュボードや<strong>ロールアウトブラウザ</strong>とネイティブ連携する。Ray クラスタを使えば、Foundry 内で<strong>カスタムコードを持ち込み、GRPO を実行し、自前のモデルを持ち込んで</strong>、クラスタ全体を管理できる。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/09-ray-dashboard.jpg" alt="Ray Dashboard の Overview。Recent jobs / Serve Deployments / Cluster status and autoscaler（Node Status に4ノード、Resource Status に CPU 9.2/360、GPU 7.2/32.0 など）。URL は nodes.azureml.ms。" loading="lazy" />
+        <figcaption>Foundry から起動した <strong>Ray クラスタのダッシュボード</strong>。ノード状態・<strong>CPU/GPU 使用量</strong>（例: 7.2/32.0 GPU）・オートスケーラを、<strong>AAD 認証エンドポイント</strong>で監視できる。RL の大量ロールアウトを分散実行する基盤。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=595s" target="_blank" rel="noopener">09:55</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>Ray は分散処理のオーケストレータで、RFT の「多数のロールアウト（試行）を並列に回す」用途に向く。画面の Node Status（Active な複数ノード）と Resource Status（総 CPU/GPU に対する使用量）から、クラスタが<strong>複数 GPU ノードで並列に学習を回している</strong>ことが読み取れる。そして RFT の中身＝<strong>ロールアウト</strong>を Foundry Rollout Browser で観察する。</p>
+
+      <figure class="shot">
+        <img src="../images/post-training-reasoning-models-foundry-dem321/10-rft-rollout-trajectory.jpg" alt="Foundry Rollout Browser。プロンプト群（Reward 0.912/0.956/0.525/0.175）、Prompt #607 0/4 correct、Sample 1 Reward 0.983、Tool call comparison（Expected 5 / Output 4 / Step matches 4/5）、ステップ get_order_details→get_fulfillment_status→check_resolution_policy→calculate_resolution→submit_resolution（Missing output）。" loading="lazy" />
+        <figcaption><strong>Foundry Rollout Browser</strong>。各サンプルの軌跡と <strong>Tool call comparison</strong>（期待ツール 5・出力ツール 4・<strong>Step matches 4/5</strong>）、そして報酬（例: Sample 1 = <strong>0.983</strong>、Prompt #607 は 0/4 correct、グループ別 Reward 0.912〜0.175）を可視化。<code>get_order_details → get_fulfillment_status → check_resolution_policy → calculate_resolution → submit_resolution</code> の各ステップを検証する。<a class="ts" href="https://www.youtube.com/watch?v=UFhvE3cF0TA&t=635s" target="_blank" rel="noopener">10:35</a></figcaption>
+      </figure>
+
+      <p><strong>画像の読み解き：</strong>これが RFT の心臓部だ。モデルが各サンプルで踏んだツール呼び出し列を、<strong>期待される正しい列（Expected tool）と突き合わせ</strong>、一致度（Step matches）と正しさに応じて<strong>報酬（0〜1）</strong>を与える。図では 5 番目の <code>submit_resolution</code> が「Missing output」で欠けており、これが減点要因となって Prompt #607 が「0/4 correct」になっている様子が読み取れる。「この手順なら OK、この手順なら罰則（punitive）」と<strong>ツール呼び出しごとに報酬を設計</strong>し、報酬が上がるまで強化学習が進む ― これを実際に眺められるのがロールアウトブラウザである。</p>
+
+      <div class="mermaid">
+flowchart LR
+  A["プロンプト（顧客シナリオ）"] --> B["モデルがロールアウト<br/>ツール列を生成"]
+  B --> C["期待ツール列と比較<br/>Step matches"]
+  C --> D["報酬を算出 0〜1<br/>（正解手順=高, 逸脱=低）"]
+  D --> E["方策を更新（GRPO）"]
+  E --> B
+      </div>
+      <div class="callout info">
+        <strong>周辺情報 ― GRPO と Ray：</strong> <strong>GRPO（Group Relative Policy Optimization）</strong>は DeepSeek が提唱した強化学習アルゴリズムで、1つのプロンプトに対し複数の出力をサンプリングし、その<strong>グループ内の相対的な良し悪し</strong>から方策を更新する（別個の価値関数＝critic を必要としない軽量さが特長）。<strong>Ray</strong>（Anyscale 発の OSS 分散フレームワーク）は、こうした「多数のロールアウトを並列に回す」RL 訓練の実行基盤として広く使われる。Foundry はこれらをマネージドに束ね、Ray クラスタ・ジョブ・ロールアウトを1か所で扱えるようにしている。
+      </div>
+    </section>
+
+    <section id="s9">
+      <h2>9. まとめ・周辺情報・リソース</h2>
+      <p>デモは機材トラブルで駆け足となり、最後の「SFT＋RFT でより良い結果になる」パートはフルには見せられなかったが、示された流れは一貫している ― <strong>eval を先に定義</strong>し、<strong>本番トレースを自動記録</strong>して<strong>データセット化</strong>し、<strong>SFT → RFT</strong>（Ray/GRPO）で小型オープンモデルを後訓練し、<strong>Foundry Managed Compute にデプロイ</strong>してループを閉じる。狙いは、フロンティア級の品質を <strong>1/10 のコスト</strong>で、信頼できる形でスケールさせることだ。</p>
+
+      <h3>この動画の位置づけ（周辺情報）</h3>
+      <ul>
+        <li>本セッション <strong>DEM321</strong> は 11 分のショートデモ。より踏み込んだ完全版が <strong>BRK232</strong>「Post-Training and Deploying Open Source Reasoning Models in Foundry」で、SFT/RFT・Ray・ローレベル API（コード名 <em>loom</em>）・GRPO・デプロイまでを解説している（発表者の画面にも BRK230/BRK231/BRK232 の資料が見えていた）。本スタッシュの日本語要約: <a href="post-training-deploying-open-source-reasoning-models-foundry-ja.html">Foundry でオープンソース推論モデルをポストトレーニング＆デプロイ（BRK232）</a>。</li>
+        <li>可観測性・評価（eval）側の詳細は <a href="understand-fix-agent-framework-observability-evals-dem361-ja.html">DEM361（Open Inference / Phoenix / LLM-as-a-judge）</a>、蒸留による小型化は <a href="distilling-models-with-fine-tuning-dem322-ja.html">DEM322（モデル蒸留 × ファインチューニング）</a> が関連する。</li>
+      </ul>
+
+      <h3>関連リソース</h3>
+      <ul>
+        <li>Microsoft Learn ― <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/fine-tuning-overview" target="_blank" rel="noopener">Fine-tuning overview（SFT/DPO/RFT・Serverless vs Managed Compute）</a></li>
+        <li>Build 2026 次の一歩: <a href="https://aka.ms/build26-next-steps" target="_blank" rel="noopener">aka.ms/build26-next-steps</a> ／ Foundry Discord: <a href="https://aka.ms/build/foundrydiscord" target="_blank" rel="noopener">aka.ms/build/foundrydiscord</a></li>
+        <li>デモ中に登壇者が開いていた導線: <code>aka.ms/customevals</code>・<code>aka.ms/customjobs</code>・<code>aka.ms/custom-training-agents</code>（カスタム評価／カスタムジョブ／カスタム訓練エージェント）</li>
+        <li>用語: <a href="https://docs.ray.io/" target="_blank" rel="noopener">Ray（分散実行基盤）</a> ／ GRPO（DeepSeekMath 由来の RL 手法）／ <a href="https://huggingface.co/Qwen" target="_blank" rel="noopener">Qwen（オープンウェイトモデル）</a></li>
+      </ul>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">
+        本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。掲載した画面キャプチャは、内容理解を目的として出典動画から該当箇所を引用し、内容を調査して説明を付したものです（各図に出典タイムスタンプを明記）。「周辺情報」は公開情報・関連ドキュメントに基づく補足であり、登壇内容そのものではありません。モデル名等の固有名詞はセッション音声（自動字幕）に基づく表記であり、正式名称と異なる場合があります。
+      </p>
+      <p>
+        出典: <a href="https://www.youtube.com/watch?v=UFhvE3cF0TA" target="_blank" rel="noopener">https://www.youtube.com/watch?v=UFhvE3cF0TA</a> ／ 登壇: Chris Lauren・Vijay Aski（Microsoft）／ Microsoft Build 2026 DEM321 ／ 取得手段: yt-dlp 英語字幕（全文精読）＋ 動画フレーム抽出 ／ 生成日: 2026年7月9日
+      </p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: prefersDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const li = document.createElement('li');
+      li.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      li.appendChild(anchor);
+      toc.appendChild(li);
+    });
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const p = 20;
+      svg.setAttribute('viewBox', [bbox.x - p, bbox.y - p, bbox.width + p * 2, bbox.height + p * 2].join(' '));
+    } catch (e) { console.warn(e); }
+  }
+
+  function startPanZoom(svg) {
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.4, maxZoom: 12
+    });
+    panZoomInstance.resize(); panZoomInstance.fit(); panZoomInstance.center();
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const cloned = sourceSvg.cloneNode(true);
+    cloned.removeAttribute('style');
+    cloned.setAttribute('width', '100%');
+    cloned.setAttribute('height', '100%');
+    body.appendChild(cloned);
+    tightenViewBox(cloned);
+    modal.classList.add('is-open');
+    startPanZoom(cloned);
+  }
+
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+    const W = img.naturalWidth || 1280, H = img.naturalHeight || 720;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(SVGNS, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0'); image.setAttribute('y', '0');
+    image.setAttribute('width', W); image.setAttribute('height', H);
+    svg.appendChild(image);
+    body.appendChild(svg);
+    modal.classList.add('is-open');
+    startPanZoom(svg);
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const body = document.getElementById('modalBody');
+    if (panZoomInstance) { panZoomInstance.destroy(); panZoomInstance = null; }
+    modal.classList.remove('is-open');
+    body.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') { panZoomInstance.resetZoom(); panZoomInstance.fit(); panZoomInstance.center(); }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagramFromElement(diagram); }
+    });
+  });
+
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openImageFromElement(img); }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('diagramModal').addEventListener('click', (e) => {
+    if (e.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
