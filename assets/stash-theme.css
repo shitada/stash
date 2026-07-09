@@ -1,0 +1,53 @@
+/*
+  stash 共通配色テーマ（黒＝dark 既定 / 淡い白＝light）
+  index.html と reports/*.html で共有する。CSS 変数名は各ページ既存のものと共通。
+  色切替は data-theme 属性で行い、localStorage に保存（stash-theme.js）。
+  html[data-theme="..."]（詳細度 0,1,1）は各ページの :root や
+  @media (prefers-color-scheme) の :root（詳細度 0,1,0）より優先されるため、
+  既存レポートの配色定義を書き換えずに上書きできる。
+*/
+
+/* 既定（属性未設定・JS 未実行時）は黒。OS が light でも黒を既定にする。 */
+:root:not([data-theme]) {
+  --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+  --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+  --shadow: 0 6px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+/* 黒（dark） */
+html[data-theme="dark"] {
+  --bg: #0e1116; --bg-elev: #161b22; --border: #2a3240;
+  --text: #e6edf3; --text-dim: #9aa6b2; --accent: #f97316; --link: #60a5fa;
+  --shadow: 0 6px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+/* 淡い白（light）＝完全な白ではなく、目に優しい温かみのあるオフホワイト */
+html[data-theme="light"] {
+  --bg: #f4f1ea; --bg-elev: #fbf9f4; --border: #e3ded2;
+  --text: #26282d; --text-dim: #5f6570; --accent: #c2570c; --link: #1f6feb;
+  --shadow: 0 6px 24px rgba(60,54,40,.10);
+  color-scheme: light;
+}
+
+/* --- フローティング配色スイッチ（全ページ共通・画面右上に固定） --- */
+.theme-switch {
+  position: fixed; top: 14px; right: 14px; z-index: 60;
+  display: inline-flex; gap: 3px; padding: 4px;
+  background: rgba(22, 27, 34, .94);
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .28);
+}
+.theme-switch button {
+  appearance: none; -webkit-appearance: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; line-height: 1; white-space: nowrap;
+  color: #cbd5e1; background: transparent; padding: 6px 13px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .15s ease, color .15s ease;
+}
+.theme-switch button:hover { color: #fff; }
+.theme-switch button.is-active { background: #f8fafc; color: #0f172a; font-weight: 600; }
+.theme-switch button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media print { .theme-switch { display: none !important; } }
