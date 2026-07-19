@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<link rel="stylesheet" href="../assets/stash-theme.css" />
+<script src="../assets/stash-theme.js"></script>
+<title>Stanford CME295 Lecture 1「Transformer」日本語要約</title>
+<meta name="description" content="Stanford CME295 Transformers &amp; LLMs（Autumn 2025）第1回を、字幕全文と公式資料から再構成した日本語要約。NLP、トークン化、Word2vec、RNN/LSTM、Attention、Transformerを一気通貫で解説。" />
+<style>
+  :root {
+    --sidebar-w: 280px;
+    --content-max: 940px;
+    --radius: 14px;
+    --shadow: 0 8px 28px rgba(0,0,0,.34);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--text); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  aside.sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  .toc-panel > summary {
+    display: none;
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .toc-title {
+    margin: 0 0 10px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block;
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    border-radius: 0 7px 7px 0;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height: 1.45;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover {
+    color: var(--text);
+    background: rgba(127,127,127,.07);
+    text-decoration: none;
+  }
+  aside.sidebar a.active {
+    border-left-color: var(--accent);
+    background: rgba(127,127,127,.1);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+
+  main {
+    width: min(100%, var(--content-max));
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+  }
+
+  header.page {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  header.page .eyebrow {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  header.page h1 {
+    margin: 8px 0 12px;
+    font-size: clamp(28px, 4vw, 42px);
+    line-height: 1.3;
+  }
+  header.page .lead { margin: 0; color: var(--text-dim); font-size: 16px; }
+
+  .meta-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px;
+    margin: 20px 0 32px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 7px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .tldr, .callout {
+    margin: 24px 0;
+    padding: 17px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .tldr h2 { margin: 0 0 10px; color: var(--accent); font-size: 17px; letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+  .callout.info { border-left-color: var(--link); }
+  .callout.info strong { color: var(--link); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 {
+    display: inline-block;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    font-size: 23px;
+    line-height: 1.45;
+  }
+  section h3 { margin: 28px 0 9px; color: var(--accent); font-size: 18px; }
+  section h4 { margin: 18px 0 6px; font-size: 15px; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 12px 0; padding-left: 23px; }
+  li { margin: 6px 0; }
+  code {
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    font-size: .92em;
+  }
+
+  .table-wrap { width: 100%; overflow-x: auto; margin: 17px 0; }
+  table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    overflow: hidden;
+  }
+  th, td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+  }
+  thead th {
+    background: rgba(127,127,127,.08);
+    color: var(--text-dim);
+    font-size: 12.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .card {
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .card h4 { margin: 0 0 6px; color: var(--accent); font-size: 14px; }
+  .card p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .stat-card {
+    padding: 14px 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .stat-card .num { color: var(--accent); font-size: 25px; font-weight: 800; line-height: 1.2; }
+  .stat-card .label { margin-top: 4px; color: var(--text-dim); font-size: 12px; line-height: 1.5; }
+
+  .formula {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: clamp(16px, 2.6vw, 23px);
+    font-weight: 700;
+    overflow-x: auto;
+  }
+  .formula small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  figure.shot { margin: 24px 0; }
+  figure.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  figure.shot .ts {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .mermaid {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    overflow-x: auto;
+    cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .diagram-hint { margin: -10px 0 18px; color: var(--text-dim); font-size: 12px; text-align: center; }
+
+  .glossary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .term {
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .term h3 { margin: 0 0 6px; color: var(--accent); font-size: 15px; }
+  .term p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+  .term .source { display: block; margin-top: 8px; font-size: 12px; }
+
+  .refs { padding-left: 22px; }
+  .refs li { margin: 9px 0; word-break: break-word; }
+
+  footer.page {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .95; }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    padding: 22px;
+    background: rgba(9,20,38,.82);
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.sidebar {
+      position: static;
+      height: auto;
+      padding: 14px 20px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .toc-panel > summary { display: block; }
+    .toc-title { display: none; }
+    aside.sidebar ol { margin-top: 10px; }
+    main { padding: 36px 20px 80px; }
+  }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+    .meta-card { grid-template-columns: 1fr; }
+    .glossary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <details class="toc-panel" open>
+      <summary>目次を開く / 閉じる</summary>
+      <p class="toc-title">Contents</p>
+      <ol id="toc"></ol>
+    </details>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Stanford CME295 / YouTube lecture summary</div>
+      <h1>Lecture 1「Transformer」日本語要約</h1>
+      <p class="lead">テキストの数値化から Transformer に到達するまでを、NLPタスク、トークン化、埋め込み、RNN/LSTM、Attention、Q/K/V、Encoder–Decoder の順に積み上げる入門講義。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div>
+        <dt>出典</dt>
+        <dd><a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener">Stanford Online / YouTube</a></dd>
+      </div>
+      <div>
+        <dt>講師</dt>
+        <dd>Afshine Amidi / Shervine Amidi</dd>
+      </div>
+      <div>
+        <dt>講義日 / 公開日</dt>
+        <dd>2025-09-26 / 2025-10-17</dd>
+      </div>
+      <div>
+        <dt>コース</dt>
+        <dd>CME295 Transformers &amp; LLMs（Autumn 2025）</dd>
+      </div>
+      <div>
+        <dt>長さ</dt>
+        <dd>1:41:59</dd>
+      </div>
+      <div>
+        <dt>取得手段</dt>
+        <dd>yt-dlp 英語自動字幕（全文）＋動画フレーム抽出</dd>
+      </div>
+      <div>
+        <dt>取得量</dt>
+        <dd>重複除去後 2,436 行 / 画面キャプチャ 7 枚</dd>
+      </div>
+      <div>
+        <dt>公式教材</dt>
+        <dd><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">Syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture1.pdf" target="_blank" rel="noopener">Lecture slides</a></dd>
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">NLP</span>
+          <span class="badge">Tokenization</span>
+          <span class="badge">Word2vec</span>
+          <span class="badge">Attention</span>
+          <span class="badge">Transformer</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>Transformer は突然現れたのではなく、<strong>固定的な単語表現 → 逐次的な文脈表現 → 必要箇所への直接参照</strong>という問題解決の連鎖から生まれた。</li>
+        <li>中心計算は <strong>Q（問い合わせ）と K（照合キー）の類似度で V（内容）を重み付き集約する Self-attention</strong>で、全トークンを行列として並列処理できる。</li>
+        <li>元論文の Transformer は Encoder–Decoder 構成で、位置情報、Multi-head Attention、FFN、因果マスク、Cross-attention を組み合わせ、BOS から EOS まで自己回帰的に翻訳する。</li>
+      </ul>
+    </div>
+
+    <section id="course">
+      <h2>1. 講義とコースの位置づけ</h2>
+      <p>この回は CME295 の導入と、以降の講義全体の土台になる Transformer の概観を扱う。講師の Afshine Amidi と Shervine Amidi は双子で、ともにフランスの École Centrale Paris を経た後、Afshine は MIT、Shervine は Stanford の ICME 修士へ進んだ。Uber、Google、Netflix などで似たキャリアを歩み、2020年ごろから NLP と LLM を専門にしてきた。年次ワークショップとして続けた内容を Stanford の授業へ発展させ、この学期はコースとして2回目だと説明する。</p>
+
+      <div class="grid-cards">
+        <div class="card">
+          <h4>目的 1：仕組み</h4>
+          <p>現在の LLM の基礎である Transformer が、なぜ、どのように動くかを理解する。</p>
+        </div>
+        <div class="card">
+          <h4>目的 2：訓練と応用</h4>
+          <p>LLM がどう訓練され、どこで使われ、何が機能し何が機能しないかを学ぶ。</p>
+        </div>
+        <div class="card">
+          <h4>想定受講者</h4>
+          <p>研究・ML職を目指す人、個人プロジェクトで LLM を使う人、他分野へ生成AIを応用したい人。</p>
+        </div>
+        <div class="card">
+          <h4>前提知識</h4>
+          <p>モデル学習とニューラルネットワークの基礎、行列積を含む線形代数。発展途上でも支援する。</p>
+        </div>
+      </div>
+
+      <h3>授業運営</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th>講義内の説明</th></tr></thead>
+          <tbody>
+            <tr><td>開講</td><td>毎週金曜 15:30–17:20、Thornton 110、2単位。Letter grade または Credit/No Credit。</td></tr>
+            <tr><td>教材</td><td>録画とスライドを公式サイトへ掲載。教科書は <em>Super Study Guide: Transformers &amp; Large Language Models</em>。短縮版の VIP cheatsheet も GitHub で公開。</td></tr>
+            <tr><td>連絡</td><td>告知は Canvas、質問は Canvas 内の Ed または講師への連絡で受け付ける。</td></tr>
+            <tr><td>評価</td><td>宿題なし。中間試験 50%（第5回・10月24日）、期末試験 50%（12月8日の週、当時日程未定）。試験はコーディングではなく講義概念を対象とする。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <strong>表記の正規化</strong>
+        <p>自動字幕には講師名の揺れがあるため、本レポートでは Stanford の公式コースサイトと動画メタデータに合わせて <strong>Afshine Amidi / Shervine Amidi</strong> と表記する。</p>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2>2. Transformer へ至る問題解決の連鎖</h2>
+      <p>講義の構成は、前の手法の弱点が次の手法の動機になるよう設計されている。単語を数値へ変えるだけでは語順と文脈が消え、RNN で語順を取り戻すと長距離依存と逐次計算が問題になり、Attention で過去の必要箇所へ直接つなぎ、Transformer では Self-attention を中心に再構成する。</p>
+
+      <div class="mermaid">
+flowchart TD
+  A["1. 文字列を token へ<br/>Tokenization"] --> B["2. token の意味をベクトルへ<br/>Word2vec"]
+  B --> C["3. 語順と逐次文脈を保持<br/>RNN / LSTM"]
+  C --> D["4. 必要箇所を直接参照<br/>Attention → Self-attention → Transformer"]
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
+
+      <p>歴史的にも、RNN 系の考えは1980年代、LSTM は1990年代、Word2vec は2013年、ニューラル機械翻訳の Attention は2014年、Transformer は2017年に登場した。講師は、古いアイデアが当時すぐ現在の規模へ進めなかった背景として、インターネット由来のデータと計算資源の不足を挙げる。2020年代にはデータ・計算量・モデル規模が拡大し、LLM が広く認知されるようになった。</p>
+    </section>
+
+    <section id="nlp">
+      <h2>3. NLP タスクと評価指標</h2>
+      <p>NLP（Natural Language Processing）は、自然言語テキストを計算機で扱う分野である。講義では、出力の形を基準にタスクを3群へ整理する。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/01-nlp-task-taxonomy.jpg" alt="NLP tasks overview の分類スライド。分類タスクの入力テキスト、モデル、単一出力と、感情・意図・言語・トピックの例が表示されている。" loading="lazy" />
+        <figcaption>分類タスクを「入力テキスト → モデル → 単一の予測」と整理し、感情分析・意図検出・言語検出・トピック分類を例示するスライド。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=680s" target="_blank" rel="noopener">11:20</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>講義での区分</th><th>入出力</th><th>代表例</th><th>評価の考え方</th></tr></thead>
+          <tbody>
+            <tr><td>Classification</td><td>テキスト → 1ラベル</td><td>感情分析、意図検出、言語検出、トピック分類</td><td>Accuracy、Precision、Recall、F1</td></tr>
+            <tr><td>Multi-classification</td><td>テキスト → 複数位置のラベル</td><td>NER、品詞タグ付け、依存・構文解析</td><td>トークン単位またはエンティティ種別単位で集計</td></tr>
+            <tr><td>Generation</td><td>テキスト → 可変長テキスト</td><td>機械翻訳、質問応答、要約、コード・詩の生成</td><td>BLEU、ROUGE、Perplexity など</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>用語上の注意</strong>
+        <p>講義の “multi-classification” は、NER や品詞タグ付けのように複数位置を分類する一群を便宜的にまとめた呼称である。一般には sequence labeling / token classification など、より具体的な名称を使うことが多い。</p>
+      </div>
+
+      <h3>分類指標</h3>
+      <ul>
+        <li><strong>Accuracy</strong>：全例のうち正解した割合。99:1 のような不均衡データでは、常に多数派を予測しても高くなり、誤解を招く。</li>
+        <li><strong>Precision</strong>：正例と予測したもののうち、実際に正例だった割合。</li>
+        <li><strong>Recall</strong>：実際の正例のうち、正例として見つけられた割合。</li>
+        <li><strong>F1</strong>：Precision と Recall の調和平均。両者を1つの値で捉える。</li>
+      </ul>
+
+      <h3>生成指標</h3>
+      <p>機械翻訳では、同じ意味に複数の正しい訳があり得る。WMT のような対訳データセットを使い、候補訳を参照訳と比べる BLEU や ROUGE が使われてきた。ただし、参照文の作成には人手・時間・費用がかかる。講師は、このコースの後半で LLM を使った reference-free 評価へ進むと予告する。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>指標</th><th>何を見るか</th><th>向き</th><th>注意</th></tr></thead>
+          <tbody>
+            <tr><td>BLEU</td><td>候補訳と参照訳の n-gram 一致を、適合率と短さへのペナルティで評価</td><td>高いほど良い</td><td>元論文は主にコーパス単位の人手評価との相関を狙う</td></tr>
+            <tr><td>ROUGE</td><td>参照要約との n-gram や最長共通部分列などの重なり</td><td>高いほど良い</td><td>複数方式からなる指標群</td></tr>
+            <tr><td>Perplexity</td><td>正解系列へモデルが割り当てた確率から「驚き」を測る</td><td>低いほど良い</td><td>人間の品質判断や下流タスク性能と必ず一致するわけではない</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tokenization">
+      <h2>4. Tokenization：文字列をモデルの処理単位へ</h2>
+      <p>モデルは文字列をそのまま理解せず、数値を処理する。そこで文章を任意の単位へ分割し、各単位を <strong>token</strong> と呼ぶ。どの粒度を選ぶかは、語の意味を再利用できるか、未知語に耐えられるか、系列がどれだけ長くなるかのトレードオフになる。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/02-tokenization.jpg" alt="単語・サブワード・文字レベルのトークン化を、利点と欠点で比較した表。" loading="lazy" />
+        <figcaption>Word-level、Subword-level（WordPiece / BPE）、Character-level を、OOV、語根、計算量、頑健性の観点で比較する講義の総括表。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=1700s" target="_blank" rel="noopener">28:20</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>粒度</th><th>利点</th><th>弱点</th></tr></thead>
+          <tbody>
+            <tr><td>Word-level</td><td>単純で解釈しやすく、系列が比較的短い</td><td><code>bear</code> と <code>bears</code> を別物として覚える。語彙が膨らみ、OOV が増える。</td></tr>
+            <tr><td>Subword-level</td><td>接頭辞・接尾辞や共通部分を再利用し、OOV を減らしやすい</td><td>単語より系列が長くなり、処理量が増える。</td></tr>
+            <tr><td>Character-level</td><td>綴り間違いや大小文字の揺れに強く、未知語がほぼない</td><td>系列が非常に長く、1文字の埋め込みを意味的に解釈しにくい。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <strong>一次資料による補足：BPE と rare word</strong>
+        <p>Sennrich ら（ACL 2016）は、頻出する文字列単位を学習して語を subword に分け、希少語や未観測語を既知部分から構成する方法をニューラル機械翻訳へ導入した。これは語彙を有限に保ちながら open vocabulary に近づける考え方である。BPE と WordPiece は同じ subword 系でも、学習規則は同一ではない。</p>
+      </div>
+
+      <p>系列長は後段の計算量へ直結する。細かく切れば未知語耐性は上がる一方、モデルが処理する token 数が増え、学習・推論の時間とコストが増える。講義の質疑では、単一言語なら数万、現在の多言語・コード対応モデルでは数十万規模の語彙もあるという大まかな目安が示されたが、最適値は言語と用途に依存する。</p>
+    </section>
+
+    <section id="embeddings">
+      <h2>5. One-hot から Word2vec へ</h2>
+      <h3>One-hot の限界</h3>
+      <p>語彙サイズを <code>V</code> とすると、One-hot encoding は各 token を長さ <code>V</code> のベクトルで表し、該当位置だけを1にする。識別には使えるが、異なる token 同士の内積は常に0である。したがって、<code>teddy bear</code> と <code>soft</code> のような関連も、無関係な語との違いも表せない。</p>
+      <p>講義ではベクトルの向きを比べる <strong>cosine similarity</strong> を導入する。同方向なら1に近く、直交なら0、反対方向なら−1に近い。ただし講師が質疑で強調したように、これは意味的類似度を測る便利な尺度であって唯一の完全な尺度ではない。</p>
+
+      <div class="formula">
+        cosine(x, y) = (x · y) / (||x|| ||y||)
+        <small>大きさを正規化し、2ベクトルが作る角度に注目する。</small>
+      </div>
+
+      <h3>Word2vec の proxy task</h3>
+      <p>Word2vec は、最終目的である「意味のある埋め込み」を直接教師付けする代わりに、文章中の語を予測する <strong>proxy task</strong> を解かせる。文脈から語を当てられるなら、モデル内部には言語の規則性が必要になる。その過程で得た中間層の重みを単語ベクトルとして使う。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/03-word2vec.jpg" alt="Word2vec の CBOW と Skip-gram を、teddy bear を中心にした周辺語の矢印で比較するスライド。" loading="lazy" />
+        <figcaption>CBOW は周辺語から中央語を、Skip-gram は中央語から周辺語を予測する。どちらも予測そのものより、埋め込み層の学習を狙う proxy task として説明される。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=2296s" target="_blank" rel="noopener">38:16</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>入力</th><th>予測</th></tr></thead>
+          <tbody>
+            <tr><td>CBOW</td><td>対象語の周辺にある複数の語</td><td>中央の対象語</td></tr>
+            <tr><td>Skip-gram</td><td>中央の対象語</td><td>周辺に現れる語</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>講義の簡略モデル</h3>
+      <ol>
+        <li>入力 token を長さ <code>V</code> の One-hot にする。</li>
+        <li>埋め込み行列との積で、語彙より小さい次元 <code>D</code> の中間表現を得る。</li>
+        <li>別の線形変換と Softmax で、次の token に対する <code>V</code> 個の確率を出す。</li>
+        <li>正解 One-hot との Cross-entropy loss を求め、Backpropagation で重みを更新する。</li>
+        <li>繰り返し学習した後、中間層を token embedding として取り出す。</li>
+      </ol>
+      <p>講義の toy example は語彙6、埋め込み2次元だが、実際には語彙は数万〜数十万、埋め込みは数百〜数千次元になり得る。768は例として挙げられた値であり、固定規則ではない。大きい埋め込みは表現力を増やす一方、計算量・推論遅延・コストも増えるため、下流タスクとのトレードオフで選ぶ。</p>
+
+      <div class="callout">
+        <strong>残る弱点</strong>
+        <p>Word2vec の埋め込みは token ごとに固定で、語順も周囲の文脈も変えない。同じ綴りの <code>bank</code> が「銀行」と「川岸」で異なる意味を持っても、同じベクトルになる。この弱点が文脈を順番に取り込む RNN への動機になる。</p>
+      </div>
+    </section>
+
+    <section id="rnn">
+      <h2>6. RNN と LSTM：語順を得て、長距離で詰まる</h2>
+      <p>単語ベクトルを単純平均すると語順が失われる。RNN（Recurrent Neural Network）は、時刻 <code>t</code> の token と直前の hidden state を受け取り、新しい hidden state を作る。hidden state は「ここまで読んだ系列」の要約であり、同じ計算セルを時刻方向へ繰り返す。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/04-rnn-hidden-state.jpg" alt="RNNを時間方向に展開し、入力x、隠れ状態a、出力yが逐次接続する一般形を示すスライド。" loading="lazy" />
+        <figcaption>RNN を時間方向に展開した一般形。前時刻の hidden state <code>a</code> と現在の入力 <code>x</code> から、次の state と出力 <code>y</code> を逐次計算する。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=3266s" target="_blank" rel="noopener">54:26</a></figcaption>
+      </figure>
+
+      <h3>タスクごとの使い方</h3>
+      <ul>
+        <li><strong>分類</strong>：系列末尾の hidden state をラベル空間へ射影する。</li>
+        <li><strong>Token classification</strong>：対象 token の state をラベルへ射影する。</li>
+        <li><strong>生成</strong>：入力系列を読み終えた context / hidden state を Decoder の初期情報として使う。</li>
+      </ul>
+
+      <h3>長距離依存と勾配</h3>
+      <p>情報を1本の state に順次圧縮すると、長い系列の初期情報を保ちにくい。学習では最終時刻の誤差を時間方向へ戻す BPTT（Backpropagation Through Time）を行うが、多数の微分を掛け続けるため、値が1未満なら勾配が0へ近づく <strong>vanishing gradient</strong>、1より大きければ増大する <strong>exploding gradient</strong> が起こり得る。</p>
+      <p>LSTM（Long Short-Term Memory）は hidden state に加えて cell state を持ち、何を保持・忘却・出力するかを gate で制御して、長期依存を学びやすくする。ただし逐次性は残る。時刻 <code>t</code> を計算するには前の state が必要なので、系列を一括並列化しにくく、長い入力では学習が遅い。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>得られたもの</th><th>主要な弱点</th></tr></thead>
+          <tbody>
+            <tr><td>Word2vec</td><td>語の意味的な静的埋め込み</td><td>語順・文脈を持たない</td></tr>
+            <tr><td>RNN</td><td>語順と「ここまで」の文脈</td><td>単一 state への圧縮、長距離依存、勾配、逐次計算</td></tr>
+            <tr><td>LSTM</td><td>cell state と gate による長期記憶の改善</td><td>完全解決ではなく、逐次計算のボトルネックも残る</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="attention">
+      <h2>7. Attention と Self-attention</h2>
+      <h3>必要箇所へ直接つなぐ</h3>
+      <p>従来の Encoder–Decoder は、入力系列全体を固定長ベクトルへ圧縮しがちだった。翻訳中の各出力 token が、入力のどこに対応するかを直接参照できれば、遠い情報を state の連鎖だけで運ばなくてよい。Bahdanau ら（2014）の Attention は、出力を予測するたびに関連する Encoder state を重み付けして取り出す。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/05-attention-history.jpg" alt="Attention の歴史として、2014年導入、翻訳の長期依存、Seq2seqの記憶問題を示すスライド。" loading="lazy" />
+        <figcaption>Attention 導入の背景を、2014年、翻訳の長期依存、Seq2seq が入力内容を保持しにくい問題として整理したスライド。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=3912s" target="_blank" rel="noopener">1:05:12</a></figcaption>
+      </figure>
+
+      <h3>Self-attention：系列内を相互参照する</h3>
+      <p>Transformer は再帰を外し、各 token の表現を同じ系列内のすべての token から直接作る。これが Self-attention である。例えば <code>teddy bear</code> の表現を、文中の <code>cute</code>、<code>is</code>、<code>reading</code> などとの関係から更新する。したがって <code>bank</code> も、周囲が川か金融かによって別の context-aware embedding になる。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/06-self-attention-context.jpg" alt="teddy bear トークンが文中の全トークンへ直接接続され、文脈化されるSelf-attentionの図。" loading="lazy" />
+        <figcaption><code>teddy bear</code> が同一文の全 token へ直接接続し、文脈を反映した表現を作る Self-attention の概念図。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=4090s" target="_blank" rel="noopener">1:08:10</a></figcaption>
+      </figure>
+
+      <h3>Query・Key・Value</h3>
+      <div class="grid-cards">
+        <div class="card">
+          <h4>Query（Q）</h4>
+          <p>「いま更新したい token は、どの情報を必要としているか」という問い合わせ。</p>
+        </div>
+        <div class="card">
+          <h4>Key（K）</h4>
+          <p>各 token が Query とどれだけ対応するかを照合するための索引。</p>
+        </div>
+        <div class="card">
+          <h4>Value（V）</h4>
+          <p>照合後の重みに従って実際に集約する内容ベクトル。</p>
+        </div>
+      </div>
+      <p>Q・K・V は人が固定する属性ではない。同じ入力埋め込みを、学習可能な行列 <code>WQ</code>、<code>WK</code>、<code>WV</code> へ射影して得る。Q と K の類似度が「どこを見るか」を決め、その重みで V を加重平均する。全 token 分を行列演算として表せるため、GPU が得意な並列計算へ落とし込める。</p>
+    </section>
+
+    <section id="transformer">
+      <h2>8. Transformer アーキテクチャ</h2>
+      <p>元論文の用途は機械翻訳で、左の Encoder が原言語を文脈化し、右の Decoder が訳文を1 token ずつ生成する。両側に Attention と token 単位の FFN（Feed-Forward Network）を積み重ねる。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-lecture1/07-transformer-architecture.jpg" alt="TransformerのEncoderとDecoder、Multi-head Attention、Masked Attention、FFN、位置符号化を示す構成図。" loading="lazy" />
+        <figcaption>Encoder–Decoder、Self-attention、Encoder–Decoder Attention、FFN、Positional Encoding を1枚にまとめた講義スライド。左が Encoder、右が Decoder。<a class="ts" href="https://www.youtube.com/watch?v=Ub3GoFaUcds&t=4458s" target="_blank" rel="noopener">1:14:18</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>場所</th><th>Attention の役割</th><th>Q / K / V の由来</th></tr></thead>
+          <tbody>
+            <tr><td>Encoder Self-attention</td><td>入力 token を、入力全体の文脈で更新</td><td>すべて Encoder 側</td></tr>
+            <tr><td>Decoder Masked Self-attention</td><td>生成済み token だけを参照し、未来を見ない</td><td>すべて Decoder 側、未来位置を mask</td></tr>
+            <tr><td>Cross-attention</td><td>現在の出力状態から、原文の必要箇所を参照</td><td>Q は Decoder、K/V は Encoder 出力</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>構成要素</h3>
+      <ul>
+        <li><strong>Positional Encoding</strong>：Self-attention 自体は並び順を持たないため、token embedding に位置ベクトルを加える。元論文は sin / cos を使用する。</li>
+        <li><strong>Multi-head Attention</strong>：異なる <code>WQ/WK/WV</code> を持つ複数 head で Attention を並列実行し、異なる関係を学べる自由度を与える。各 head を連結し、<code>WO</code> で元のモデル次元へ戻す。</li>
+        <li><strong>FFN</strong>：各位置へ同じ2層ネットワークを適用する。講義では、内部次元を入力より大きくし、特徴を豊かにする自由度を与えると説明する。</li>
+        <li><strong>Residual connection / Layer normalization</strong>：構成図の Add &amp; Norm に含まれる。講義では詳細を掘り下げないが、元論文では各 sub-layer の周囲に置かれる。</li>
+        <li><strong>Label smoothing</strong>：正解を確率1に固定せず、少量を他クラスへ配る。自然言語では次語の妥当解が複数あり得るため、過度な確信を抑え、元論文では BLEU 改善に寄与した。</li>
+      </ul>
+
+      <h3>元論文 Transformer-base の値</h3>
+      <p>以下は一次資料 <em>Attention Is All You Need</em> の base 構成であり、すべての Transformer に固定された値ではない。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">6 + 6</div><div class="label">Encoder / Decoder layers</div></div>
+        <div class="stat-card"><div class="num">512</div><div class="label">d<sub>model</sub></div></div>
+        <div class="stat-card"><div class="num">8</div><div class="label">Attention heads</div></div>
+        <div class="stat-card"><div class="num">64</div><div class="label">d<sub>k</sub> = d<sub>v</sub> / head</div></div>
+        <div class="stat-card"><div class="num">2048</div><div class="label">d<sub>ff</sub></div></div>
+        <div class="stat-card"><div class="num">0.1</div><div class="label">Label smoothing ε</div></div>
+      </div>
+    </section>
+
+    <section id="calculation">
+      <h2>9. Scaled Dot-Product Attention を分解する</h2>
+      <p>入力行列を <code>X</code> とすると、まず <code>Q = XWQ</code>、<code>K = XWK</code>、<code>V = XWV</code> を作る。講義後半は、この行列計算を1段ずつ読み解く。</p>
+
+      <div class="formula">
+        Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d<sub>k</sub>)V
+        <small>Vaswani et al. (2017), Equation (1)</small>
+      </div>
+
+      <div class="mermaid">
+flowchart TD
+  Q["Query 行列 Q"] --> DOT["QKᵀ<br/>全 Query × Key のスコア"]
+  K["Key 行列 K"] --> DOT
+  DOT --> SCALE["√dₖ で割る<br/>スコアを安定化"]
+  SCALE --> S["行ごとに Softmax<br/>Attention weight"]
+  S --> SUM["重み × V<br/>Value の加重和"]
+  V["Value 行列 V"] --> SUM
+  SUM --> Z["文脈化された表現"]
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
+
+      <ol>
+        <li><strong><code>QK<sup>T</sup></code></strong>：各 Query と全 Key の内積を取り、token 間の対応スコア行列を作る。</li>
+        <li><strong><code>√d<sub>k</sub></code> で除算</strong>：次元が大きいほど内積の絶対値が大きくなり、Softmax が極端になりやすい。スケーリングで安定させる。</li>
+        <li><strong>Softmax</strong>：各 Query の行を、全 Key に対する重みの分布へ変える。</li>
+        <li><strong><code>×V</code></strong>：重みに従って Value を足し合わせ、各 Query に対応する context-aware vector を得る。</li>
+        <li><strong>Multi-head</strong>：この計算を異なる射影で <code>h</code> 回並列に行い、結果を列方向に連結して <code>WO</code> で射影する。</li>
+      </ol>
+      <p>Q と K は内積を取るため同じ次元が必要で、講義では <code>dQ = dK</code> と説明する。各 head が異なる関係を学ぶことを保証する明示的制約はないが、目的関数を改善する過程で異なる表現へ分化することが多い。</p>
+    </section>
+
+    <section id="end-to-end">
+      <h2>10. 翻訳を端から端まで追う</h2>
+      <p>最後に <code>A cute teddy bear is reading.</code> を原文として、元論文型 Transformer の推論を通しで確認する。</p>
+      <ol>
+        <li><strong>Tokenize</strong>：原文を token へ分割し、BOS（Beginning of Sequence）と EOS（End of Sequence）を付ける。</li>
+        <li><strong>入力表現</strong>：各 token embedding に、sin / cos による positional encoding を要素ごとに加える。</li>
+        <li><strong>Encoder</strong>：入力から Q/K/V を作り、Multi-head Self-attention と FFN を通す。この block を <code>N</code> 回積み、文脈化された原文表現を得る。</li>
+        <li><strong>Decoder 開始</strong>：最初は BOS だけを入れる。Masked Self-attention は現在位置より右を見ないため、推論時と学習時の因果性を守る。</li>
+        <li><strong>Cross-attention</strong>：Decoder の状態を Q、Encoder の最終出力を K/V とし、今の出力に必要な原文箇所を集約する。</li>
+        <li><strong>次 token</strong>：Decoder block と FFN を重ね、Linear + Softmax で語彙全体の確率分布を得て次 token を選ぶ。</li>
+        <li><strong>自己回帰</strong>：選んだ token を Decoder 入力へ戻し、同じ処理を繰り返す。EOS が生成されたら停止する。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>この講義の到達点</strong>
+        <p>token 化、埋め込み、位置、Self-attention、Multi-head、Encoder、因果 Decoder、Cross-attention、FFN、語彙 Softmax が1本につながった。以降の LLM を理解する際も、「何を Q とし、どこから K/V を取るか」「未来を mask するか」「どの表現を並列に更新するか」が基本の読み方になる。</p>
+      </div>
+    </section>
+
+    <section id="glossary">
+      <h2>11. 公式・一次資料で補う専門用語集</h2>
+      <p>以下は講義内の説明を核に、公式コース資料、原論文、ACL Anthology、Stanford の教科書資料で定義と注意点を補ったもの。</p>
+
+      <div class="glossary">
+        <article class="term">
+          <h3>NLP</h3>
+          <p>自然言語を分析・理解・生成する計算処理の総称。分類、系列ラベリング、生成など、入出力形式の異なるタスクを含む。</p>
+          <a class="source" href="https://web.stanford.edu/~jurafsky/slp3/" target="_blank" rel="noopener">出典: Jurafsky &amp; Martin, Speech and Language Processing</a>
+        </article>
+        <article class="term">
+          <h3>Token / Tokenization</h3>
+          <p>モデルが扱う離散的なテキスト単位と、その単位列へ分割する処理。token は単語・subword・文字と一致するとは限らない。</p>
+          <a class="source" href="https://cme295.stanford.edu/slides/fall25-cme295-lecture1.pdf" target="_blank" rel="noopener">出典: CME295 Lecture 1 slides</a>
+        </article>
+        <article class="term">
+          <h3>OOV / Subword / BPE</h3>
+          <p>OOV は語彙にない入力。BPE 系 subword は未知語を既知の部分へ分解し、有限語彙でも希少語を構成しやすくする。</p>
+          <a class="source" href="https://aclanthology.org/P16-1162/" target="_blank" rel="noopener">出典: Sennrich et al. (2016), ACL Anthology</a>
+        </article>
+        <article class="term">
+          <h3>Embedding</h3>
+          <p>離散 token を、学習可能な低次元の密ベクトルへ写した表現。類似する使用文脈がベクトル空間の幾何へ反映される。</p>
+          <a class="source" href="https://arxiv.org/abs/1301.3781" target="_blank" rel="noopener">出典: Mikolov et al. (2013)</a>
+        </article>
+        <article class="term">
+          <h3>Word2vec / CBOW / Skip-gram</h3>
+          <p>CBOW は周辺から中央語、Skip-gram は中央語から周辺を予測する。予測課題を通じて分散表現を学ぶ。</p>
+          <a class="source" href="https://arxiv.org/abs/1301.3781" target="_blank" rel="noopener">出典: Efficient Estimation of Word Representations</a>
+        </article>
+        <article class="term">
+          <h3>Proxy task</h3>
+          <p>本当に欲しい表現を直接教師付けせず、関連する予測課題を解かせて有用な内部表現を学習させる設計。</p>
+          <a class="source" href="https://arxiv.org/abs/1310.4546" target="_blank" rel="noopener">出典: Mikolov et al. (2013), Distributed Representations</a>
+        </article>
+        <article class="term">
+          <h3>RNN / BPTT</h3>
+          <p>直前の state を再利用して系列を順番に処理するネットワーク。BPTT は展開した時系列に沿って誤差を逆伝播する。</p>
+          <a class="source" href="https://cme295.stanford.edu/slides/fall25-cme295-lecture1.pdf" target="_blank" rel="noopener">出典: CME295 Lecture 1 slides</a>
+        </article>
+        <article class="term">
+          <h3>Vanishing / Exploding Gradient</h3>
+          <p>多段の微分積で勾配が0へ消える、または極端に増える現象。長期依存の学習を難しくする。</p>
+          <a class="source" href="https://doi.org/10.1109/72.279181" target="_blank" rel="noopener">出典: Bengio, Simard &amp; Frasconi (1994)</a>
+        </article>
+        <article class="term">
+          <h3>LSTM</h3>
+          <p>cell state と gate を導入し、長期にわたる誤差信号と情報保持を改善する recurrent architecture。</p>
+          <a class="source" href="https://doi.org/10.1162/neco.1997.9.8.1735" target="_blank" rel="noopener">出典: Hochreiter &amp; Schmidhuber (1997)</a>
+        </article>
+        <article class="term">
+          <h3>Attention</h3>
+          <p>各出力時点で、入力側のどの state が重要かを重み付けして参照する。固定長ベクトルだけに圧縮する bottleneck を緩和する。</p>
+          <a class="source" href="https://arxiv.org/abs/1409.0473" target="_blank" rel="noopener">出典: Bahdanau, Cho &amp; Bengio (2014)</a>
+        </article>
+        <article class="term">
+          <h3>Self-attention / QKV</h3>
+          <p>同じ系列から Q・K・V を作り、各 token を系列全体の加重和で文脈化する。Q/K は対応度、V は集約内容を担う。</p>
+          <a class="source" href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">出典: Vaswani et al. (2017)</a>
+        </article>
+        <article class="term">
+          <h3>Scaled Dot-Product / Multi-head</h3>
+          <p>QKᵀ を √d<sub>k</sub> で縮尺し Softmax 後に V を集約する。複数 head は異なる射影空間でこの計算を並列化する。</p>
+          <a class="source" href="https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html" target="_blank" rel="noopener">出典: NeurIPS 2017 proceedings</a>
+        </article>
+        <article class="term">
+          <h3>Positional Encoding</h3>
+          <p>再帰を持たない Transformer へ token の順序を与える信号。元論文は異なる周波数の sin / cos を embedding に加算する。</p>
+          <a class="source" href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">出典: Vaswani et al. (2017), §3.5</a>
+        </article>
+        <article class="term">
+          <h3>Causal Mask / Cross-attention</h3>
+          <p>Causal mask は Decoder が未来 token を参照するのを防ぐ。Cross-attention は Decoder の Q で Encoder の K/V を読む。</p>
+          <a class="source" href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">出典: Vaswani et al. (2017), §3.2.3</a>
+        </article>
+        <article class="term">
+          <h3>BLEU / ROUGE</h3>
+          <p>BLEU は機械翻訳、ROUGE は主に要約の自動評価として提案された参照ベース指標。単一の人間評価そのものではない。</p>
+          <a class="source" href="https://aclanthology.org/P02-1040/" target="_blank" rel="noopener">BLEU</a> / <a class="source" href="https://aclanthology.org/W04-1013/" target="_blank" rel="noopener">ROUGE</a>
+        </article>
+        <article class="term">
+          <h3>Perplexity</h3>
+          <p>系列の平均負対数尤度を指数化した値。正解 token へ高い確率を付けるほど低くなるが、生成品質の全側面は測れない。</p>
+          <a class="source" href="https://web.stanford.edu/~jurafsky/slp3/" target="_blank" rel="noopener">出典: Jurafsky &amp; Martin</a>
+        </article>
+        <article class="term">
+          <h3>Label Smoothing</h3>
+          <p>正解ラベルの確率質量を少し他クラスへ配り、過度に確信した分類器になるのを抑える。Transformer 元論文は ε=0.1。</p>
+          <a class="source" href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">出典: Vaswani et al. (2017), §5.4</a>
+        </article>
+        <article class="term">
+          <h3>BOS / EOS</h3>
+          <p>系列の開始・終了を表す special token。Decoder は BOS から生成を始め、EOS を選ぶと停止する。</p>
+          <a class="source" href="https://cme295.stanford.edu/slides/fall25-cme295-lecture1.pdf" target="_blank" rel="noopener">出典: CME295 Lecture 1 slides</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="references">
+      <h2>12. 参考資料</h2>
+      <ol class="refs">
+        <li><a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener">Stanford Online — CME295 Transformers &amp; LLMs, Autumn 2025, Lecture 1</a></li>
+        <li><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">Stanford CME295 official syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture1.pdf" target="_blank" rel="noopener">official Lecture 1 slides</a></li>
+        <li><a href="https://github.com/afshinea/stanford-cme-295-transformers-large-language-models" target="_blank" rel="noopener">Official CME295 Transformers &amp; LLMs cheatsheet repository</a></li>
+        <li>Vaswani et al. (2017), <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener"><em>Attention Is All You Need</em></a>, NeurIPS.</li>
+        <li>Mikolov et al. (2013), <a href="https://arxiv.org/abs/1301.3781" target="_blank" rel="noopener"><em>Efficient Estimation of Word Representations in Vector Space</em></a>.</li>
+        <li>Mikolov et al. (2013), <a href="https://arxiv.org/abs/1310.4546" target="_blank" rel="noopener"><em>Distributed Representations of Words and Phrases and their Compositionality</em></a>.</li>
+        <li>Hochreiter &amp; Schmidhuber (1997), <a href="https://doi.org/10.1162/neco.1997.9.8.1735" target="_blank" rel="noopener"><em>Long Short-Term Memory</em></a>, Neural Computation.</li>
+        <li>Bahdanau, Cho &amp; Bengio (2014), <a href="https://arxiv.org/abs/1409.0473" target="_blank" rel="noopener"><em>Neural Machine Translation by Jointly Learning to Align and Translate</em></a>.</li>
+        <li>Sennrich, Haddow &amp; Birch (2016), <a href="https://aclanthology.org/P16-1162/" target="_blank" rel="noopener"><em>Neural Machine Translation of Rare Words with Subword Units</em></a>, ACL.</li>
+        <li>Papineni et al. (2002), <a href="https://aclanthology.org/P02-1040/" target="_blank" rel="noopener"><em>BLEU: a Method for Automatic Evaluation of Machine Translation</em></a>, ACL.</li>
+        <li>Lin (2004), <a href="https://aclanthology.org/W04-1013/" target="_blank" rel="noopener"><em>ROUGE: A Package for Automatic Evaluation of Summaries</em></a>, ACL Workshop.</li>
+        <li>Jurafsky &amp; Martin (2026), <a href="https://web.stanford.edu/~jurafsky/slp3/" target="_blank" rel="noopener"><em>Speech and Language Processing</em>, 3rd ed. online manuscript</a>.</li>
+      </ol>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
+      <p>掲載した画面キャプチャは講義内容を説明するための少数引用で、各画像から該当時刻の動画へリンクしています。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）＋ ffmpeg 動画フレーム抽出 ／ 生成日: 2026-07-19</p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="図と画面キャプチャの拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const themeAttr = document.documentElement.getAttribute('data-theme');
+  const isDark = themeAttr
+    ? themeAttr === 'dark'
+    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default',
+    securityLevel: 'loose'
+  });
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) {
+        heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      }
+      const item = document.createElement('li');
+      item.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      item.appendChild(anchor);
+      toc.appendChild(item);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id);
+      });
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [
+        bbox.x - padding,
+        bbox.y - padding,
+        bbox.width + padding * 2,
+        bbox.height + padding * 2
+      ].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const svgNamespace = 'http://www.w3.org/2000/svg';
+    const width = img.naturalWidth || 1280;
+    const height = img.naturalHeight || 720;
+    const svg = document.createElementNS(svgNamespace, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(svgNamespace, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', width);
+    image.setAttribute('height', height);
+    svg.appendChild(image);
+    modalBody.appendChild(svg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.4,
+      maxZoom: 12
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openImageFromElement(img);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
