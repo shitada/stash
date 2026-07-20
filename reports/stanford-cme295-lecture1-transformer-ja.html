@@ -544,6 +544,51 @@ flowchart TD
         <li><strong>F1</strong>：Precision と Recall の調和平均。両者を1つの値で捉える。</li>
       </ul>
 
+      <h3>補足：Precision・Recall・F1 の計算と現在の使われ方</h3>
+      <p>まず「正例」を何とするかを決め、予測と正解の組み合わせを次の4種類に数える。F1 の計算には TP・FP・FN を使い、TN は直接は使わない。</p>
+
+      <div class="table-wrap">
+        <table aria-label="二値分類の混同行列">
+          <thead>
+            <tr><th></th><th>予測：正例</th><th>予測：負例</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>実際：正例</th><td><strong>TP</strong>（正しく検出）</td><td><strong>FN</strong>（見逃し）</td></tr>
+            <tr><th>実際：負例</th><td><strong>FP</strong>（誤検出）</td><td><strong>TN</strong>（正しく除外）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="formula">
+        Precision = TP / (TP + FP)<br />
+        Recall = TP / (TP + FN)<br />
+        F1 = 2 × (Precision × Recall) / (Precision + Recall)
+        <small>F1 は 2TP / (2TP + FP + FN) とも書ける。通常は 0〜1 で、1に近いほど良い。</small>
+      </div>
+
+      <p><strong>計算例：</strong>100件を正例と予測し、そのうち80件が正解なら TP=80、FP=20。実際の正例が120件なら、残り40件を見逃しているので FN=40 となる。Precision は <code>80 / 100 = 0.80</code>、Recall は <code>80 / 120 ≈ 0.67</code>、F1 は <code>2 × 0.80 × 0.67 / (0.80 + 0.67) ≈ 0.73</code> である。調和平均を使うため、Precision と Recall の片方だけが高くても F1 は高くなりにくい。</p>
+
+      <p><strong>現在の主な使われ方：</strong>F1 は、正例が少なく Accuracy だけでは性能を判断しにくい分類や、誤検出と見逃しの両方を重視する場面で使われる。現在の機械学習・NLP ライブラリでも標準的な分類指標として実装されている。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>利用場面</th><th>使い方</th><th>注意点</th></tr></thead>
+          <tbody>
+            <tr><td>不均衡な二値分類</td><td>スパム・不正・異常など、注目する正例クラスの Precision と Recall を1値にまとめる。</td><td>TN を直接評価しないため、負例側の性能も重要なら混同行列などを併記する。</td></tr>
+            <tr><td>多クラス・マルチラベル分類</td><td>クラスごとの F1 と、micro・macro・weighted などの平均値を報告する。</td><td>平均方法で値の意味が変わるため、単に「F1」とだけ書かず集計方法を明記する。</td></tr>
+            <tr><td>NLP の NER / token classification</td><td>人名・地名などの抽出結果について Precision・Recall・F1 を測る。Hugging Face の現行ガイドでも <code>seqeval</code> による3指標を使用する。</td><td>token 単位か、ラベルと範囲が一致した entity 単位かを明記する。</td></tr>
+            <tr><td>モデル選択・閾値調整</td><td>検証データ上の F1 でモデルや判定閾値を比較する。</td><td>テストデータで閾値を調整しない。業務上の誤検出・見逃しコストが同等でない場合は、Precision、Recall、Fβ、PR曲線なども使う。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>多クラス分類では、各クラスを1対その他の二値問題として評価してから集計する。<strong>macro F1</strong> はクラスごとの F1 を同じ重みで平均するため少数クラスの弱さが表れやすい。<strong>micro F1</strong> は全クラスの TP・FP・FN を合計してから計算し、各予測を同じ重みで扱う。<strong>weighted F1</strong> は各クラスの正解件数（support）で重み付けするため、全体傾向を表しやすい一方で多数クラスの影響が強い。単一ラベルの多クラス分類では micro F1 が Accuracy と一致する点にも注意が必要である。</p>
+
+      <div class="callout info">
+        <strong>F1 は万能な品質指標ではない</strong>
+        <p>F1 は Precision と Recall を同じ重みで扱う。見逃しの損失が特に大きいなら Recall や F2、誤検出の損失が大きいなら Precision や F0.5 を重視する。また、予測確率の確からしさや生成文の意味的品質は F1 だけでは測れないため、目的に合う複数の指標と併用する。</p>
+      </div>
+
       <h3>生成指標</h3>
       <p>機械翻訳では、同じ意味に複数の正しい訳があり得る。WMT のような対訳データセットを使い、候補訳を参照訳と比べる BLEU や ROUGE が使われてきた。ただし、参照文の作成には人手・時間・費用がかかる。講師は、このコースの後半で LLM を使った reference-free 評価へ進むと予告する。</p>
       <div class="table-wrap">
@@ -903,13 +948,16 @@ flowchart TD
         <li>Papineni et al. (2002), <a href="https://aclanthology.org/P02-1040/" target="_blank" rel="noopener"><em>BLEU: a Method for Automatic Evaluation of Machine Translation</em></a>, ACL.</li>
         <li>Lin (2004), <a href="https://aclanthology.org/W04-1013/" target="_blank" rel="noopener"><em>ROUGE: A Package for Automatic Evaluation of Summaries</em></a>, ACL Workshop.</li>
         <li>Jurafsky &amp; Martin (2026), <a href="https://web.stanford.edu/~jurafsky/slp3/" target="_blank" rel="noopener"><em>Speech and Language Processing</em>, 3rd ed. online manuscript</a>.</li>
+        <li><a href="https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-and-f-measures" target="_blank" rel="noopener">scikit-learn User Guide — Precision, recall and F-measures</a>.</li>
+        <li><a href="https://huggingface.co/docs/transformers/tasks/token_classification" target="_blank" rel="noopener">Hugging Face Transformers — Token classification</a>.</li>
       </ol>
     </section>
 
     <footer class="page">
       <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
       <p>掲載した画面キャプチャは講義内容を説明するための少数引用で、各画像から該当時刻の動画へリンクしています。</p>
-      <p>出典: <a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）＋ ffmpeg 動画フレーム抽出 ／ 生成日: 2026-07-19</p>
+      <p>F1 の計算・現在の利用法に関する補足は、scikit-learn と Hugging Face の公開ドキュメントに基づく説明であり、講義内容そのものではありません。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）＋ ffmpeg 動画フレーム抽出 ／ 生成日: 2026-07-19 ／ 最終更新日: 2026-07-20</p>
     </footer>
   </main>
 </div>
