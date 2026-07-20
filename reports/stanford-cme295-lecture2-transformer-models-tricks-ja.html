@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<link rel="stylesheet" href="../assets/stash-theme.css" />
+<script src="../assets/stash-theme.js"></script>
+<title>Stanford CME295 Lecture 2「Transformer-Based Models &amp; Tricks」日本語要約</title>
+<meta name="description" content="Stanford CME295 Transformers &amp; LLMs（Autumn 2025）第2回を字幕全文と一次資料から日本語要約。位置表現、RoPE、正規化、Sparse Attention、MHA/MQA/GQA、T5、BERT、DistilBERT、RoBERTaを解説。" />
+<style>
+  :root {
+    --sidebar-w: 286px;
+    --content-max: 960px;
+    --radius: 14px;
+    --shadow: 0 8px 28px rgba(0,0,0,.34);
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--text); }
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+  aside.sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  .toc-panel > summary { display: none; color: var(--text); cursor: pointer; font-weight: 700; }
+  .toc-title {
+    margin: 0 0 10px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block;
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    border-radius: 0 7px 7px 0;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height: 1.45;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.07); text-decoration: none; }
+  aside.sidebar a.active {
+    border-left-color: var(--accent);
+    background: rgba(127,127,127,.1);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+  main { width: min(100%, var(--content-max)); margin: 0 auto; padding: 48px 28px 96px; }
+  header.page { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  header.page .eyebrow {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(28px, 4vw, 42px); line-height: 1.3; }
+  header.page .lead { margin: 0; color: var(--text-dim); font-size: 16px; }
+  .meta-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px;
+    margin: 20px 0 32px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 7px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .tldr, .callout, .related {
+    margin: 24px 0;
+    padding: 17px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .tldr h2 { margin: 0 0 10px; color: var(--accent); font-size: 17px; letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+  .callout.info { border-left-color: var(--link); }
+  .callout.info strong { color: var(--link); }
+  .callout.warning { border-left-color: #f59e0b; }
+  .callout.warning strong { color: #f59e0b; }
+  .callout p:last-child, .related p:last-child { margin-bottom: 0; }
+  .related { border-style: dashed; }
+  .related strong { color: var(--accent); }
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 {
+    display: inline-block;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    font-size: 23px;
+    line-height: 1.45;
+  }
+  section h3 { margin: 28px 0 9px; color: var(--accent); font-size: 18px; }
+  section h4 { margin: 18px 0 6px; font-size: 15px; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 12px 0; padding-left: 23px; }
+  li { margin: 6px 0; }
+  code {
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    font-size: .92em;
+  }
+  .table-wrap { width: 100%; overflow-x: auto; margin: 17px 0; }
+  table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    overflow: hidden;
+  }
+  th, td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+  }
+  thead th {
+    background: rgba(127,127,127,.08);
+    color: var(--text-dim);
+    font-size: 12.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .card {
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .card h4 { margin: 0 0 6px; color: var(--accent); font-size: 14px; }
+  .card p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .stat-card {
+    padding: 14px 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .stat-card .num { color: var(--accent); font-size: 25px; font-weight: 800; line-height: 1.2; }
+  .stat-card .label { margin-top: 4px; color: var(--text-dim); font-size: 12px; line-height: 1.5; }
+  .formula {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: clamp(15px, 2.4vw, 22px);
+    font-weight: 700;
+    overflow-x: auto;
+  }
+  .formula small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  figure.shot { margin: 24px 0; }
+  figure.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption { margin-top: 8px; color: var(--text-dim); font-size: 13px; line-height: 1.65; }
+  figure.shot .ts {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .mermaid {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    overflow-x: auto;
+    cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .diagram-hint { margin: -10px 0 18px; color: var(--text-dim); font-size: 12px; text-align: center; }
+  .glossary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .term {
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .term h3 { margin: 0 0 6px; color: var(--accent); font-size: 15px; }
+  .term p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+  .term .source { display: block; margin-top: 8px; font-size: 12px; }
+  .refs { padding-left: 22px; }
+  .refs li { margin: 9px 0; word-break: break-word; }
+  footer.page {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .95; }
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    padding: 22px;
+    background: rgba(9,20,38,.82);
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); width: 100%; }
+    aside.sidebar {
+      position: static;
+      height: auto;
+      min-width: 0;
+      max-width: 100%;
+      padding: 14px 20px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .toc-panel > summary { display: block; }
+    .toc-title { display: none; }
+    aside.sidebar ol { margin-top: 10px; }
+    main { min-width: 0; max-width: 100%; padding: 36px 20px 80px; }
+  }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+    .meta-card { grid-template-columns: 1fr; }
+    .glossary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <details class="toc-panel" open>
+      <summary>目次を開く / 閉じる</summary>
+      <p class="toc-title">Contents</p>
+      <ol id="toc"></ol>
+    </details>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Stanford CME295 / YouTube lecture summary</div>
+      <h1>Lecture 2「Transformer-Based Models &amp; Tricks」日本語要約</h1>
+      <p class="lead">2017年の Transformer を出発点に、位置表現、正規化、Attention の効率化、Encoder/Decoder の派生、BERT の事前学習とfine-tuningまで、現在へ続く設計変化を追う。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=yT84Y5zCnaA" target="_blank" rel="noopener">Stanford Online / YouTube</a></dd></div>
+      <div><dt>講師</dt><dd>Afshine Amidi / Shervine Amidi</dd></div>
+      <div><dt>講義日 / 公開日</dt><dd>2025-10-03 / 2025-10-17</dd></div>
+      <div><dt>コース</dt><dd>CME295 Transformers &amp; LLMs（Autumn 2025）</dd></div>
+      <div><dt>長さ</dt><dd>1:47:19</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語自動字幕（全文）＋動画フレーム抽出</dd></div>
+      <div><dt>取得量</dt><dd>重複除去後 2,181 行 / 画面キャプチャ 8 枚</dd></div>
+      <div><dt>公式教材</dt><dd><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">Syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture2.pdf" target="_blank" rel="noopener">Lecture slides</a></dd></div>
+      <div style="grid-column:1/-1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Position Embedding</span>
+          <span class="badge">RoPE</span>
+          <span class="badge">RMSNorm</span>
+          <span class="badge">Sparse Attention</span>
+          <span class="badge">BERT</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>Transformer の骨格は残ったまま、<strong>位置情報の入れ方、正規化の位置、Attention の疎化、K/V head の共有</strong>が効率と長文対応のために変化した。</li>
+        <li>モデルは <strong>Encoder–Decoder、Encoder-only、Decoder-only</strong> の3系統へ分化し、T5 は text-to-text、BERT は双方向表現による分類、GPT 系は自己回帰生成を得意とする。</li>
+        <li>BERT は WordPiece、[CLS]/[SEP]、MLM・NSP の自己教師あり事前学習を組み合わせる。公式資料で照合すると、位置埋め込みは学習型で、標準fine-tuningはEncoderを凍結せず全パラメータを更新する。</li>
+      </ul>
+    </div>
+
+    <section id="intro">
+      <h2>1. 導入・前回の復習・今回の射程</h2>
+      <p>冒頭では、Lecture 1 の録音品質を受けて音響設定を変更したことと、当時12月10日を仮日程としていた期末試験を週前半へ移せるか検討中だと案内する。本編は前半を Afshine Amidi が Transformer の「変わった部品」、後半を Shervine Amidi がモデル系統と BERT に分けて解説する。</p>
+
+      <div class="related">
+        <strong>前提となる Lecture 1</strong>
+        <p>Self-attention、Q/K/V、Encoder–Decoder、scaled dot-product attention の導入は、先行レポート <a href="stanford-cme295-lecture1-transformer-ja.html">「CME295 Lecture 1: Transformer」</a> で詳しく整理している。</p>
+      </div>
+
+      <h3>Self-attention と Multi-head の復習</h3>
+      <div class="formula">
+        Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d<sub>k</sub>)V
+      </div>
+      <p>各 head は独自の <code>WQ/WK/WV</code> で入力を射影し、Attention を並列計算する。head ごとの結果を連結し、<code>WO</code> で再びモデル次元へ射影する。講義は元論文の attention map を使い、異なる head が照応や構文関係を別々に捉え得ることを示す。</p>
+
+      <div class="callout info">
+        <strong>公式研究による補足：Attention map の読み方</strong>
+        <p><code>QK<sup>T</sup></code> は raw score であり、通常「attention weight」と呼ぶのは scaling・mask・Softmax 後の値である。また可視化は関係を調べる手掛かりだが、モデル判断の因果的な説明と同一ではない。Jain &amp; Wallace（NAACL 2019）は、attention weight だけを説明として扱うことへ注意を促している。</p>
+        <p><a href="https://aclanthology.org/N19-1357/" target="_blank" rel="noopener">一次資料: Attention is not Explanation</a></p>
+      </div>
+    </section>
+
+    <section id="position-basics">
+      <h2>2. なぜ位置情報が必要か</h2>
+      <p>Self-attention は token 同士を直接結ぶため、RNN のような計算順序から位置を得られない。そこで token embedding に位置情報を注入する。Lecture 2 はまず、絶対位置を入力へ加える2方式を比較する。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>仕組み</th><th>長所</th><th>制約</th></tr></thead>
+          <tbody>
+            <tr><td>Learned absolute</td><td>位置ごとの埋め込み表を学習し、token embedding へ加算</td><td>データから最適化できる</td><td>表にない位置は直接扱えず、訓練長やデータの位置偏りに依存</td></tr>
+            <tr><td>Sinusoidal</td><td>位置と次元から sin/cos を計算し、token embedding へ加算</td><td>追加パラメータ不要で任意位置の値を計算可能</td><td>訓練長を超えた品質を保証せず、類似度は周期的</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="formula">
+        PE(pos, 2i) = sin(pos / 10000<sup>2i/d<sub>model</sub></sup>)<br />
+        PE(pos, 2i+1) = cos(pos / 10000<sup>2i/d<sub>model</sub></sup>)
+        <small>Vaswani et al. (2017), §3.5</small>
+      </div>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/01-sinusoidal-relative.jpg" alt="sinとcosの位置表現について、位置mとnの差に依存する三角関数の恒等式を示す講義スライド。" loading="lazy" />
+        <figcaption>sin/cos の組を内積すると <code>cos(ω<sub>i</sub>(m−n))</code> が現れ、絶対位置から相対距離を読み取れることを示す式。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=1160s" target="_blank" rel="noopener">19:20</a></figcaption>
+      </figure>
+
+      <p>各次元は異なる周波数を持ち、低い次元側は速く、高い次元側はゆっくり変化する。元論文では learned と sinusoidal がほぼ同等だったため、長い位置にも式を適用できる可能性を理由に sinusoidal を採った。</p>
+
+      <div class="callout warning">
+        <strong>公式資料による精密化</strong>
+        <p>sinusoidal 値を訓練長より先で<strong>計算できる</strong>ことと、モデルがその長さへ<strong>正しく外挿できる</strong>ことは別である。また内積は相対距離の余弦和なので、同位置で最大になる一方、距離とともに単調減少するわけではなく周期的に振動する。</p>
+      </div>
+    </section>
+
+    <section id="position-modern">
+      <h2>3. T5 bias・ALiBi・RoPE</h2>
+      <p>入力に位置ベクトルを足す代わりに、Attention の対応度を計算する場所へ位置を直接入れる方法が発展した。</p>
+
+      <div class="mermaid">
+flowchart TD
+  P["位置情報をどこへ入れるか"] --> I["入力 embedding に加算"]
+  P --> A["Attention 計算へ直接反映"]
+  I --> L["Learned absolute"]
+  I --> S["Sinusoidal"]
+  A --> T["T5: bucket別の学習bias"]
+  A --> B["ALiBi: 距離比例の固定bias"]
+  A --> R["RoPE: Q/Kを位置角で回転"]
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/02-relative-biases.jpg" alt="Query-Key scoreへ位置biasを加える式と、T5が相対距離をbucket化してhead別biasを学ぶ説明スライド。" loading="lazy" />
+        <figcaption>T5 の relative position bias。相対距離 <code>m−n</code> を bucket 化し、head ごとの学習値を Softmax 前の score に加える。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=1725s" target="_blank" rel="noopener">28:45</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>Attentionへの反映</th><th>学習</th><th>相対距離の扱い</th></tr></thead>
+          <tbody>
+            <tr><td>T5 relative bias</td><td>logit に bucket 対応scalarを加算</td><td>head別に学習</td><td>近距離は細かく、遠距離は対数的にまとめ、最大距離以遠は同bucket</td></tr>
+            <tr><td>ALiBi</td><td>head別の傾き × 距離を logit から減算</td><td>傾きは固定</td><td>距離が遠いほど線形penalty。headごとに異なる受容範囲</td></tr>
+            <tr><td>RoPE</td><td>Attention 前に Q/K の次元ペアを回転</td><td>角周波数は固定</td><td>回転後の内積が相対位置 <code>n−m</code> の関数になる</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>RoPE の直観</h3>
+      <p>RoPE（Rotary Position Embedding）は、Q と K の隣接する2次元ずつを、位置に比例する角度で回す。2次元の回転行列は次の形になる。</p>
+      <div class="formula">
+        R(θ) = [[cos θ, −sin θ], [sin θ, cos θ]]<br />
+        ⟨R(mθ)q, R(nθ)k⟩ = ⟨q, R((n−m)θ)k⟩
+        <small>絶対位置 m/n を入れた回転が、内積では相対差 n−m へ変わる。</small>
+      </div>
+      <p>高次元ではQ/Kを2次元ペアへ分け、ペアごとに異なる周波数で回転する。Value は回転しない。多くの近年モデルで採用されるが、RoPE の類似度も sin/cos から成るため単調な近接biasではなく、長さ外挿の品質は追加のスケーリングや訓練条件にも依存する。</p>
+    </section>
+
+    <section id="normalization">
+      <h2>4. LayerNorm・Pre-Norm・RMSNorm</h2>
+      <p>元 Transformer の “Add &amp; Norm” は、sub-layer の入力を residual connection で出力へ足し、その後で LayerNorm を適用する。LayerNorm は1サンプル内の特徴次元に沿って平均と分散を求め、学習可能な <code>γ</code> と <code>β</code> で再スケール・シフトする。</p>
+
+      <div class="formula">
+        LayerNorm(x) = γ ⊙ (x − μ) / √(σ² + ε) + β
+      </div>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/03-normalization.jpg" alt="TransformerのPost-NormとPre-Normを、式とResidual connection上のLayerNorm位置で比較するスライド。" loading="lazy" />
+        <figcaption>元論文の Post-Norm と、sub-layer へ入る前に正規化する Pre-Norm の比較。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=2805s" target="_blank" rel="noopener">46:45</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>式の概略</th><th>特徴</th></tr></thead>
+          <tbody>
+            <tr><td>Post-Norm</td><td><code>LN(x + F(x))</code></td><td>元 Transformer と BERT。深いモデルでは初期勾配が不安定になりやすく、warm-upを要し得る。</td></tr>
+            <tr><td>Pre-Norm</td><td><code>x + F(LN(x))</code></td><td>Residual経路が直接残り、深いモデルの学習を安定させやすい。近年モデルで広く使われるが普遍ではない。</td></tr>
+            <tr><td>RMSNorm</td><td><code>g ⊙ x / √(mean(x²)+ε)</code></td><td>平均を引かず、βを持たず、RMSでスケールだけを整える軽量化。</td></tr>
+            <tr><td>BatchNorm</td><td>batch内の同一特徴を正規化</td><td>batch統計に依存し、訓練/推論差が生じる。TransformerではLayerNorm系が一般的。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warning">
+        <strong>補足：Internal Covariate Shift は確定した原因ではない</strong>
+        <p>講義では活性値の揺れを “internal covariate shift” と結び付ける。これは歴史的説明だが、Santurkar ら（NeurIPS 2018）は BatchNorm の効果を covariate shift の低減だけでは説明できず、最適化地形を滑らかにする効果を示した。LayerNormの有用性を単一原因へ還元しない方が正確である。</p>
+        <p><a href="https://arxiv.org/abs/1805.11604" target="_blank" rel="noopener">一次資料: How Does Batch Normalization Help Optimization?</a></p>
+      </div>
+    </section>
+
+    <section id="sparse-attention">
+      <h2>5. Dense Attention の二乗コストと疎化</h2>
+      <p>長さ <code>n</code> の各 token が全 token を見ると、score 行列は <code>n×n</code> になる。Self-attention の主要計算は <code>O(n²d)</code>、score/weight 行列の保存は head ごとに <code>O(n²)</code> で、長文ほど負担が急増する。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/04-sparse-attention.jpg" alt="Longformerのsliding-window attentionとCLS global attentionを疎な行列で示すスライド。" loading="lazy" />
+        <figcaption>Longformer の疎なAttention。対角帯が局所window、先頭の行・列が [CLS] などのglobal tokenを表す。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=3092s" target="_blank" rel="noopener">51:32</a></figcaption>
+      </figure>
+
+      <h3>Longformer と sliding window</h3>
+      <ul>
+        <li>各 token が近傍 <code>w</code> 個だけを見る sliding-window attention は <code>O(nw)</code>。</li>
+        <li>[CLS] や質問 token など <code>g</code> 個を global にすると、全体は概ね <code>O(nw + ng)</code>。</li>
+        <li>実装では巨大なdense行列を作って後から消すのではなく、必要blockだけを計算する tiling / sparse kernel が重要。</li>
+      </ul>
+      <p>講義は、層ごとにlocalとglobalを交互に使う方式や、Mistralのように全層でwindowを使う方式を紹介する。後者では層を重ねるほど情報が伝播できる理論上の receptive field が広がるが、各層が直接見る範囲とモデルの実効context windowは同じではない。</p>
+    </section>
+
+    <section id="head-sharing">
+      <h2>6. MHA・MQA・GQA と KV cache</h2>
+      <p>Attention の別の効率化は、Query head の多様性を残しながら Key/Value head を共有すること。自己回帰Decoderは新tokenを生成するたびに過去のK/Vを再利用するため、K/Vのhead数がKV cacheの容量とmemory bandwidthへ直結する。</p>
+
+      <div class="mermaid">
+flowchart TD
+  M["MHA<br/>Q: H heads / K: H / V: H<br/>最大の表現容量・最大cache"]
+  G["GQA<br/>Q: H / K: G / V: G<br/>1 &lt; G &lt; H"]
+  Q["MQA<br/>Q: H / K: 1 / V: 1<br/>最小cache"]
+  M -->|"K/Vをgroup共有"| G
+  G -->|"全Queryで1組を共有"| Q
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>Query heads</th><th>KV heads</th><th>位置づけ</th></tr></thead>
+          <tbody>
+            <tr><td>MHA</td><td>H</td><td>H</td><td>各headが独自Q/K/V。元Transformer。</td></tr>
+            <tr><td>GQA</td><td>H</td><td>G</td><td>H/G個のQuery headがK/Vを共有。品質と速度・cacheの折衷。</td></tr>
+            <tr><td>MQA</td><td>H</td><td>1</td><td>全Query headでK/Vを1組共有。cacheを最小化。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <strong>KV cache</strong>
+        <p>生成step <code>t</code> では新しいQだけを計算し、過去tokenのK/Vをlayerごとに保存して再利用する。概算容量は <code>2 × layers × sequence length × KV heads × head dimension × bytes</code>。MQA/GQAはKV headsを減らし、decode時のcache読込量を削減する。GQAは近年よく見られるが、全モデルに共通する既定ではない。</p>
+      </div>
+    </section>
+
+    <section id="families">
+      <h2>7. Transformerモデルの3系統</h2>
+      <p>後半は、元TransformerのEncoderとDecoderをどこまで残すかでモデルを3群に整理する。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/05-transformer-families.jpg" alt="Encoder-Decoder、Encoder-only、Decoder-onlyの3系統と代表モデルを示す表。" loading="lazy" />
+        <figcaption>モデル3分類。Encoder–DecoderはT5系、Encoder-onlyはBERT系、Decoder-onlyはGPT系へつながる。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=4270s" target="_blank" rel="noopener">1:11:10</a></figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>系統</th><th>Attention</th><th>代表</th><th>主な用途</th></tr></thead>
+          <tbody>
+            <tr><td>Encoder–Decoder</td><td>Encoder full + Decoder causal + Cross-attention</td><td>Transformer、T5、mT5、ByT5</td><td>翻訳、要約、text-to-text変換</td></tr>
+            <tr><td>Encoder-only</td><td>双方向full Self-attention</td><td>BERT、DistilBERT、RoBERTa</td><td>文分類、token分類、抽出型QA</td></tr>
+            <tr><td>Decoder-only</td><td>因果mask付きSelf-attention</td><td>GPT系、多くの現代LLM</td><td>next-token prediction、生成、対話</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>T5 family</h3>
+      <p>T5（Text-to-Text Transfer Transformer）は全タスクをtext-to-textへ統一する。事前学習は、tokenの15%を平均長3の連続spanとして選び、sentinel token（<code>&lt;extra_id_0&gt;</code> 等）へ置き換え、Decoderが欠落spanをsentinel順に復元する <strong>span corruption</strong>。mT5は多言語版、ByT5は学習済みsubword tokenizerを使わずUTF-8 byte列を直接処理する。</p>
+
+      <div class="callout warning">
+        <strong>公式資料による補正：ByT5 の byte</strong>
+        <p>UTF-8の文字は常に2 byteではない。ASCIIは1、アクセント付き文字は2、一般的な日本語の仮名・漢字は3、補助平面のemoji等は4 byteになり得る。ByT5は256種類のbyte値とspecial tokenを語彙にし、長くなりやすいbyte列を扱う。</p>
+        <p><a href="https://arxiv.org/abs/2105.13626" target="_blank" rel="noopener">一次資料: ByT5</a></p>
+      </div>
+    </section>
+
+    <section id="bert">
+      <h2>8. BERT：Encoder-only の双方向表現</h2>
+      <p>BERT は <strong>Bidirectional Encoder Representations from Transformers</strong>。Decoderを外し、因果maskのないEncoder Self-attentionにより、各tokenが左右両方の文脈を見る。生成は不得意だが、分類や抽出に適したcontextual representationを作る。</p>
+
+      <h3>ELMoとの関係</h3>
+      <p>同じ2018年のELMoも左右文脈を持つ表現を作ったが、2層のforward/backward LSTMを使うfeature-based方式で、再帰による並列化の難しさが残る。BERTはTransformer Encoderで深い双方向相互作用を実現し、事前学習済み本体を下流taskへfine-tuneする。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/06-bert-inputs.jpg" alt="BERTのWordPiece、約3万語彙、CLS、SEP、MASK tokenを説明するInput processingスライド。" loading="lazy" />
+        <figcaption>BERT入力処理。WordPiece、[CLS]、[SEP]、[MASK] と、MLM/NSP のための構造を示す。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=5120s" target="_blank" rel="noopener">1:25:20</a></figcaption>
+      </figure>
+
+      <h3>入力表現</h3>
+      <ul>
+        <li><strong>WordPiece</strong>：約30,000のsubword語彙。未知語を共通部分へ分解する。</li>
+        <li><strong>[CLS]</strong>：先頭のspecial token。最終stateを文全体の分類へ使う。</li>
+        <li><strong>[SEP]</strong>：文末と文ペアの境界。</li>
+        <li><strong>Embedding</strong>：token + position + segment（token type A/B）を要素ごとに加算。</li>
+        <li><strong>Cased / uncased</strong>：大文字小文字を保持するかをpreprocessingと語彙で選ぶ。</li>
+      </ul>
+
+      <div class="callout warning">
+        <strong>公式BERT論文による補正</strong>
+        <p>BERTのposition embeddingは<strong>学習型の絶対位置表</strong>で、元Transformerの固定sinusoidalではない。最大長は512。また元Transformer-baseは6 Encoder + 6 Decoder、BERT-baseは12 Encoderのみであり、「12層」の意味を区別する必要がある。</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">12</div><div class="label">BERT-Base Encoder layers</div></div>
+        <div class="stat-card"><div class="num">768</div><div class="label">Hidden size</div></div>
+        <div class="stat-card"><div class="num">12</div><div class="label">Attention heads</div></div>
+        <div class="stat-card"><div class="num">110M</div><div class="label">Parameters（約）</div></div>
+        <div class="stat-card"><div class="num">512</div><div class="label">Maximum positions</div></div>
+      </div>
+    </section>
+
+    <section id="bert-pretraining">
+      <h2>9. BERT の事前学習：MLM と NSP</h2>
+      <p>BERT は人手ラベルなしのraw textから自動的に教師信号を作る<strong>自己教師あり学習</strong>を行い、その後に少量のラベル付きdataで下流taskへfine-tuneする。</p>
+
+      <div class="mermaid">
+flowchart TD
+  A["Raw text"] --> B["WordPiece + [CLS]/[SEP]"]
+  B --> C["Token + learned position + segment embedding"]
+  C --> D["MLM: 選択tokenを復元"]
+  C --> E["NSP: 文Bが次文か分類"]
+  D --> F["事前学習済み BERT Encoder"]
+  E --> F
+  F --> G["Task headを追加してfine-tuning"]
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
+
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/07-bert-mlm.jpg" alt="BERTのMLMで15%のtokenを選び、80% MASK、10% random、10% unchangedとするスライド。" loading="lazy" />
+        <figcaption>MLM の選択規則。全入力tokenの15%を対象にし、その中を80/10/10へ分ける。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=5360s" target="_blank" rel="noopener">1:29:20</a></figcaption>
+      </figure>
+
+      <h3>Masked Language Model（MLM）</h3>
+      <ol>
+        <li>WordPiece token の15%を予測対象に選ぶ。</li>
+        <li>選んだtokenの80%を <code>[MASK]</code>、10%をrandom token、10%を元のままにする。</li>
+        <li>左右の文脈を同時に使って元tokenを予測し、双方向表現を学ぶ。</li>
+      </ol>
+      <p>常に[MASK]へ変えないのは、fine-tuningや推論では[MASK]が現れないというpretrain–downstream差を弱めるためである。</p>
+
+      <h3>Next Sentence Prediction（NSP）</h3>
+      <p>文Aと文Bを[SEP]でつなぎ、50%は実際の次文（IsNext）、50%はcorpusから選んだrandom文（NotNext）とする。[CLS]の最終stateから二値分類し、文間関係を学ばせる狙いだった。</p>
+
+      <div class="callout info">
+        <strong>用語の精密化</strong>
+        <p>BERT論文は “unsupervised” という語も使うが、MLM/NSPはdata自身から正解を生成するため、現在は<strong>self-supervised（自己教師あり）</strong>と呼ぶ方が明確である。</p>
+      </div>
+    </section>
+
+    <section id="bert-finetuning">
+      <h2>10. Fine-tuning と下流task</h2>
+      <p>事前学習済みBERTへ小さなtask-specific headを付ける。文分類は[CLS]、token分類は各token、抽出型QAは各tokenに対するanswer start/end scoreを使う。</p>
+
+      <div class="grid-cards">
+        <div class="card"><h4>Sentiment / 文分類</h4><p>[CLS]の最終state → Linear / FFN → class probability。</p></div>
+        <div class="card"><h4>NER / Token classification</h4><p>各tokenのcontextual stateへ同じ分類headを適用。</p></div>
+        <div class="card"><h4>Extractive QA</h4><p>各位置へstart headとend headを適用し、回答spanを選ぶ。</p></div>
+      </div>
+
+      <div class="callout warning">
+        <strong>公式BERT論文による補正：標準fine-tuningは凍結しない</strong>
+        <p>Encoderを固定してheadだけ学習するfeature extractionも可能だが、BERT論文の標準手順は<strong>事前学習済み全パラメータと出力headを一緒に更新</strong>する。下流data量・計算予算・domain差に応じて一部を凍結するのは別の選択肢である。</p>
+        <p><a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">一次資料: BERT §4</a></p>
+      </div>
+
+      <h3>長所と制約</h3>
+      <ul>
+        <li>大量のunlabeled textで一般表現を学び、少量のlabelで高性能な分類器へ適応できる。</li>
+        <li>Encoder-onlyなので自由なtext生成には向かない。</li>
+        <li>BERT-baseでも約110M parameters、最大位置512で、長文には疎Attention等の工夫が必要。</li>
+        <li>pretrainingとfine-tuningの2段階が必要で、taskごとにheadと学習dataを用意する。</li>
+      </ul>
+    </section>
+
+    <section id="extensions">
+      <h2>11. DistilBERT と RoBERTa</h2>
+      <h3>DistilBERT：知識蒸留で小型化</h3>
+      <p>teacher BERTのhard labelだけでなく、class間の相対関係を含むsoft probabilityをstudentへ学ばせる。temperatureで分布を柔らかくし、teacherとstudentの分布差をKL divergence等で縮める。DistilBERTはBERT-baseの12層から6層へ減らし、distillation loss、MLM loss、hidden stateを近づけるcosine lossを組み合わせる。</p>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">40%</div><div class="label">小型化（論文報告）</div></div>
+        <div class="stat-card"><div class="num">60%</div><div class="label">高速化（論文報告）</div></div>
+        <div class="stat-card"><div class="num">97%</div><div class="label">言語理解性能を保持（論文報告）</div></div>
+      </div>
+
+      <h3>RoBERTa：BERTの学習recipeを再検証</h3>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-transformer-models-tricks-lecture2/08-roberta.jpg" alt="RoBERTaがNSPを除去し、epochごとにdynamic maskingを行うことを示すスライド。" loading="lazy" />
+        <figcaption>RoBERTaの主要変更。NSPを外し、固定maskをepochごとに変えるdynamic maskingへ変更する。<a class="ts" href="https://www.youtube.com/watch?v=yT84Y5zCnaA&t=6400s" target="_blank" rel="noopener">1:46:40</a></figcaption>
+      </figure>
+      <p>RoBERTa は NSP を除去しても性能低下がなく、dynamic masking、より大きいbatch、長いsequence、より大量で多様なdata、byte-level BPEなど学習条件を強化した。BERTが「十分に訓練されていなかった」ことを示し、architectureだけでなくdataとtraining recipeが性能を大きく左右すると結論付ける。</p>
+    </section>
+
+    <section id="takeaways">
+      <h2>12. 講義全体のメッセージ</h2>
+      <div class="grid-cards">
+        <div class="card"><h4>位置は入力からAttention内部へ</h4><p>absolute addからrelative bias、Q/K rotationへ移り、score計算と位置を密接に結び付けた。</p></div>
+        <div class="card"><h4>安定性と効率は別軸</h4><p>Pre-Norm/RMSNormは学習安定性、Sparse AttentionとGQAは長文・decode時memoryを改善する。</p></div>
+        <div class="card"><h4>同じTransformerでも目的が違う</h4><p>T5は変換、BERTは理解・分類、Decoder-onlyは生成へcomputeを集中する。</p></div>
+        <div class="card"><h4>目的関数とdataがarchitecture同様に重要</h4><p>MLM/NSP、span corruption、next-token、distillation、dynamic maskingが表現の性質を決める。</p></div>
+      </div>
+      <p>Lecture 2 は「Transformer」という単一図を暗記するのではなく、<strong>どこへ位置を入れるか、何を共有するか、どのmaskを使うか、どの自己教師信号で学ぶか</strong>を追うことで、モデル名の違いを設計判断として読む視点を与える。</p>
+    </section>
+
+    <section id="glossary">
+      <h2>13. 公式・一次資料で補う専門用語集</h2>
+      <div class="glossary">
+        <article class="term">
+          <h3>Relative Position Bias</h3>
+          <p>Query–Key scoreへ相対距離に応じた値を加える方式。T5は距離bucketごとのhead別scalarを学ぶ。</p>
+          <a class="source" href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener">出典: T5</a>
+        </article>
+        <article class="term">
+          <h3>ALiBi</h3>
+          <p>Attention with Linear Biases。head別の固定傾きで距離に比例するpenaltyをlogitへ加え、長さ外挿を狙う。</p>
+          <a class="source" href="https://arxiv.org/abs/2108.12409" target="_blank" rel="noopener">出典: Press et al. (2022)</a>
+        </article>
+        <article class="term">
+          <h3>RoPE</h3>
+          <p>Rotary Position Embedding。Q/Kの2次元ペアを位置角で回し、内積を相対位置の関数にする。</p>
+          <a class="source" href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">出典: RoFormer</a>
+        </article>
+        <article class="term">
+          <h3>Post-LN / Pre-LN</h3>
+          <p>Residual加算後に正規化するか、sub-layer入力を先に正規化するかの違い。Pre-LNは深い学習を安定化しやすい。</p>
+          <a class="source" href="https://arxiv.org/abs/2002.04745" target="_blank" rel="noopener">出典: Xiong et al. (2020)</a>
+        </article>
+        <article class="term">
+          <h3>RMSNorm</h3>
+          <p>平均を引かずroot mean squareでscaleを整える。LayerNormからre-centeringとβを省いた簡略形。</p>
+          <a class="source" href="https://arxiv.org/abs/1910.07467" target="_blank" rel="noopener">出典: Zhang &amp; Sennrich (2019)</a>
+        </article>
+        <article class="term">
+          <h3>Sliding-window Attention</h3>
+          <p>各tokenのAttentionを近傍windowへ限定する疎Attention。Longformerはglobal tokenも組み合わせる。</p>
+          <a class="source" href="https://arxiv.org/abs/2004.05150" target="_blank" rel="noopener">出典: Longformer</a>
+        </article>
+        <article class="term">
+          <h3>Receptive Field</h3>
+          <p>ある上位表現へ情報が伝わり得る入力範囲。各層のwindowより層を重ねた範囲は広がるが、直接Attention範囲とは異なる。</p>
+          <a class="source" href="https://arxiv.org/abs/2310.06825" target="_blank" rel="noopener">出典: Mistral 7B</a>
+        </article>
+        <article class="term">
+          <h3>MQA / GQA</h3>
+          <p>Query headは複数のままK/Vを全headまたはgroup内で共有し、KV cacheとdecode帯域を減らす。</p>
+          <a class="source" href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">MQA</a> / <a class="source" href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">GQA</a>
+        </article>
+        <article class="term">
+          <h3>KV Cache</h3>
+          <p>自己回帰生成で、過去tokenのKey/Valueをlayerごとに保存して再計算を避けるmemory領域。</p>
+          <a class="source" href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">出典: Fast Transformer Decoding</a>
+        </article>
+        <article class="term">
+          <h3>Span Corruption / Sentinel</h3>
+          <p>連続token spanを固有のplaceholderへ置き換え、target側で欠落spanを復元するT5の事前学習。</p>
+          <a class="source" href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener">出典: T5</a>
+        </article>
+        <article class="term">
+          <h3>WordPiece</h3>
+          <p>subword語彙を学習し、語を既知部分へ分割するtokenization。BERT英語版は約30k語彙。</p>
+          <a class="source" href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">出典: BERT</a>
+        </article>
+        <article class="term">
+          <h3>Segment Embedding</h3>
+          <p>文ペアのtokenがsegment A/Bのどちらかを示す学習ベクトル。token・position embeddingへ加算する。</p>
+          <a class="source" href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">出典: BERT §3.1</a>
+        </article>
+        <article class="term">
+          <h3>MLM / NSP</h3>
+          <p>MLMはmasked token復元、NSPは2文が連続かの分類。BERTの自己教師ありpretraining objectives。</p>
+          <a class="source" href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">出典: BERT §3.2</a>
+        </article>
+        <article class="term">
+          <h3>Knowledge Distillation</h3>
+          <p>大きいteacherのsoft output distributionを小さいstudentへ移し、知識を保ちながら圧縮する。</p>
+          <a class="source" href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">出典: Hinton et al. (2015)</a>
+        </article>
+        <article class="term">
+          <h3>KL Divergence</h3>
+          <p>確率分布PをQで近似したときの情報差を測る非対称量。蒸留でteacherとstudentの分布を近づけるlossに使う。</p>
+          <a class="source" href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">出典: Distilling the Knowledge</a>
+        </article>
+        <article class="term">
+          <h3>Dynamic Masking</h3>
+          <p>同じ文でもepochごとにMLM対象を選び直し、より多様なcorruption patternを見せるRoBERTaの手法。</p>
+          <a class="source" href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener">出典: RoBERTa</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="references">
+      <h2>14. 参考資料</h2>
+      <ol class="refs">
+        <li><a href="https://www.youtube.com/watch?v=yT84Y5zCnaA" target="_blank" rel="noopener">Stanford Online — CME295 Lecture 2: Transformer-Based Models &amp; Tricks</a></li>
+        <li><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">CME295 official syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture2.pdf" target="_blank" rel="noopener">official Lecture 2 slides</a></li>
+        <li>Vaswani et al. (2017), <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener"><em>Attention Is All You Need</em></a>.</li>
+        <li>Raffel et al. (2020), <a href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener"><em>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</em></a>.</li>
+        <li>Press, Smith &amp; Lewis (2022), <a href="https://arxiv.org/abs/2108.12409" target="_blank" rel="noopener"><em>Train Short, Test Long: Attention with Linear Biases</em></a>.</li>
+        <li>Su et al. (2021), <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener"><em>RoFormer: Enhanced Transformer with Rotary Position Embedding</em></a>.</li>
+        <li>Ba, Kiros &amp; Hinton (2016), <a href="https://arxiv.org/abs/1607.06450" target="_blank" rel="noopener"><em>Layer Normalization</em></a>.</li>
+        <li>Xiong et al. (2020), <a href="https://arxiv.org/abs/2002.04745" target="_blank" rel="noopener"><em>On Layer Normalization in the Transformer Architecture</em></a>.</li>
+        <li>Zhang &amp; Sennrich (2019), <a href="https://arxiv.org/abs/1910.07467" target="_blank" rel="noopener"><em>Root Mean Square Layer Normalization</em></a>.</li>
+        <li>Beltagy, Peters &amp; Cohan (2020), <a href="https://arxiv.org/abs/2004.05150" target="_blank" rel="noopener"><em>Longformer: The Long-Document Transformer</em></a>.</li>
+        <li>Shazeer (2019), <a href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener"><em>Fast Transformer Decoding: One Write-Head is All You Need</em></a>.</li>
+        <li>Ainslie et al. (2023), <a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener"><em>GQA: Training Generalized Multi-Query Transformer Models</em></a>.</li>
+        <li>Devlin et al. (2019), <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener"><em>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</em></a>.</li>
+        <li>Peters et al. (2018), <a href="https://arxiv.org/abs/1802.05365" target="_blank" rel="noopener"><em>Deep Contextualized Word Representations</em></a>.</li>
+        <li>Xue et al. (2022), <a href="https://arxiv.org/abs/2105.13626" target="_blank" rel="noopener"><em>ByT5: Towards a Token-Free Future with Pre-trained Byte-to-Byte Models</em></a>.</li>
+        <li>Sanh et al. (2019), <a href="https://arxiv.org/abs/1910.01108" target="_blank" rel="noopener"><em>DistilBERT</em></a>.</li>
+        <li>Liu et al. (2019), <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener"><em>RoBERTa: A Robustly Optimized BERT Pretraining Approach</em></a>.</li>
+        <li>Hinton, Vinyals &amp; Dean (2015), <a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener"><em>Distilling the Knowledge in a Neural Network</em></a>.</li>
+      </ol>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
+      <p>画面キャプチャは講義内容を説明するための少数引用で、各画像から該当時刻へリンクしています。公式資料・原論文による補足は、講義内の説明そのものではなく正確性を補う付記です。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=yT84Y5zCnaA" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）＋ ffmpeg 動画フレーム抽出 ／ 生成日: 2026-07-20</p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="図と画面キャプチャの拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const themeAttr = document.documentElement.getAttribute('data-theme');
+  const isDark = themeAttr ? themeAttr === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: isDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const tocPanel = document.querySelector('.toc-panel');
+  const mobileToc = window.matchMedia('(max-width: 900px)');
+  const syncTocState = (event) => {
+    if (!tocPanel) return;
+    if (event.matches) tocPanel.removeAttribute('open');
+    else tocPanel.setAttribute('open', '');
+  };
+  syncTocState(mobileToc);
+  mobileToc.addEventListener('change', syncTocState);
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const item = document.createElement('li');
+      item.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      item.appendChild(anchor);
+      toc.appendChild(item);
+    });
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [bbox.x-padding, bbox.y-padding, bbox.width+padding*2, bbox.height+padding*2].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: .4, maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const ns = 'http://www.w3.org/2000/svg';
+    const width = img.naturalWidth || 1280;
+    const height = img.naturalHeight || 720;
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(ns, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', width);
+    image.setAttribute('height', height);
+    svg.appendChild(image);
+    modalBody.appendChild(svg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: .4, maxZoom: 12
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid 図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '画面キャプチャを拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openImageFromElement(img);
+      }
+    });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
