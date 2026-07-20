@@ -6,8 +6,8 @@
 <meta name="color-scheme" content="light dark" />
 <link rel="stylesheet" href="../assets/stash-theme.css" />
 <script src="../assets/stash-theme.js"></script>
-<title>Stanford CME295 Lecture 3「Large Language Models」日本語要約</title>
-<meta name="description" content="Stanford CME295 Lecture 3を英語字幕全文と公式スライド125ページから再構成。LLM、MoE、デコーディング、prompting、CoT、KV cache、PagedAttention、MLA、speculative decoding、MTPを網羅。" />
+<title>Stanford CME295 Lecture 3「Large Language Models」日本語要約【講義スライド11枚付き】</title>
+<meta name="description" content="Stanford CME295 Lecture 3を英語字幕全文、公式スライド125ページ、講義映像から確認したスライド11枚で再構成。LLM、MoE、デコーディング、prompting、CoT、KV cache、PagedAttention、MLA、speculative decoding、MTPを網羅。" />
 <style>
   :root {
     --sidebar-w: 286px;
@@ -210,6 +210,35 @@
     font-size: 12px;
     font-weight: 400;
   }
+  figure.shot { margin: 24px 0; }
+  figure.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
   .mermaid {
     margin: 20px 0;
     padding: 18px;
@@ -302,8 +331,8 @@
   <main>
     <header class="page">
       <div class="eyebrow">Stanford CME295 / YouTube lecture summary</div>
-      <h1>Lecture 3「Large Language Models」日本語要約</h1>
-      <p class="lead">LLMの定義から、MoE、token生成、prompting、推論時のmemory・latency最適化までを一続きで理解する。講義内容と一次資料による補足は明示的に分離した。</p>
+      <h1>Lecture 3「Large Language Models」日本語要約【講義スライド11枚付き】</h1>
+      <p class="lead">LLMの定義から、MoE、token生成、prompting、推論時のmemory・latency最適化までを一続きで理解する。講義映像から確認したスライド11枚を添え、講義内容と一次資料による補足は明示的に分離した。</p>
     </header>
 
     <dl class="meta-card" aria-label="出典メタデータ">
@@ -311,9 +340,8 @@
       <div><dt>講師</dt><dd>Afshine Amidi / Shervine Amidi</dd></div>
       <div><dt>講義日 / 公開日</dt><dd>2025-10-10 / 2025-10-17</dd></div>
       <div><dt>コース</dt><dd>CME295 Transformers &amp; LLMs（Autumn 2025）</dd></div>
-      <div><dt>長さ</dt><dd>1:48:45</dd></div>
-      <div><dt>取得手段</dt><dd>yt-dlp 英語自動字幕＋Stanford公式スライド</dd></div>
-      <div><dt>取得量</dt><dd>字幕 5,205 cues（重複除去後 2,487行・14,087語）/ スライド125ページ</dd></div>
+      <div><dt>所要時間 / 取得量</dt><dd>1:48:45 / 字幕 5,205 cues（重複除去後 2,487行・14,087語）/ スライド125ページ / 講義フレーム11枚</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語自動字幕・720p動画＋Stanford公式スライド</dd></div>
       <div><dt>公式教材</dt><dd><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">Syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture3.pdf" target="_blank" rel="noopener">Lecture 3 slides</a></dd></div>
       <div style="grid-column:1/-1;">
         <dt>タグ</dt>
@@ -373,6 +401,11 @@
         ŷ = ∑<sub>i=1</sub><sup>N</sup> G<sub>i</sub>(x) E<sub>i</sub>(x)
         <small>Dense MoEは全expertを重み付き合成し、Sparse MoEはrouter確率のtop-k expertだけを計算する。</small>
       </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/01-sparse-moe.jpg" alt="講義室の投影画面に、Sparse MoEのrouter G、選択されたexpert E2、top-k選択と重み付き出力式が示されている" loading="lazy" />
+        <figcaption>「Overview of MoEs」のSparse MoEスライド。router出力の一部を×で除外し、選択されたexpertだけを重み付き合成する図と式が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=840s" target="_blank" rel="noopener">14:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>左のgate <code>G</code>はtokenごとのrouting scoreを作り、top-k外の経路を切る。右の総和が全expertではなく選択集合へ限定されることが、総parameter数を増やしながら1 token当たりのactive computeを抑える核心である。</p>
       <div class="mermaid">
 flowchart LR
   X["token表現 x"] --> G["Router / Gate G(x)"]
@@ -418,6 +451,11 @@ flowchart LR
         P<sub>i</sub> = (1/T)∑<sub>x∈B</sub> p<sub>i</sub>(x)
         <small>fᵢはexpert iへ実際に送られたtoken比率、Pᵢはrouterがexpert iへ与えた平均確率。双方が1/Nに近い状態を促す。</small>
       </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/02-routing-load-balance.jpg" alt="講義室の投影画面に、routing collapseへの補助lossと、token比率fi・平均routing確率Piの定義が示されている" loading="lazy" />
+        <figcaption>「Training challenges include routing collapse」の対策スライド。補助loss <code>αNΣfᵢPᵢ</code>と、<code>fᵢ</code>・<code>Pᵢ</code>の意味が投影されている。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=1340s" target="_blank" rel="noopener">22:20</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>実際の割当比率 <code>fᵢ</code>とsoftな平均確率 <code>Pᵢ</code>を同時に見ることで、「同じexpertばかりが選ばれる」状態へ罰則を与える。hard assignment自体の微分可能性は、この直後の一次資料補足で区別する。</p>
       <p>講義ではmini-batchごとにこれらを計算し、主lossと一緒にbackpropagationすると説明する。dropoutを併用でき、router logitへnoiseを加えて他expertにも機会を与えるnoisy gatingも紹介する。</p>
       <div class="callout warning">
         <strong>一次資料による補足：hard routingはどう微分するか</strong>
@@ -452,6 +490,11 @@ flowchart LR
         <li><strong>Top-k:</strong> 確率上位k tokenだけを残し、再正規化してsampleする。講義例は<code>k=4</code>。</li>
         <li><strong>Top-p:</strong> 確率の高い順に足し、累積確率が<code>p</code>以上になる最小集合からsampleする。講義例は<code>p=0.9</code>。</li>
       </ul>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/03-top-k-top-p.jpg" alt="Sampling strategiesスライドに、top-kのk=4と、top-pの累積確率p=90パーセントの候補選択グラフが並ぶ" loading="lazy" />
+        <figcaption>Sampling strategiesの比較。top-kは上位4 token、top-pは累積確率90%へ達する最小token集合を候補にする例が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3005s" target="_blank" rel="noopener">50:05</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>top-kは棒の高さに関係なく候補数を4へ固定する一方、top-pは分布の質量を基準に集合sizeを変える。右下の棒グラフは、token順位ではなく累積確率がcutoffを決める点を可視化している。</p>
       <p>固定kと違い、top-pの候補数は分布の確信度に応じて変わる。尖った分布では少数、平坦な分布では多数を残す。これらはtraining手法ではなく、学習済みmodelのresponse generation時に使う。</p>
     </section>
 
@@ -461,6 +504,11 @@ flowchart LR
       <div class="formula">
         P(i) = exp(z<sub>i</sub>/T) / ∑<sub>j</sub> exp(z<sub>j</sub>/T)
       </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/04-temperature-softmax.jpg" alt="講義室の投影画面に、decoder出力からsoftmaxへ進む図とtemperature Tでlogitを割る確率式が示されている" loading="lazy" />
+        <figcaption>「Temperature allows to tweak output probabilities」のスライド。decoderのlogitをtemperature付きsoftmaxへ渡す流れと確率式が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3265s" target="_blank" rel="noopener">54:25</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong><code>T</code>はtoken候補の順位を直接入れ替えるのではなく、softmaxへ入るlogitの尺度を変える。小さい<code>T</code>は差を拡大し、大きい<code>T</code>は差を縮めるため、同じmodelから生成多様性を調整できる。</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Temperature</th><th>極限・形</th><th>生成の傾向</th></tr></thead>
@@ -482,6 +530,11 @@ flowchart LR
     <section id="guided-decoding">
       <h2>6. Guided decoding：invalid tokenを生成前に除く</h2>
       <p>JSONを求めて失敗するたび再試行するのはnaiveである。guided decodingは、生成済みprefixとschema・grammarから次に許されるtokenだけを残し、invalid tokenの確率を0にする。たとえばJSON先頭なら<code>{</code>、property名の後なら<code>:</code>など、状態ごとに候補を制約する。複数候補がvalidなら、その集合内で通常のsamplingを行う。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/05-guided-decoding-json.jpg" alt="guided decodingスライドに、teddy bearの説明をJSON形式で求めるpromptとfirst_name・last_name・age・hobbyを持つJSON出力例が並ぶ" loading="lazy" />
+        <figcaption>guided decodingの動機。左のpromptはJSON形式を要求し、右には <code>first_name</code>、<code>last_name</code>、<code>age</code>、<code>hobby</code>を持つ期待出力が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3960s" target="_blank" rel="noopener">1:06:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>promptでformatを「お願い」するだけでは、property欠落や構文errorを防げない。guided decodingは右側のshapeをschemaやgrammarとして機械的な制約へ変え、違反tokenをsampling候補へ入れない。</p>
       <div class="callout info">
         <strong>一次資料による補足：FSM・regular expression・CFG</strong>
         <p>Efficient Guided Generationは、regular expressionをfinite-state machineへ、JSON・Python・SQLなどをcontext-free grammar / parserへ対応付け、vocabulary indexからvalid token集合を効率的に取得する。単なる「JSONで答えて」というpromptより、構文的validityを生成過程で保証できる。</p>
@@ -539,6 +592,11 @@ flowchart LR
       </div>
       <h3>Self-Consistency</h3>
       <p>同じqueryから複数のCoT pathを独立sampleし、reasoning部分を除いたfinal answerを抽出してmajority voteする。講義例では「5、5、4」から5を選ぶ。answer位置を最後に固定するinstruction、regex、別LLMによるextractなどで集計する。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/06-self-consistency.jpg" alt="Self-consistencyスライドに、同じLLMから3本のreasoning pathが分岐し、答え5・5・4から5へ投票する図が示されている" loading="lazy" />
+        <figcaption>Self-consistencyの集約図。同じLLMから3本のreasoning pathをsampleし、2本が5、1本が4を出したため最終回答5へ集約している。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=4950s" target="_blank" rel="noopener">1:22:30</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>同一pathを長くするのではなく、独立した複数pathの最終回答をvoteする点が要点である。図の分岐は並列化できるが、3本なら生成computeも概ね3本分必要になる。</p>
       <ul>
         <li>各generationは互いをcontextへ入れず、並列にsampleできるためwall-clock latencyは概ね最遅branchに支配される。</li>
         <li>正答率向上を主張するにはground truth付きbenchmarkが必要で、元論文は算術・数学reasoning taskなどを評価する。</li>
@@ -567,6 +625,11 @@ flowchart TD
       <h2>11. KV cache・GQA・PagedAttention</h2>
       <h3>KV cache</h3>
       <p>自己回帰生成では、新tokenのqueryは毎回新しく必要だが、過去tokenのkey・valueは既に計算済みである。各layerのK/Vをcacheし、次stepで再利用すれば同じprojectionを繰り返さずに済む。trainingではteacher forcingでsequence全体を並列入力するため、逐次decode時と同じcache問題は通常生じない。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/07-kv-cache.jpg" alt="KV cachingスライドに、新tokenのqueryと、cacheから再利用される過去tokenのkey・valueを示す色付きベクトルが並ぶ" loading="lazy" />
+        <figcaption>KV cachingによる再利用。新tokenではqueryを計算する一方、過去tokenのkey・valueには「From cache」と表示され、再計算せずattentionへ渡す構造が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5355s" target="_blank" rel="noopener">1:29:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>赤い新queryに対し、青・緑のK/V列は前stepの結果を保持する。decodeが1 token進むたびに過去全tokenのK/V projectionをやり直す無駄を消す代わりに、sequence長に比例するcache memoryを使う。</p>
       <div class="callout info">
         <strong>公式documentによる補足：cacheはspeedとmemoryの交換</strong>
         <p>Hugging Face TransformersはDynamic、Static、Quantized、offloaded cacheを提供する。cacheは再計算を減らす一方、contextとlayer数に応じてmemoryを消費する。Static cacheはcompileしやすいが未使用slotをmaskする無駄があり、quantization・offloadはmemoryを減らす代わりにthroughputへ影響し得る。</p>
@@ -579,6 +642,11 @@ flowchart TD
       </div>
       <h3>PagedAttentionで予約領域を細分化する</h3>
       <p>naive serverは生成lengthがEOSまで不明なためrequestごとに最大context長のcontiguous memoryを予約し、internal・external fragmentationを生む。PagedAttentionはOSのvirtual memoryに似てKV cacheを固定size blockへ分け、logical token blockを非連続physical blockへmapする。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/08-paged-attention.jpg" alt="PagedAttentionスライドに、複数requestの予約memory、internal fragmentation、external fragmentationを色分けした横長の配置図が示されている" loading="lazy" />
+        <figcaption>naiveなKV cache管理の断片化。複数requestのtoken領域、未使用予約領域、internal fragmentation、領域間のexternal fragmentationが横棒で色分けされている。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5700s" target="_blank" rel="noopener">1:35:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>sequenceがいつEOSへ達するか不明なため、連続領域を大きく予約すると「block内の余り」と「block間の隙間」が同時に生じる。PagedAttentionはlogical blockとphysical blockを分離し、この図の空白を小さなblock単位で再利用する。</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>無駄</th><th>意味</th><th>PagedAttentionの対応</th></tr></thead>
@@ -605,6 +673,11 @@ flowchart TD
         v<sub>t</sub><sup>C</sup> = W<sup>UV</sup>c<sub>t</sub><sup>KV</sup>
         <small>d<sub>c</sub> ≪ d<sub>h</sub>n<sub>h</sub>。低rank次元d<sub>c</sub>は学習中に自動決定される値ではなくarchitectureのdesign choice。</small>
       </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/09-mla-latent-cache.jpg" alt="MLAスライドに、teddyとbearのtoken表現をshared down-projectionで細いlatentへ圧縮し、shared up-projectionで展開する図が示されている" loading="lazy" />
+        <figcaption>MLAのlatent圧縮。token表現をshared matrixで低次元の細いlatentへ縮約し、必要時にshared up-projectionでK/V表現へ戻す模式図が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5955s" target="_blank" rel="noopener">1:39:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>cacheへ残すのは右端の大きなhead別表現ではなく、中央の細いlatentである。K/Vとhead間で圧縮表現を共有するため、GQAとは異なるlow-rank方向からmemoryを削減する。</p>
       <div class="callout warning">
         <strong>一次資料による精密化：実際のcacheはlatentだけではない</strong>
         <p>講義は「layerごとにtoken当たり1つの共有表現」と直観化する。DeepSeek-V2論文では、通常のRoPEをcompressed keyへ直接適用するとup-projectionをquery側へ吸収できないため、RoPE用のshared keyを分離する<strong>decoupled RoPE</strong>を導入する。実装上はcompressed latentに加え、この小さなRoPE keyもcache対象になる。なおスライド表記の“DeepSeek-V2, 2023”に対し、arXiv初版は2024年5月である。</p>
@@ -615,6 +688,11 @@ flowchart TD
     <section id="speculative">
       <h2>13. Speculative decoding：小modelのdraftを大modelが検証</h2>
       <p>draft model <code>p</code>がk tokenを高速に自己回帰生成し、target model <code>q</code>へdraft列をまとめて入力する。Transformerは短いcontinuationを並列scoreでき、memory-bandwidth-boundな大modelではk tokenを一括評価するlatencyが1 token評価に近い場合がある。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/10-speculative-decoding.jpg" alt="speculative decodingスライドに、BOS・A・teddy・bearに続いてDraft LLMがis・cute・and・smartを予測する図が示されている" loading="lazy" />
+        <figcaption>Draft LLMによる先読み。prefix「BOS A teddy bear」に続く <code>is / cute / and / smart</code> の4 token候補を小modelが順に作る段階が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=6175s" target="_blank" rel="noopener">1:42:55</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>図の4候補はまだ確定出力ではない。draft modelは安く先読みし、次段でtarget modelが各位置をまとめてscoreしてaccept/rejectするため、qualityの基準をtarget側へ残したまま逐次呼び出し回数を減らせる。</p>
       <ol>
         <li>draft modelで<code>x̃<sub>1:k</sub></code>を生成する。</li>
         <li>target modelを1回呼び、各位置の<code>q<sub>1:k+1</sub></code>を並列計算する。</li>
@@ -635,6 +713,11 @@ flowchart TD
     <section id="mtp">
       <h2>14. Multi-Token Prediction（MTP）</h2>
       <p>MTPはshared Transformer trunkの上に、<code>t+1, t+2, …, t+k</code>を予測する複数headを付けてtraining objective自体を変える。test時には追加head群を同一model内のdraftとして使い、main next-token headで検証するself-speculative decodingが可能になる。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/11-multi-token-prediction.jpg" alt="MTPスライドに、shared Transformer trunkの上でt+1からt+kまでを予測する複数のprediction headが並ぶ" loading="lazy" />
+        <figcaption>Multi-Token Predictionのarchitecture。shared trunkの上に <code>t+1 … t+k</code> の未来位置を担当する複数headを置き、複数tokenを同時に予測する構成が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=6435s" target="_blank" rel="noopener">1:47:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>別のdraft modelを用意するspeculative decodingと違い、MTPはtraining時から同じtrunkに未来token headを持たせる。追加headをin-model draftとして使える一方、training objectiveとarchitectureの変更が必要になる。</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th></th><th>通常のspeculative decoding</th><th>MTP</th></tr></thead>
@@ -728,12 +811,13 @@ flowchart TD
     <footer class="page">
       <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
       <p>公式教材・原論文・公式documentによる補足は、講義内の説明そのものではなく、説明不足・保留・単純化された点を正確に補う付記です。</p>
-      <p>出典: <a href="https://www.youtube.com/watch?v=Q5baLehv5So" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）＋ Stanford公式スライド125ページ＋一次資料 ／ 生成日: 2026-07-20</p>
+      <p>講義フレーム11枚は理解に必要な要所へ限定した少数引用であり、各captionの時刻からYouTube上の該当箇所を確認できます。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=Q5baLehv5So" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）・720p動画フレーム11枚＋ Stanford公式スライド125ページ＋一次資料 ／ 生成日: 2026-07-20</p>
     </footer>
   </main>
 </div>
 
-<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="Mermaid図の拡大ビューア">
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="図と講義画面の拡大ビューア">
   <div class="modal-toolbar">
     <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
     <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
@@ -818,6 +902,35 @@ flowchart TD
     panZoomInstance.fit();
     panZoomInstance.center();
   }
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const svgNamespace = 'http://www.w3.org/2000/svg';
+    const width = img.naturalWidth || 1280;
+    const height = img.naturalHeight || 720;
+    const svg = document.createElementNS(svgNamespace, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(svgNamespace, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', width);
+    image.setAttribute('height', height);
+    svg.appendChild(image);
+    modalBody.appendChild(svg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: .4, maxZoom: 12
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
   function closeModal() {
     const modal = document.getElementById('diagramModal');
     const modalBody = document.getElementById('modalBody');
@@ -850,6 +963,19 @@ flowchart TD
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         openDiagramFromElement(diagram);
+      }
+    });
+  });
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '講義画面を拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openImageFromElement(img);
       }
     });
   });
