@@ -498,6 +498,16 @@ flowchart TD
       </div>
       <p class="diagram-hint">図をクリックすると拡大・ドラッグ・ズームできます。</p>
 
+      <div class="callout info">
+        <strong>まずは3用語をひとことで</strong>
+        <ul>
+          <li><strong>Word2vec</strong>：単語を数値ベクトルに変え、似た文脈で使われる単語ほど近くに配置する手法。単語ごとに固定の「意味の座標」を作るイメージ。</li>
+          <li><strong>RNN（Recurrent Neural Network）</strong>：文章を先頭から順に読み、直前までの内容を短いメモとして次の単語へ渡すニューラルネットワーク。</li>
+          <li><strong>LSTM（Long Short-Term Memory）</strong>：RNN のメモに「覚える・忘れる・読み出す」を調整する仕組みを加え、前に出た情報をより長く残しやすくした改良版。</li>
+        </ul>
+        <p>大まかには、Word2vec が単語の意味を数値化し、RNN がその単語を順番に読み、LSTM が RNN の記憶を長持ちさせる、という関係にある。</p>
+      </div>
+
       <p>歴史的にも、RNN 系の考えは1980年代、LSTM は1990年代、Word2vec は2013年、ニューラル機械翻訳の Attention は2014年、Transformer は2017年に登場した。講師は、古いアイデアが当時すぐ現在の規模へ進めなかった背景として、インターネット由来のデータと計算資源の不足を挙げる。2020年代にはデータ・計算量・モデル規模が拡大し、LLM が広く認知されるようになった。</p>
     </section>
 
