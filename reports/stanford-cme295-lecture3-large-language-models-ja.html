@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<link rel="stylesheet" href="../assets/stash-theme.css" />
+<script src="../assets/stash-theme.js"></script>
+<title>Stanford CME295 Lecture 3「Large Language Models」日本語要約【講義スライド11枚付き】</title>
+<meta name="description" content="Stanford CME295 Lecture 3を英語字幕全文、公式スライド125ページ、講義映像から確認したスライド11枚で再構成。LLM、MoE、デコーディング、prompting、CoT、KV cache、PagedAttention、MLA、speculative decoding、MTPを網羅。" />
+<style>
+  :root {
+    --sidebar-w: 286px;
+    --content-max: 980px;
+    --radius: 14px;
+    --shadow: 0 8px 28px rgba(0,0,0,.34);
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.85;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--text); }
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+  aside.sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 18px;
+  }
+  .toc-panel > summary { display: none; color: var(--text); cursor: pointer; font-weight: 700; }
+  .toc-title {
+    margin: 0 0 10px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  aside.sidebar ol { list-style: none; padding: 0; margin: 0; }
+  aside.sidebar li { margin: 2px 0; }
+  aside.sidebar a {
+    display: block;
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    border-radius: 0 7px 7px 0;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height: 1.45;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  aside.sidebar a:hover { color: var(--text); background: rgba(127,127,127,.07); text-decoration: none; }
+  aside.sidebar a.active {
+    border-left-color: var(--accent);
+    background: rgba(127,127,127,.1);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  aside.sidebar li.lvl-3 a { padding-left: 22px; font-size: 12.5px; }
+  main { width: min(100%, var(--content-max)); margin: 0 auto; padding: 48px 28px 96px; }
+  header.page { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  header.page .eyebrow {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  header.page h1 { margin: 8px 0 12px; font-size: clamp(28px, 4vw, 42px); line-height: 1.3; }
+  header.page .lead { margin: 0; color: var(--text-dim); font-size: 16px; }
+  .meta-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px;
+    margin: 20px 0 32px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    font-size: 14px;
+  }
+  .meta-card dt { color: var(--text-dim); font-size: 12px; letter-spacing: .04em; }
+  .meta-card dd { margin: 0 0 7px; color: var(--text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .tldr, .callout, .source-note {
+    margin: 24px 0;
+    padding: 17px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .tldr h2 { margin: 0 0 10px; color: var(--accent); font-size: 17px; letter-spacing: .04em; }
+  .callout { border-left: 3px solid var(--accent); }
+  .callout strong { color: var(--accent); }
+  .callout.info { border-left-color: var(--link); }
+  .callout.info strong { color: var(--link); }
+  .callout.warning { border-left-color: #f59e0b; }
+  .callout.warning strong { color: #f59e0b; }
+  .callout p:last-child, .source-note p:last-child { margin-bottom: 0; }
+  .source-note { border-style: dashed; }
+  section { margin: 48px 0; scroll-margin-top: 24px; }
+  section h2 {
+    display: inline-block;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    font-size: 23px;
+    line-height: 1.45;
+  }
+  section h3 { margin: 28px 0 9px; color: var(--accent); font-size: 18px; }
+  section h4 { margin: 18px 0 6px; font-size: 15px; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 12px 0; padding-left: 23px; }
+  li { margin: 6px 0; }
+  code {
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    font-size: .92em;
+  }
+  .table-wrap { width: 100%; overflow-x: auto; margin: 17px 0; }
+  table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    overflow: hidden;
+  }
+  th, td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+  }
+  thead th {
+    background: rgba(127,127,127,.08);
+    color: var(--text-dim);
+    font-size: 12.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .card {
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .card h4 { margin: 0 0 6px; color: var(--accent); font-size: 14px; }
+  .card p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .stat-card {
+    padding: 14px 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .stat-card .num { color: var(--accent); font-size: 25px; font-weight: 800; line-height: 1.2; }
+  .stat-card .label { margin-top: 4px; color: var(--text-dim); font-size: 12px; line-height: 1.5; }
+  .formula {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: clamp(14px, 2.2vw, 20px);
+    font-weight: 700;
+    overflow-x: auto;
+  }
+  .formula small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  figure.shot { margin: 24px 0; }
+  figure.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    cursor: zoom-in;
+  }
+  figure.shot img:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  figure.shot figcaption {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  figure.shot figcaption .ts {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .mermaid {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    text-align: center;
+    overflow-x: auto;
+    cursor: zoom-in;
+  }
+  .mermaid:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .diagram-hint { margin: -10px 0 18px; color: var(--text-dim); font-size: 12px; text-align: center; }
+  .refs { padding-left: 22px; }
+  .refs li { margin: 9px 0; word-break: break-word; }
+  footer.page {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  footer.page .disclaimer { font-size: 12.5px; opacity: .95; }
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    padding: 22px;
+    background: rgba(9,20,38,.82);
+  }
+  .modal.is-open { display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+  .modal-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .modal-button {
+    appearance: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-button:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-body {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .modal-body svg { width: 100%; height: 100%; min-height: 70vh; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); width: 100%; }
+    aside.sidebar {
+      position: static;
+      height: auto;
+      min-width: 0;
+      max-width: 100%;
+      padding: 14px 20px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .toc-panel > summary { display: block; }
+    .toc-title { display: none; }
+    aside.sidebar ol { margin-top: 10px; }
+    main { min-width: 0; max-width: 100%; padding: 36px 20px 80px; }
+  }
+  @media (max-width: 720px) {
+    .modal { padding: 12px; }
+    .modal-toolbar { justify-content: center; }
+    .modal-button { padding: 7px 10px; }
+    .meta-card { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="目次">
+    <details class="toc-panel" open>
+      <summary>目次を開く / 閉じる</summary>
+      <p class="toc-title">Contents</p>
+      <ol id="toc"></ol>
+    </details>
+  </aside>
+
+  <main>
+    <header class="page">
+      <div class="eyebrow">Stanford CME295 / YouTube lecture summary</div>
+      <h1>Lecture 3「Large Language Models」日本語要約【講義スライド11枚付き】</h1>
+      <p class="lead">LLMの定義から、MoE、token生成、prompting、推論時のmemory・latency最適化までを一続きで理解する。講義映像から確認したスライド11枚を添え、講義内容と一次資料による補足は明示的に分離した。</p>
+    </header>
+
+    <dl class="meta-card" aria-label="出典メタデータ">
+      <div><dt>出典</dt><dd><a href="https://www.youtube.com/watch?v=Q5baLehv5So" target="_blank" rel="noopener">Stanford Online / YouTube</a></dd></div>
+      <div><dt>講師</dt><dd>Afshine Amidi / Shervine Amidi</dd></div>
+      <div><dt>講義日 / 公開日</dt><dd>2025-10-10 / 2025-10-17</dd></div>
+      <div><dt>コース</dt><dd>CME295 Transformers &amp; LLMs（Autumn 2025）</dd></div>
+      <div><dt>所要時間 / 取得量</dt><dd>1:48:45 / 字幕 5,205 cues（重複除去後 2,487行・14,087語）/ スライド125ページ / 講義フレーム11枚</dd></div>
+      <div><dt>取得手段</dt><dd>yt-dlp 英語自動字幕・720p動画＋Stanford公式スライド</dd></div>
+      <div><dt>公式教材</dt><dd><a href="https://cme295.stanford.edu/syllabus/" target="_blank" rel="noopener">Syllabus</a> / <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture3.pdf" target="_blank" rel="noopener">Lecture 3 slides</a></dd></div>
+      <div style="grid-column:1/-1;">
+        <dt>タグ</dt>
+        <dd class="badges">
+          <span class="badge">Mixture of Experts</span>
+          <span class="badge">Decoding</span>
+          <span class="badge">Prompting</span>
+          <span class="badge">KV Cache</span>
+          <span class="badge">Speculative Decoding</span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="tldr">
+      <h2>3 行サマリ</h2>
+      <ul>
+        <li>現代的なLLMは巨大なdecoder-only Transformerであり、<strong>MoEは総parameter数を増やしつつtokenごとのactive parameterと計算量を抑える</strong>。</li>
+        <li>生成品質はgreedy・beam・top-k・top-p・temperature・guided decodingで制御し、promptではcontext・instructions・input・constraintsを組み立て、ICL・CoT・self-consistencyを使い分ける。</li>
+        <li>推論はKV cache、GQA、PagedAttention、MLA、speculative decoding、MTPにより、再計算・memory断片化・帯域律速・逐次生成をそれぞれ減らす。</li>
+      </ul>
+    </div>
+
+    <div class="source-note">
+      <p><strong>読み分け:</strong> 通常の本文・表は講義と公式スライドの再構成である。青・黄の「一次資料による補足／補正」は、講義で省略・保留・単純化された点を原論文や公式文書で補ったもので、講師の発言そのものではない。</p>
+    </div>
+
+    <section id="overview">
+      <h2>1. Transformer 3系統とLLMの定義</h2>
+      <p>冒頭では前2回を復習する。Transformer系モデルは、encoder-decoder、encoder-only、decoder-onlyの3系統に分かれる。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>系統</th><th>主な入出力・用途</th><th>講義の例</th></tr></thead>
+          <tbody>
+            <tr><td>Encoder–Decoder</td><td>入力textをencodeし、decoderが別のtextを生成する。</td><td>T5、mT5、ByT5</td></tr>
+            <tr><td>Encoder-only</td><td>文・documentを意味のあるembeddingへ変換し、<code>[CLS]</code>表現などをclassificationへ使う。</td><td>BERT、DistilBERT、RoBERTa</td></tr>
+            <tr><td>Decoder-only</td><td>causal masked self-attentionで次tokenを自己回帰生成する。encoderがないのでcross-attentionは除く。</td><td>GPT、LLaMA、Gemma、DeepSeek、Mistral、Qwen</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>講義でのLLMは、単にparameterが多いモデルではなく、<strong>token列へ確率を割り当て、次tokenを予測する大規模language model</strong>である。現代的な用法ではtextを生成するdecoder-only modelを指し、BERTのようなencoder-only modelはこの定義から外す。</p>
+      <div class="formula">
+        P(x<sub>1:T</sub>) = ∏<sub>t=1</sub><sup>T</sup> P(x<sub>t</sub> | x<sub>&lt;t</sub>)
+        <small>自己回帰language modelは、各位置の「それまでのtokenを条件とした次token確率」の積としてsequence確率を表す。</small>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">10<sup>9</sup>+</div><div class="label">講義が示すparameter規模の目安。実際には数百billion級も一般的。</div></div>
+        <div class="stat-card"><div class="num">10<sup>11</sup>–10<sup>13</sup></div><div class="label">pretraining token数の概数。数百billionから数十trillion。</div></div>
+        <div class="stat-card"><div class="num">多数のGPU</div><div class="label">training・inferenceとも大きなcomputeを要するが、consumer GPU向け最適化も進む。</div></div>
+      </div>
+      <p>「LLM」という呼称は比較的新しく、2018–2019年ごろには現在ほど定義が固まっていなかった。講義では、現代のLLMの90%以上はdecoder-onlyという概算も示す。</p>
+    </section>
+
+    <section id="moe-basics">
+      <h2>2. Mixture of Experts：全parameterを毎回使わない</h2>
+      <p>巨大modelへ単純な質問をするたびに全parameterを動かす必要はあるのか。講義は「数学者・物理学者・化学者・歴史家がいる部屋で数学の質問を誰へ聞くか」という比喩を使う。input <code>x</code>からrouter（gate）<code>G</code>がexpertの重みを決め、expert <code>E<sub>i</sub></code>の出力を合成するのがMoEである。</p>
+      <div class="formula">
+        ŷ = ∑<sub>i=1</sub><sup>N</sup> G<sub>i</sub>(x) E<sub>i</sub>(x)
+        <small>Dense MoEは全expertを重み付き合成し、Sparse MoEはrouter確率のtop-k expertだけを計算する。</small>
+      </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/01-sparse-moe.jpg" alt="講義室の投影画面に、Sparse MoEのrouter G、選択されたexpert E2、top-k選択と重み付き出力式が示されている" loading="lazy" />
+        <figcaption>「Overview of MoEs」のSparse MoEスライド。router出力の一部を×で除外し、選択されたexpertだけを重み付き合成する図と式が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=840s" target="_blank" rel="noopener">14:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>左のgate <code>G</code>はtokenごとのrouting scoreを作り、top-k外の経路を切る。右の総和が全expertではなく選択集合へ限定されることが、総parameter数を増やしながら1 token当たりのactive computeを抑える核心である。</p>
+      <div class="mermaid">
+flowchart LR
+  X["token表現 x"] --> G["Router / Gate G(x)"]
+  G -->|"top-k選択"| E1["Expert 1: FFN"]
+  G --> E2["Expert 2: FFN"]
+  G --> EN["Expert N: FFN"]
+  E1 --> Y["重み付き出力 ŷ"]
+  E2 --> Y
+  EN --> Y
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・移動できる。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>routerの扱い</th><th>compute上の含意</th></tr></thead>
+          <tbody>
+            <tr><td>Dense MoE</td><td>全expertに0–1の重みを与える。</td><td>専門性は分けられるが、全expertを計算するためcompute削減は限定的。</td></tr>
+            <tr><td>Sparse MoE</td><td>top-k（典型的にはk=1または2）だけを選ぶ。</td><td>総capacityを増やしながら、1 forward passのactive parameterを制御できる。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>講義は計算量の尺度としてFLOPを紹介する。forward pass中の浮動小数点addition・multiplicationなどの<strong>operation数</strong>を数え、Sparse MoEはDense MoEよりFLOPを減らせる。</p>
+      <div class="callout info">
+        <strong>一次資料による補足：FLOPとFLOP/s</strong>
+        <p>FLOPはfloating-point operation、FLOP/sは1秒あたりの実行率である。operation数が減っても、expert間通信・memory access・load imbalanceにより実時間が同率で短くなるとは限らない。</p>
+      </div>
+    </section>
+
+    <section id="moe-transformer">
+      <h2>3. Transformer内部のMoEとrouting collapse</h2>
+      <h3>なぜFFNをexpertへ置き換えるのか</h3>
+      <p>decoder blockの候補はmasked self-attention、FFN、normalizationである。講義では、FFNが<code>d<sub>model</sub></code>から大きな<code>d<sub>ff</sub></code>へ拡張して戻すためparameterの大部分を占めることから、ここを複数FFN expertへ置き換える。</p>
+      <div class="formula">
+        Params(FFN) ≈ 2 d<sub>model</sub>d<sub>ff</sub> + bias
+        <small>各Transformer blockにlayer固有のrouterとexpert群を置き、routingはattention後のcontextualized tokenごとに行う。</small>
+      </div>
+      <p>同じsequence内でもtokenごと、blockごとに選ばれるexpertは異なる。attention headごとにrouterを置くのではない。multi-head attentionの出力をconcatenateして<code>d<sub>model</sub></code>へ戻した後、layer固有routerがtop-k expertを選ぶ。</p>
+
+      <h3>routing collapseとload-balancing loss</h3>
+      <p>共同学習を素朴に行うと、一部のexpertだけが選ばれ続け、他が学習されないrouting collapseが起こり得る。Switch Transformerの補助lossは、batch内のroutingをuniformへ近づける。</p>
+      <div class="formula">
+        L<sub>aux</sub> = αN ∑<sub>i=1</sub><sup>N</sup> f<sub>i</sub>P<sub>i</sub><br />
+        f<sub>i</sub> = (1/T)∑<sub>x∈B</sub> 1[argmax p(x)=i],&nbsp;
+        P<sub>i</sub> = (1/T)∑<sub>x∈B</sub> p<sub>i</sub>(x)
+        <small>fᵢはexpert iへ実際に送られたtoken比率、Pᵢはrouterがexpert iへ与えた平均確率。双方が1/Nに近い状態を促す。</small>
+      </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/02-routing-load-balance.jpg" alt="講義室の投影画面に、routing collapseへの補助lossと、token比率fi・平均routing確率Piの定義が示されている" loading="lazy" />
+        <figcaption>「Training challenges include routing collapse」の対策スライド。補助loss <code>αNΣfᵢPᵢ</code>と、<code>fᵢ</code>・<code>Pᵢ</code>の意味が投影されている。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=1340s" target="_blank" rel="noopener">22:20</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>実際の割当比率 <code>fᵢ</code>とsoftな平均確率 <code>Pᵢ</code>を同時に見ることで、「同じexpertばかりが選ばれる」状態へ罰則を与える。hard assignment自体の微分可能性は、この直後の一次資料補足で区別する。</p>
+      <p>講義ではmini-batchごとにこれらを計算し、主lossと一緒にbackpropagationすると説明する。dropoutを併用でき、router logitへnoiseを加えて他expertにも機会を与えるnoisy gatingも紹介する。</p>
+      <div class="callout warning">
+        <strong>一次資料による補足：hard routingはどう微分するか</strong>
+        <p>講義Q&amp;Aでは<code>f<sub>i</sub></code>の微分が保留された。Switch Transformer論文は、argmax由来の<code>f</code> vectorは<strong>非微分可能</strong>、softmax確率由来の<code>P</code> vectorは微分可能と明記する。実装では選択件数<code>f</code>をbatch統計として扱い、勾配は<code>P</code>を通じてrouterへ流れる。論文では<code>α=10<sup>−2</sup></code>を使用した。</p>
+        <p><a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener">一次資料: Switch Transformers, Eq. 4–6</a></p>
+      </div>
+      <p>expert数を増やせば総parameter数とmodel capacityは増えるが、top-kを固定すればactive parameterは抑えられる。Switch Transformerはtrillion-parameterへscaleし、同じqualityへより早く到達するsample efficiencyも報告した。ただし講義が繰り返す通り、parameter・compute・communication・training安定性のtrade-offである。</p>
+      <p>最後にMixtral論文の可視化を示し、あるlayerで各tokenがどのexpertへ送られたかを色分けする。全tokenが同色ならcollapseの兆候で、複数色へ分散していればexpertが使い分けられている。</p>
+    </section>
+
+    <section id="decoding">
+      <h2>4. 次token生成：greedy・beam・sampling</h2>
+      <p>decoder-only LLMは<code>[BOS] → A → teddy → bear → is → ...</code>と、生成済みprefixを再入力して次token分布を得る。ここで「どのtokenを選ぶか」はmodel本体とは別のdecoding policyである。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>操作</th><th>長所</th><th>限界</th></tr></thead>
+          <tbody>
+            <tr><td>Greedy decoding</td><td>毎stepで最大確率tokenを選ぶ。</td><td>単純・高速・理論上deterministic。</td><td>局所最適でsequence全体の最適を保証せず、同じ入力から同じ出力で多様性がない。</td></tr>
+            <tr><td>Beam search</td><td>beam width k本の高確率prefixを保持し、各stepで展開・剪定する。</td><td>greedyよりglobal optimumへ近い候補を探せる。</td><td>計算・memoryが増え、もっともらしさを優先して創造性に乏しい。翻訳などに向く。</td></tr>
+            <tr><td>Sampling</td><td>次token分布から確率的にsampleする。</td><td>自然さ・多様性・創造性を得やすい。</td><td>低確率の不自然なtokenも理論上は選ばれるため、候補制限が必要。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Beam scoreとlength bias</h3>
+      <div class="formula">
+        log P(x<sub>1:T</sub>) = ∑<sub>t=1</sub><sup>T</sup> log P(x<sub>t</sub>|x<sub>&lt;t</sub>)
+        <small>0–1の確率を掛け続けるほど長いsequenceはscoreが小さくなるため、実用beam searchではlength penaltyなどで短文偏重を補正する。</small>
+      </div>
+      <p>講義例では、最初に0.8のbranchを選んでも後続確率が低ければ、最初は0.2でも後続が高いbranchのsequence確率が上回り得る。beam searchは複数branchを保持してこの局所性を和らげるが、完全探索ではないためglobal optimumを保証しない。</p>
+      <h3>Top-kとTop-p（nucleus）</h3>
+      <ul>
+        <li><strong>Top-k:</strong> 確率上位k tokenだけを残し、再正規化してsampleする。講義例は<code>k=4</code>。</li>
+        <li><strong>Top-p:</strong> 確率の高い順に足し、累積確率が<code>p</code>以上になる最小集合からsampleする。講義例は<code>p=0.9</code>。</li>
+      </ul>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/03-top-k-top-p.jpg" alt="Sampling strategiesスライドに、top-kのk=4と、top-pの累積確率p=90パーセントの候補選択グラフが並ぶ" loading="lazy" />
+        <figcaption>Sampling strategiesの比較。top-kは上位4 token、top-pは累積確率90%へ達する最小token集合を候補にする例が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3005s" target="_blank" rel="noopener">50:05</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>top-kは棒の高さに関係なく候補数を4へ固定する一方、top-pは分布の質量を基準に集合sizeを変える。右下の棒グラフは、token順位ではなく累積確率がcutoffを決める点を可視化している。</p>
+      <p>固定kと違い、top-pの候補数は分布の確信度に応じて変わる。尖った分布では少数、平坦な分布では多数を残す。これらはtraining手法ではなく、学習済みmodelのresponse generation時に使う。</p>
+    </section>
+
+    <section id="temperature">
+      <h2>5. Softmax temperatureと非決定性</h2>
+      <p>最終hidden stateをvocabulary size次元へlinear projectionしてlogit <code>z</code>を得て、temperature付きsoftmaxで次token確率へ変換する。</p>
+      <div class="formula">
+        P(i) = exp(z<sub>i</sub>/T) / ∑<sub>j</sub> exp(z<sub>j</sub>/T)
+      </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/04-temperature-softmax.jpg" alt="講義室の投影画面に、decoder出力からsoftmaxへ進む図とtemperature Tでlogitを割る確率式が示されている" loading="lazy" />
+        <figcaption>「Temperature allows to tweak output probabilities」のスライド。decoderのlogitをtemperature付きsoftmaxへ渡す流れと確率式が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3265s" target="_blank" rel="noopener">54:25</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong><code>T</code>はtoken候補の順位を直接入れ替えるのではなく、softmaxへ入るlogitの尺度を変える。小さい<code>T</code>は差を拡大し、大きい<code>T</code>は差を縮めるため、同じmodelから生成多様性を調整できる。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Temperature</th><th>極限・形</th><th>生成の傾向</th></tr></thead>
+          <tbody>
+            <tr><td><code>T → 0+</code></td><td>最大logitの確率が1へ近づくspiky distribution。</td><td>greedyに近く、保守的・再現性重視。</td></tr>
+            <tr><td>中程度の<code>T &gt; 0</code></td><td>元の順位を保ちつつ確率差を調整。</td><td>sampleごとに変化し、多様性とqualityを調整。</td></tr>
+            <tr><td><code>T → ∞</code></td><td>各<code>exp(z/T) → 1</code>なのでvocabulary上のuniform distributionへ近づく。</td><td>低確率tokenも選ばれやすく、よりcreativeだが不安定。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>講義の証明は最大logit <code>z<sub>k</sub></code>を分母からfactorし、<code>exp((z<sub>j</sub>−z<sub>k</sub>)/T)</code>を見る。<code>j≠k</code>なら差は負なので<code>T→0+</code>で0となり、最大要素だけが残る。<code>T→∞</code>では全項が1となり<code>1/|V|</code>へ近づく。tokenは順序を持たない離散categoryなので、低temperature分布をGaussianとして解釈するのは適切でない。</p>
+      <div class="callout warning">
+        <strong>一次資料による補正：T=0でもAPI出力が変わる理由</strong>
+        <p>講義はGPU上の浮動小数点加算順序を直観として挙げた。Thinking Machinesの公式技術記事はさらに、LLM serverでbatch sizeに応じてkernel実装・reduction順が変わる<strong>batch invarianceの欠如</strong>が、同一requestから見た非決定性の主要因になり得ると説明する。modelの数学と実装上のbitwise reproducibilityは別問題である。</p>
+        <p><a href="https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/" target="_blank" rel="noopener">公式技術記事: Defeating Nondeterminism in LLM Inference</a></p>
+      </div>
+    </section>
+
+    <section id="guided-decoding">
+      <h2>6. Guided decoding：invalid tokenを生成前に除く</h2>
+      <p>JSONを求めて失敗するたび再試行するのはnaiveである。guided decodingは、生成済みprefixとschema・grammarから次に許されるtokenだけを残し、invalid tokenの確率を0にする。たとえばJSON先頭なら<code>{</code>、property名の後なら<code>:</code>など、状態ごとに候補を制約する。複数候補がvalidなら、その集合内で通常のsamplingを行う。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/05-guided-decoding-json.jpg" alt="guided decodingスライドに、teddy bearの説明をJSON形式で求めるpromptとfirst_name・last_name・age・hobbyを持つJSON出力例が並ぶ" loading="lazy" />
+        <figcaption>guided decodingの動機。左のpromptはJSON形式を要求し、右には <code>first_name</code>、<code>last_name</code>、<code>age</code>、<code>hobby</code>を持つ期待出力が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=3960s" target="_blank" rel="noopener">1:06:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>promptでformatを「お願い」するだけでは、property欠落や構文errorを防げない。guided decodingは右側のshapeをschemaやgrammarとして機械的な制約へ変え、違反tokenをsampling候補へ入れない。</p>
+      <div class="callout info">
+        <strong>一次資料による補足：FSM・regular expression・CFG</strong>
+        <p>Efficient Guided Generationは、regular expressionをfinite-state machineへ、JSON・Python・SQLなどをcontext-free grammar / parserへ対応付け、vocabulary indexからvalid token集合を効率的に取得する。単なる「JSONで答えて」というpromptより、構文的validityを生成過程で保証できる。</p>
+        <p><a href="https://arxiv.org/abs/2307.09702" target="_blank" rel="noopener">一次資料: Efficient Guided Generation for Large Language Models</a></p>
+      </div>
+    </section>
+
+    <section id="context-prompt">
+      <h2>7. Context lengthとpromptの4要素</h2>
+      <p><strong>context length / context size / window size</strong>は、1 passでmodelが扱う入力token数を指す同義語として紹介される。現代modelは数万・数十万・million token級を掲げるが、windowが長いほど常に情報利用能力が高いわけではない。self-attentionが見るtoken範囲に対応し、標準attentionの計算量はlengthに対してquadraticなので、前回扱ったsparse attention等の工夫も関係する。</p>
+      <div class="callout warning">
+        <strong>公式研究による補足：Context Rot</strong>
+        <p>Chromaの2025年technical reportは18モデルを評価し、task complexityを固定してinput lengthだけを増やしてもperformanceが非一様に低下すると報告した。単純なlexical Needle-in-a-Haystackは長文能力を過大評価しやすく、semantic match、類似distractor、haystack構造が加わると劣化が強まる。したがってretrievalでは「全部入れる」より、関連contextを絞る動機がある。</p>
+        <p><a href="https://www.trychroma.com/research/context-rot" target="_blank" rel="noopener">一次資料: Context Rot</a></p>
+      </div>
+      <h3>Promptのmental model</h3>
+      <div class="grid-cards">
+        <article class="card"><h4>Context</h4><p>役割・状況・日時・背景。「疲れたteddy bearにbedtime storyが必要」など。</p></article>
+        <article class="card"><h4>Instructions</h4><p>modelに実行してほしい操作。「特定の場所を舞台に物語を生成」など。</p></article>
+        <article class="card"><h4>Input</h4><p>instructionへ渡す具体値。「Location: Country of teddy bears」など。</p></article>
+        <article class="card"><h4>Constraints</h4><p>出力条件・safety rule。「疲れたteddy bear向け」「有害contentを生成しない」など。</p></article>
+      </div>
+      <p>これは厳密なprompt理論ではなく、system prompt・user query・入力data・policyを目的別に点検するための実務的分解である。</p>
+    </section>
+
+    <section id="icl">
+      <h2>8. In-Context Learning：weight更新なしでtaskを教える</h2>
+      <p>ICLではmodel parameterを更新しない。「learning」は、prompt contextにtaskの記述やexampleを置き、pretrainingで得た能力をその場で引き出すという意味である。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方式</th><th>Prompt</th><th>利点</th><th>cost・注意</th></tr></thead>
+          <tbody>
+            <tr><td>Zero-shot</td><td>例を与えずinstructionとinputだけ。</td><td>準備が少なく、未知分布へinstructionからgeneralizeしやすい場合がある。</td><td>base modelの能力とinstruction品質へ強く依存。</td></tr>
+            <tr><td>Few-shot</td><td>複数のinput/output exampleを先に示す。</td><td>期待format・taskを具体的にsteerしやすく、一般にはperformanceが上がる。</td><td>example収集、context token、compute、latencyが増え、有限exampleへ過適合する場合もある。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>講義のteddy bear例では、TeddyやBobへのqueryとstoryの組を示してから新しいbearのstoryを求める。近年のreasoning modelでは、良い自然言語instructionがfew-shotと同等または上回る場合もあり、「few-shotが常に最善」ではない。</p>
+      <div class="callout info">
+        <strong>一次資料による補足：Plan-and-Solve</strong>
+        <p>PS promptingは、まずproblemをsubtaskへ分解するplanを作り、次にplanに沿ってsolveする。PS+は計算とintermediate stepを明示するinstructionを加える。ACL 2023論文ではZero-shot-CoTの誤りをcalculation、missing-step、semantic misunderstandingへ分析し、特にmissing-stepを減らす目的で提案された。</p>
+        <p><a href="https://aclanthology.org/2023.acl-long.147/" target="_blank" rel="noopener">一次資料: Plan-and-Solve Prompting</a></p>
+      </div>
+    </section>
+
+    <section id="cot">
+      <h2>9. Chain-of-ThoughtとSelf-Consistency</h2>
+      <h3>Chain-of-Thought（CoT）</h3>
+      <p>最終回答だけでなく中間reasoningを生成させると、多段問題のperformanceが改善し得る。講義例では「bearは2020年生まれで今年4歳。来年は1歳増えるので5歳」とstepを出し、そのpatternをfew-shot exampleとして別queryへ転用する。</p>
+      <p>講義はCoTの利点として説明・interpretability・debuggingを挙げる。たとえば誤答のreasoningに「現在は2019年」とあれば、contextのdateが誤っていた可能性を追える。一方、token数が増えるためcostとlatencyも増す。</p>
+      <div class="callout warning">
+        <strong>一次資料による重要な注意：CoTは内部因果の忠実な説明とは限らない</strong>
+        <p>Turpinら（NeurIPS 2023）は、choice順やsuggested answerのようなbiasing featureにpredictionが影響されても、CoTがその影響を述べず、誤答をもっともらしく合理化する例を示した。CoTはdebuggingの手掛かりにはなるが、model内部の「真の思考過程」を保証する監査logではない。</p>
+        <p><a href="https://arxiv.org/abs/2305.04388" target="_blank" rel="noopener">一次資料: Language Models Don’t Always Say What They Think</a></p>
+      </div>
+      <h3>Self-Consistency</h3>
+      <p>同じqueryから複数のCoT pathを独立sampleし、reasoning部分を除いたfinal answerを抽出してmajority voteする。講義例では「5、5、4」から5を選ぶ。answer位置を最後に固定するinstruction、regex、別LLMによるextractなどで集計する。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/06-self-consistency.jpg" alt="Self-consistencyスライドに、同じLLMから3本のreasoning pathが分岐し、答え5・5・4から5へ投票する図が示されている" loading="lazy" />
+        <figcaption>Self-consistencyの集約図。同じLLMから3本のreasoning pathをsampleし、2本が5、1本が4を出したため最終回答5へ集約している。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=4950s" target="_blank" rel="noopener">1:22:30</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>同一pathを長くするのではなく、独立した複数pathの最終回答をvoteする点が要点である。図の分岐は並列化できるが、3本なら生成computeも概ね3本分必要になる。</p>
+      <ul>
+        <li>各generationは互いをcontextへ入れず、並列にsampleできるためwall-clock latencyは概ね最遅branchに支配される。</li>
+        <li>正答率向上を主張するにはground truth付きbenchmarkが必要で、元論文は算術・数学reasoning taskなどを評価する。</li>
+        <li>sample数に比例してtotal compute・costは増える。performanceとcostのtrade-offである。</li>
+      </ul>
+    </section>
+
+    <section id="inference-map">
+      <h2>10. 推論最適化の全体像</h2>
+      <p>講義は最適化を、結果を変えず冗長計算・memory管理・数式を改善する「exact」系と、architecture・embedding・token predictionを変える「approximation」系に分ける。その後、attention側とoutput token側の順に各手法を配置する。</p>
+      <div class="mermaid">
+flowchart TD
+  A["LLM推論のbottleneck"] --> B["Attention / KV側"]
+  A --> C["Token生成側"]
+  B --> D["KV cache: 再計算を除く"]
+  B --> E["GQA: K/V headを共有"]
+  B --> F["PagedAttention: memory断片化を抑える"]
+  B --> G["MLA: cache表現を圧縮"]
+  C --> H["Speculative decoding: 小modelでdraft"]
+  C --> I["MTP: 同一model内で複数未来token head"]
+      </div>
+      <p class="diagram-hint">図をクリックすると拡大・移動できる。</p>
+    </section>
+
+    <section id="kv-cache">
+      <h2>11. KV cache・GQA・PagedAttention</h2>
+      <h3>KV cache</h3>
+      <p>自己回帰生成では、新tokenのqueryは毎回新しく必要だが、過去tokenのkey・valueは既に計算済みである。各layerのK/Vをcacheし、次stepで再利用すれば同じprojectionを繰り返さずに済む。trainingではteacher forcingでsequence全体を並列入力するため、逐次decode時と同じcache問題は通常生じない。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/07-kv-cache.jpg" alt="KV cachingスライドに、新tokenのqueryと、cacheから再利用される過去tokenのkey・valueを示す色付きベクトルが並ぶ" loading="lazy" />
+        <figcaption>KV cachingによる再利用。新tokenではqueryを計算する一方、過去tokenのkey・valueには「From cache」と表示され、再計算せずattentionへ渡す構造が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5355s" target="_blank" rel="noopener">1:29:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>赤い新queryに対し、青・緑のK/V列は前stepの結果を保持する。decodeが1 token進むたびに過去全tokenのK/V projectionをやり直す無駄を消す代わりに、sequence長に比例するcache memoryを使う。</p>
+      <div class="callout info">
+        <strong>公式documentによる補足：cacheはspeedとmemoryの交換</strong>
+        <p>Hugging Face TransformersはDynamic、Static、Quantized、offloaded cacheを提供する。cacheは再計算を減らす一方、contextとlayer数に応じてmemoryを消費する。Static cacheはcompileしやすいが未使用slotをmaskする無駄があり、quantization・offloadはmemoryを減らす代わりにthroughputへ影響し得る。</p>
+        <p><a href="https://huggingface.co/docs/transformers/main/en/kv_cache" target="_blank" rel="noopener">公式document: Transformers Cache strategies</a></p>
+      </div>
+      <h3>GQAでK/V head数を減らす</h3>
+      <p>MHAはquery・key・valueを各h head持つ。GQAはh個のquery headをG groupへ分け、group内でK/V headを共有する。<code>G=h</code>ならMHA、<code>G=1</code>ならMQAであり、中間のGQAはqualityとKV cache量の折衷になる。</p>
+      <div class="formula">
+        #Q heads = h,&nbsp; #K heads = #V heads = G ≤ h
+      </div>
+      <h3>PagedAttentionで予約領域を細分化する</h3>
+      <p>naive serverは生成lengthがEOSまで不明なためrequestごとに最大context長のcontiguous memoryを予約し、internal・external fragmentationを生む。PagedAttentionはOSのvirtual memoryに似てKV cacheを固定size blockへ分け、logical token blockを非連続physical blockへmapする。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/08-paged-attention.jpg" alt="PagedAttentionスライドに、複数requestの予約memory、internal fragmentation、external fragmentationを色分けした横長の配置図が示されている" loading="lazy" />
+        <figcaption>naiveなKV cache管理の断片化。複数requestのtoken領域、未使用予約領域、internal fragmentation、領域間のexternal fragmentationが横棒で色分けされている。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5700s" target="_blank" rel="noopener">1:35:00</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>sequenceがいつEOSへ達するか不明なため、連続領域を大きく予約すると「block内の余り」と「block間の隙間」が同時に生じる。PagedAttentionはlogical blockとphysical blockを分離し、この図の空白を小さなblock単位で再利用する。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>無駄</th><th>意味</th><th>PagedAttentionの対応</th></tr></thead>
+          <tbody>
+            <tr><td>Reservation</td><td>最大lengthを見越して確保する未使用領域。</td><td>必要になった分だけ小blockを追加。</td></tr>
+            <tr><td>Internal fragmentation</td><td>割当block内部の未使用部分。</td><td>最後のblock程度へ限定。</td></tr>
+            <tr><td>External fragmentation</td><td>連続領域を要求するため生じる隙間。</td><td>KV blockを非連続配置し、block tableで対応付け。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout info">
+        <strong>一次資料による補足：論文での効果</strong>
+        <p>PagedAttention論文はvLLM上でKV cache wasteをnear-zeroへ近づけ、同等latencyで既存systemより2–4倍のthroughputを報告した。効果はlong sequence・large model・複雑なdecodingで大きい。</p>
+        <p><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">一次資料: Efficient Memory Management for LLM Serving with PagedAttention</a></p>
+      </div>
+    </section>
+
+    <section id="mla">
+      <h2>12. Multi-head Latent Attention（MLA）</h2>
+      <p>MHAでは各token・各layerについて多数のK/V head vectorをcacheする。DeepSeek-V2のMLAは、hidden stateを低次元latent <code>c<sub>t</sub><sup>KV</sup></code>へdown-projectし、必要時に別matrixでK/Vへup-projectする。compression matrixをKとVで、さらに全headで共有するため、cacheする表現を大幅に減らす。</p>
+      <div class="formula">
+        c<sub>t</sub><sup>KV</sup> = W<sup>DKV</sup>h<sub>t</sub><br />
+        k<sub>t</sub><sup>C</sup> = W<sup>UK</sup>c<sub>t</sub><sup>KV</sup>,&nbsp;
+        v<sub>t</sub><sup>C</sup> = W<sup>UV</sup>c<sub>t</sub><sup>KV</sup>
+        <small>d<sub>c</sub> ≪ d<sub>h</sub>n<sub>h</sub>。低rank次元d<sub>c</sub>は学習中に自動決定される値ではなくarchitectureのdesign choice。</small>
+      </div>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/09-mla-latent-cache.jpg" alt="MLAスライドに、teddyとbearのtoken表現をshared down-projectionで細いlatentへ圧縮し、shared up-projectionで展開する図が示されている" loading="lazy" />
+        <figcaption>MLAのlatent圧縮。token表現をshared matrixで低次元の細いlatentへ縮約し、必要時にshared up-projectionでK/V表現へ戻す模式図が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=5955s" target="_blank" rel="noopener">1:39:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>cacheへ残すのは右端の大きなhead別表現ではなく、中央の細いlatentである。K/Vとhead間で圧縮表現を共有するため、GQAとは異なるlow-rank方向からmemoryを削減する。</p>
+      <div class="callout warning">
+        <strong>一次資料による精密化：実際のcacheはlatentだけではない</strong>
+        <p>講義は「layerごとにtoken当たり1つの共有表現」と直観化する。DeepSeek-V2論文では、通常のRoPEをcompressed keyへ直接適用するとup-projectionをquery側へ吸収できないため、RoPE用のshared keyを分離する<strong>decoupled RoPE</strong>を導入する。実装上はcompressed latentに加え、この小さなRoPE keyもcache対象になる。なおスライド表記の“DeepSeek-V2, 2023”に対し、arXiv初版は2024年5月である。</p>
+        <p><a href="https://arxiv.org/abs/2405.04434" target="_blank" rel="noopener">一次資料: DeepSeek-V2, §2.1</a></p>
+      </div>
+    </section>
+
+    <section id="speculative">
+      <h2>13. Speculative decoding：小modelのdraftを大modelが検証</h2>
+      <p>draft model <code>p</code>がk tokenを高速に自己回帰生成し、target model <code>q</code>へdraft列をまとめて入力する。Transformerは短いcontinuationを並列scoreでき、memory-bandwidth-boundな大modelではk tokenを一括評価するlatencyが1 token評価に近い場合がある。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/10-speculative-decoding.jpg" alt="speculative decodingスライドに、BOS・A・teddy・bearに続いてDraft LLMがis・cute・and・smartを予測する図が示されている" loading="lazy" />
+        <figcaption>Draft LLMによる先読み。prefix「BOS A teddy bear」に続く <code>is / cute / and / smart</code> の4 token候補を小modelが順に作る段階が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=6175s" target="_blank" rel="noopener">1:42:55</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>図の4候補はまだ確定出力ではない。draft modelは安く先読みし、次段でtarget modelが各位置をまとめてscoreしてaccept/rejectするため、qualityの基準をtarget側へ残したまま逐次呼び出し回数を減らせる。</p>
+      <ol>
+        <li>draft modelで<code>x̃<sub>1:k</sub></code>を生成する。</li>
+        <li>target modelを1回呼び、各位置の<code>q<sub>1:k+1</sub></code>を並列計算する。</li>
+        <li>左からaccept/rejectし、全acceptなら<code>q<sub>k+1</sub></code>から追加1 tokenもsampleする。</li>
+      </ol>
+      <div class="formula">
+        a(x̃<sub>i</sub>) = min(1, q<sub>i</sub>(x̃<sub>i</sub>) / p<sub>i</sub>(x̃<sub>i</sub>))<br />
+        reject時: x ∼ normalize([q<sub>i</sub>(x) − p<sub>i</sub>(x)]<sub>+</sub>)
+        <small>q≥pなら必ずaccept。そうでなければq/pでacceptし、reject時はpositive residual distributionからsampleする。</small>
+      </div>
+      <div class="callout info">
+        <strong>一次資料による補足：近似ではなくtarget分布を保存する</strong>
+        <p>modified rejection samplingにより、最終sample分布はhardware numericsの範囲でtarget model <code>q</code>と一致する。DeepMind論文はChinchilla 70Bでqualityを損なわず2–2.5倍のdecoding speedupを報告した。draftとtargetの一致率が低いとaccept数が減り、speedupも小さくなる。</p>
+        <p><a href="https://arxiv.org/abs/2302.01318" target="_blank" rel="noopener">一次資料: Accelerating LLM Decoding with Speculative Sampling</a></p>
+      </div>
+    </section>
+
+    <section id="mtp">
+      <h2>14. Multi-Token Prediction（MTP）</h2>
+      <p>MTPはshared Transformer trunkの上に、<code>t+1, t+2, …, t+k</code>を予測する複数headを付けてtraining objective自体を変える。test時には追加head群を同一model内のdraftとして使い、main next-token headで検証するself-speculative decodingが可能になる。</p>
+      <figure class="shot">
+        <img src="../images/stanford-cme295-lecture3-large-language-models/11-multi-token-prediction.jpg" alt="MTPスライドに、shared Transformer trunkの上でt+1からt+kまでを予測する複数のprediction headが並ぶ" loading="lazy" />
+        <figcaption>Multi-Token Predictionのarchitecture。shared trunkの上に <code>t+1 … t+k</code> の未来位置を担当する複数headを置き、複数tokenを同時に予測する構成が映る。<a class="ts" href="https://www.youtube.com/watch?v=Q5baLehv5So&t=6435s" target="_blank" rel="noopener">1:47:15</a></figcaption>
+      </figure>
+      <p><strong>画像の読み解き：</strong>別のdraft modelを用意するspeculative decodingと違い、MTPはtraining時から同じtrunkに未来token headを持たせる。追加headをin-model draftとして使える一方、training objectiveとarchitectureの変更が必要になる。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>通常のspeculative decoding</th><th>MTP</th></tr></thead>
+          <tbody>
+            <tr><td>Draft</td><td>別の小model</td><td>同一model内の未来token prediction heads</td></tr>
+            <tr><td>Training</td><td>target modelは変更不要</td><td>複数未来tokenを予測するobjectiveへ変更</td></tr>
+            <tr><td>Validation</td><td>rejection samplingでtarget分布を厳密保存</td><td>講義で扱う論文実装はgreedy validationで、同じ分布保存式をそのまま使わない</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout info">
+        <strong>一次資料による補足：qualityとspeedの両面</strong>
+        <p>Gloeckleらはmulti-token objectiveがsample efficiencyを高め、13B modelでHumanEvalを12%、MBPPを17%多く解き、4-token prediction modelで最大3倍のinference speedupを報告した。一方、小modelではbaselineより悪い場合もあり、scaleとhead数に依存する。</p>
+        <p><a href="https://arxiv.org/abs/2404.19737" target="_blank" rel="noopener">一次資料: Better &amp; Faster LLMs via Multi-token Prediction</a></p>
+      </div>
+    </section>
+
+    <section id="qa">
+      <h2>15. 講義内Q&amp;A総覧</h2>
+      <p>発話中に挟まれた質問を、重複をまとめつつ全論点が残る形で整理する。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>質問</th><th>講義での回答</th></tr></thead>
+          <tbody>
+            <tr><td>Router <code>G</code>とexpert <code>E</code>はどう学習するか。</td><td>通常のforward、loss、backpropでjoint trainingする。MoE固有のcollapse対策を補助loss等で加える。</td></tr>
+            <tr><td>Expertのarchitectureは何か。</td><td>一般式では任意networkだが、Transformer LLMでは各expertはFFNで、通常FFNをMoE layerへ置換する。</td></tr>
+            <tr><td>Load balanceの<code>f<sub>i</sub></code>と<code>P<sub>i</sub></code>はいつ計算するか。</td><td>mini-batchをmodelへ通した後にbatch統計として計算し、主lossと合わせてbackpropする。</td></tr>
+            <tr><td>Dropoutを使えるか。</td><td>併用可能。関連手法としてrouter scoreへnoiseを加えるnoisy gatingもある。</td></tr>
+            <tr><td>Hard assignmentの<code>f<sub>i</sub></code>は微分可能か。</td><td>講義では保留。原論文では<code>f</code>は非微分、<code>P</code>は微分可能で、勾配は後者を通る。</td></tr>
+            <tr><td>Expert数を増やすとparameterは増えるか。</td><td>総parameterとcapacityは増えるが、top-kを固定すればactive parameterと1 passのcomputeは制御できる。</td></tr>
+            <tr><td>MoEはattention headごとにあるのか。</td><td>headとは独立。head出力を連結・射影した後に1つのlayer-specific routerがtokenをexpertへ送る。</td></tr>
+            <tr><td>各blockにexpertがあり、weightは共有するか。</td><td>通常各blockに別のrouter・expert群がありweightは共有しない。layerごとに別expertが選ばれ得る。</td></tr>
+            <tr><td>Inferenceでroutingはいつ決まるか。</td><td>masked self-attention後のcontextualized token表現をrouterへ入れ、softmax確率のtop-kを選ぶ時点。</td></tr>
+            <tr><td>Samplingはtraining時か。</td><td>ここでのsamplingは学習済みmodelのresponse generation時。trainingでは予測分布とground-truth labelをlossで比較する。</td></tr>
+            <tr><td>低temperatureをGaussianとして考えられるか。</td><td>tokenは順序のない離散categoryなので、連続x軸を持つGaussianより「最大候補へspikeする」と理解する。</td></tr>
+            <tr><td>Context lengthはself-attentionが見る範囲か。</td><td>その通り。長くなると標準attentionのquadratic complexityが効き、sparse attention等の工夫が必要になる。</td></tr>
+            <tr><td>Self-consistencyが良いとどう判定するか。</td><td>ground truth付き算術・数学benchmark等で評価する。answer抽出は末尾指定、regex、別LLMなどで行う。</td></tr>
+            <tr><td>複数CoT sampleは互いをcontextへ入れるか。</td><td>入れず、同一requestから独立に並列sampleする。最後にanswerだけを集約する。</td></tr>
+            <tr><td>TrainingでもKV cacheを使うか。</td><td>teacher forcingで全tokenを一括処理するため、逐次generationと同じ意味のKV cachingは通常不要。</td></tr>
+            <tr><td>KV cache削減にsparse attentionを使えるか。</td><td>別の選択肢ではあるが、講義の問いはK/V head数に着目し、GQA/MQAを答えとした。</td></tr>
+            <tr><td>MLAのlow-rank次元は学習で決まるか。</td><td>次元sizeは固定のarchitecture design choice。layer間で変えることも可能だが、実装では同一値を使うことが多い。</td></tr>
+            <tr><td>Speculative decodingのrejectはrejection samplingか。</td><td>その理解でよい。accept/rejectとresidual再sampleでtarget分布を回復する。</td></tr>
+            <tr><td>なぜdraft列の後ろに追加位置もtargetへ入れるか。</td><td>1回のtarget forwardで<code>q<sub>k+1</sub></code>も「無料で」得て、draftが全acceptならさらに1 token進めるため。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="summary">
+      <h2>16. まとめ：各手法はどのbottleneckを解くか</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>課題</th><th>手法</th><th>中心idea</th></tr></thead>
+          <tbody>
+            <tr><td>総parameterを増やすとcomputeも増える</td><td>Sparse MoE</td><td>tokenごとにtop-k FFN expertだけactivateする。</td></tr>
+            <tr><td>出力が単調・不自然・format違反</td><td>Sampling / temperature / guided decoding</td><td>分布の多様性とvalid token集合を別々に制御する。</td></tr>
+            <tr><td>Taskをweight更新なしで適応させたい</td><td>ICL / Plan-and-Solve / CoT / self-consistency</td><td>instruction・example・reasoning path・voteで推論をsteerする。</td></tr>
+            <tr><td>過去tokenのK/Vを再計算する</td><td>KV cache</td><td>過去K/Vを保存して再利用する。</td></tr>
+            <tr><td>KV cacheが大きい</td><td>GQA / MLA</td><td>K/V head共有、低rank joint compression。</td></tr>
+            <tr><td>Serving memoryが断片化する</td><td>PagedAttention</td><td>固定size blockを非連続配置してlogical/physical memoryを分離。</td></tr>
+            <tr><td>大modelが1 tokenずつ逐次decodeする</td><td>Speculative decoding / MTP</td><td>複数候補をdraftし、大modelまたはmain headでまとめて検証する。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>講義全体の軸は、LLMを「巨大なdecoder-only model」として終わらせず、<strong>どのparameterを動かすか、どのtokenを選ぶか、どのcontextを渡すか、どの計算・memoryを再利用するか</strong>へ分解することにある。quality、capacity、latency、throughput、memory、costは常にtrade-offであり、手法名ではなくbottleneckとの対応で選ぶ必要がある。</p>
+    </section>
+
+    <section id="references">
+      <h2>17. 出典・一次資料</h2>
+      <ol class="refs">
+        <li>Stanford CME295, <a href="https://cme295.stanford.edu/slides/fall25-cme295-lecture3.pdf" target="_blank" rel="noopener"><em>Lecture 3: Large Language Models</em>（125 slides）</a>.</li>
+        <li>Fedus, Zoph &amp; Shazeer (2021/2022), <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener"><em>Switch Transformers</em></a>.</li>
+        <li>Jiang et al. (2024), <a href="https://arxiv.org/abs/2401.04088" target="_blank" rel="noopener"><em>Mixtral of Experts</em></a>.</li>
+        <li>Holtzman et al. (2020), <a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener"><em>The Curious Case of Neural Text Degeneration</em></a>.</li>
+        <li>Hong, Troynikov &amp; Huber (2025), <a href="https://www.trychroma.com/research/context-rot" target="_blank" rel="noopener"><em>Context Rot</em></a>.</li>
+        <li>Brown et al. (2020), <a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener"><em>Language Models are Few-Shot Learners</em></a>.</li>
+        <li>Wang et al. (2023), <a href="https://aclanthology.org/2023.acl-long.147/" target="_blank" rel="noopener"><em>Plan-and-Solve Prompting</em></a>.</li>
+        <li>Wei et al. (2022), <a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener"><em>Chain-of-Thought Prompting</em></a>.</li>
+        <li>Wang et al. (2022), <a href="https://arxiv.org/abs/2203.11171" target="_blank" rel="noopener"><em>Self-Consistency Improves Chain of Thought Reasoning</em></a>.</li>
+        <li>Turpin et al. (2023), <a href="https://arxiv.org/abs/2305.04388" target="_blank" rel="noopener"><em>Language Models Don’t Always Say What They Think</em></a>.</li>
+        <li>Kwon et al. (2023), <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener"><em>Efficient Memory Management for LLM Serving with PagedAttention</em></a>.</li>
+        <li>DeepSeek-AI (2024), <a href="https://arxiv.org/abs/2405.04434" target="_blank" rel="noopener"><em>DeepSeek-V2</em></a>.</li>
+        <li>Chen et al. (2023), <a href="https://arxiv.org/abs/2302.01318" target="_blank" rel="noopener"><em>Accelerating LLM Decoding with Speculative Sampling</em></a>.</li>
+        <li>Gloeckle et al. (2024), <a href="https://arxiv.org/abs/2404.19737" target="_blank" rel="noopener"><em>Better &amp; Faster LLMs via Multi-token Prediction</em></a>.</li>
+        <li>Willard &amp; Louf (2023), <a href="https://arxiv.org/abs/2307.09702" target="_blank" rel="noopener"><em>Efficient Guided Generation for Large Language Models</em></a>.</li>
+        <li>Thinking Machines Lab (2025), <a href="https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/" target="_blank" rel="noopener"><em>Defeating Nondeterminism in LLM Inference</em></a>.</li>
+        <li>Hugging Face, <a href="https://huggingface.co/docs/transformers/main/en/kv_cache" target="_blank" rel="noopener"><em>Transformers Cache strategies</em></a>.</li>
+      </ol>
+    </section>
+
+    <footer class="page">
+      <p class="disclaimer">本レポートは、上記の出典元コンテンツを参照し、内容を省略せず日本語で要約・再構成した非公式まとめです。記述に誤りがある場合は出典元の表現が正となります。</p>
+      <p>公式教材・原論文・公式documentによる補足は、講義内の説明そのものではなく、説明不足・保留・単純化された点を正確に補う付記です。</p>
+      <p>講義フレーム11枚は理解に必要な要所へ限定した少数引用であり、各captionの時刻からYouTube上の該当箇所を確認できます。</p>
+      <p>出典: <a href="https://www.youtube.com/watch?v=Q5baLehv5So" target="_blank" rel="noopener">YouTube / Stanford Online</a> ／ 取得手段: yt-dlp 英語自動字幕（全文精読）・720p動画フレーム11枚＋ Stanford公式スライド125ページ＋一次資料 ／ 生成日: 2026-07-20</p>
+    </footer>
+  </main>
+</div>
+
+<div id="diagramModal" class="modal" role="dialog" aria-modal="true" aria-label="図と講義画面の拡大ビューア">
+  <div class="modal-toolbar">
+    <button class="modal-button" type="button" onclick="zoomCmd('in')">拡大</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('out')">縮小</button>
+    <button class="modal-button" type="button" onclick="zoomCmd('reset')">リセット</button>
+    <button class="modal-button" type="button" onclick="closeModal()">閉じる</button>
+  </div>
+  <div id="modalBody" class="modal-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<script>
+  const themeAttr = document.documentElement.getAttribute('data-theme');
+  const isDark = themeAttr ? themeAttr === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: isDark ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const tocPanel = document.querySelector('.toc-panel');
+  const mobileToc = window.matchMedia('(max-width: 900px)');
+  const syncTocState = (event) => {
+    if (!tocPanel) return;
+    if (event.matches) tocPanel.removeAttribute('open');
+    else tocPanel.setAttribute('open', '');
+  };
+  syncTocState(mobileToc);
+  mobileToc.addEventListener('change', syncTocState);
+
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('main section[id] > h2, main section[id] > h3')];
+  if (toc && headings.length) {
+    toc.innerHTML = '';
+    headings.forEach((heading, index) => {
+      const section = heading.closest('section');
+      if (!heading.id) heading.id = section ? section.id + '-h' + index : 'heading-' + index;
+      const item = document.createElement('li');
+      item.className = heading.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+      const anchor = document.createElement('a');
+      anchor.href = '#' + heading.id;
+      anchor.textContent = heading.textContent.trim();
+      item.appendChild(anchor);
+      toc.appendChild(item);
+    });
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 1] });
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  let panZoomInstance = null;
+  function tightenViewBox(svg) {
+    if (!svg || !svg.getBBox) return;
+    try {
+      const bbox = svg.getBBox();
+      if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) return;
+      const padding = 20;
+      svg.setAttribute('viewBox', [bbox.x-padding, bbox.y-padding, bbox.width+padding*2, bbox.height+padding*2].join(' '));
+    } catch (error) {
+      console.warn('Unable to tighten Mermaid viewBox', error);
+    }
+  }
+  function openDiagramFromElement(diagram) {
+    const sourceSvg = diagram ? diagram.querySelector('svg') : null;
+    if (!sourceSvg) return;
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const clonedSvg = sourceSvg.cloneNode(true);
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    modalBody.appendChild(clonedSvg);
+    tightenViewBox(clonedSvg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(clonedSvg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: .4, maxZoom: 8
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+  function openImageFromElement(img) {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = '';
+    const svgNamespace = 'http://www.w3.org/2000/svg';
+    const width = img.naturalWidth || 1280;
+    const height = img.naturalHeight || 720;
+    const svg = document.createElementNS(svgNamespace, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const image = document.createElementNS(svgNamespace, 'image');
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', img.src);
+    image.setAttribute('href', img.src);
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', width);
+    image.setAttribute('height', height);
+    svg.appendChild(image);
+    modalBody.appendChild(svg);
+    modal.classList.add('is-open');
+    if (panZoomInstance) panZoomInstance.destroy();
+    panZoomInstance = svgPanZoom(svg, {
+      zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: .4, maxZoom: 12
+    });
+    panZoomInstance.resize();
+    panZoomInstance.fit();
+    panZoomInstance.center();
+  }
+  function closeModal() {
+    const modal = document.getElementById('diagramModal');
+    const modalBody = document.getElementById('modalBody');
+    if (panZoomInstance) {
+      panZoomInstance.destroy();
+      panZoomInstance = null;
+    }
+    modal.classList.remove('is-open');
+    modalBody.innerHTML = '';
+  }
+  function zoomCmd(command) {
+    if (!panZoomInstance) return;
+    if (command === 'in') panZoomInstance.zoomIn();
+    if (command === 'out') panZoomInstance.zoomOut();
+    if (command === 'reset') {
+      panZoomInstance.resetZoom();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+  window.closeModal = closeModal;
+  window.zoomCmd = zoomCmd;
+  document.querySelectorAll('.mermaid').forEach((diagram) => {
+    diagram.setAttribute('role', 'button');
+    diagram.setAttribute('aria-label', 'Mermaid図を拡大表示');
+    diagram.setAttribute('title', 'クリックで拡大表示');
+    if (!diagram.hasAttribute('tabindex')) diagram.tabIndex = 0;
+    diagram.addEventListener('click', () => openDiagramFromElement(diagram));
+    diagram.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDiagramFromElement(diagram);
+      }
+    });
+  });
+  document.querySelectorAll('figure.shot img').forEach((img) => {
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', '講義画面を拡大表示');
+    img.setAttribute('title', 'クリックで拡大表示');
+    if (!img.hasAttribute('tabindex')) img.tabIndex = 0;
+    img.addEventListener('click', () => openImageFromElement(img));
+    img.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openImageFromElement(img);
+      }
+    });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+  document.getElementById('diagramModal').addEventListener('click', (event) => {
+    if (event.target.id === 'diagramModal') closeModal();
+  });
+</script>
+</body>
+</html>
